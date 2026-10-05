@@ -1,0 +1,115 @@
+{
+ "v": 3,
+ "attachments": {},
+ "boards": {
+  "Main.dc.html": {
+   "x": 0,
+   "y": 0,
+   "w": 1280,
+   "h": 2900,
+   "title": "1 · Catálogo",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "Producto.dc.html": {
+   "x": 1360,
+   "y": 0,
+   "w": 1280,
+   "h": 1500,
+   "title": "2 · Producto y planes",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "Checkout.dc.html": {
+   "x": 1360,
+   "y": 1620,
+   "w": 1280,
+   "h": 1350,
+   "title": "3 · Checkout y pago",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "Pedidos.dc.html": {
+   "x": 1360,
+   "y": 3090,
+   "w": 1280,
+   "h": 1150,
+   "title": "4 · Mis pedidos y licencia",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "AdminInicio.dc.html": {
+   "x": 2720,
+   "y": 0,
+   "w": 1280,
+   "h": 1000,
+   "title": "5 · Admin: Inicio",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "AdminPagos.dc.html": {
+   "x": 2720,
+   "y": 1120,
+   "w": 1280,
+   "h": 1100,
+   "title": "6 · Admin: Pagos",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "AdminInventario.dc.html": {
+   "x": 2720,
+   "y": 2340,
+   "w": 1280,
+   "h": 1150,
+   "title": "7 · Admin: Inventario",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "AdminReclamos.dc.html": {
+   "x": 2720,
+   "y": 3610,
+   "w": 1280,
+   "h": 1000,
+   "title": "8 · Admin: Reclamos",
+   "expand": "fill",
+   "is_interactive": true
+  }
+ },
+ "createdOnFiles": {
+  "at": "2026-10-05T17:00:00Z",
+  "v": 1
+ },
+ "designSystems": [],
+ "launch": {
+  "view": "canvas"
+ },
+ "notes": {
+  "flujo": {
+   "kind": "title1",
+   "maxW": 2640,
+   "text": "Tienda del cliente: flujo de compra de licencias",
+   "w": 240,
+   "x": 0,
+   "y": -300
+  },
+  "admin": {
+   "x": 2720,
+   "y": -300,
+   "text": "Panel admin: operación diaria",
+   "kind": "title1",
+   "maxW": 1280
+  }
+ },
+ "order": [
+  "Main.dc.html",
+  "Producto.dc.html",
+  "Checkout.dc.html",
+  "Pedidos.dc.html",
+  "AdminInicio.dc.html",
+  "AdminPagos.dc.html",
+  "AdminInventario.dc.html",
+  "AdminReclamos.dc.html"
+ ],
+ "pages": [],
+ "title": "Tienda de licencias – Cliente"
+}

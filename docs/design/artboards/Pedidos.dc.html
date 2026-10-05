@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Tienda de licencias — Mis pedidos</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #7DB3FF;outline-offset:2px}
+button,input{font-family:inherit}
+</style>
+</helmet>
+<div style="background:#F6F7F9;color:#101828;font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:16px;line-height:1.5;min-height:1150px;display:flex;flex-direction:column">
+<div style="background:#EAF1FE;color:#0A3FA3;font-size:14px">
+<div style="max-width:1200px;margin:0 auto;padding:8px 24px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 24px;box-sizing:border-box">
+<span style="display:inline-flex;align-items:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Entrega estimada: [X] min después de aprobar tu pago</span>
+<span style="display:inline-flex;align-items:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>Soporte por WhatsApp: [NÚMERO]</span>
+</div></div>
+<header style="background:#fff;border-bottom:1px solid #E4E7EC">
+<div style="max-width:1200px;margin:0 auto;padding:12px 24px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 24px;box-sizing:border-box">
+<a href="Main.dc.html" style="display:flex;align-items:center;gap:10px;color:#101828;text-decoration:none;font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;font-size:20px;min-height:44px">
+<svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true"><rect x="2" y="2" width="24" height="24" rx="6" fill="#101828"/><path d="M9 14h10M14 9v10" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+[TU MARCA]</a>
+<nav aria-label="Principal" style="display:flex;flex-wrap:wrap;gap:4px">
+<a href="Main.dc.html" style="display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:8px;color:#101828;text-decoration:none;font-weight:500;">Catálogo</a>
+<a href="Pedidos.dc.html" style="display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:8px;color:#101828;text-decoration:none;font-weight:500;background:#F2F4F7;">Mis pedidos</a>
+<a href="#soporte" style="display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:8px;color:#101828;text-decoration:none;font-weight:500">Soporte</a>
+</nav>
+<a href="#ingresar" style="display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border-radius:8px;border:1px solid #D0D5DD;color:#101828;text-decoration:none;font-weight:500">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>Ingresar</a>
+</div>
+</header>
+<main style="flex:1">
+<div style="max-width:1200px;margin:0 auto;padding:0 24px;box-sizing:border-box;padding-top:32px;padding-bottom:72px">
+<h1 style="margin:0 0 20px;font-family:'Space Grotesk',system-ui,sans-serif;font-size:32px">Mis pedidos</h1>
+<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px">
+<sc-for list="{{filters}}" as="f" hint-placeholder-count="4">
+<button type="button" onClick="{{ f.pick }}" aria-pressed="{{ f.pressed }}" style="{{ f.style }}">{{ f.label }}</button>
+</sc-for>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start">
+<section style="flex:999 1 520px;min-width:0;display:flex;flex-direction:column;gap:12px">
+<sc-for list="{{orders}}" as="o" hint-placeholder-count="4">
+<div style="background:#fff;border:1px solid #E4E7EC;border-radius:16px;display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;padding:20px 24px">
+<div style="{{ o.tile }}">{{ o.initials }}</div>
+<div style="flex:1 1 200px;min-width:0">
+<div style="font-weight:600">{{ o.title }}</div>
+<div style="color:#475467;font-size:14px">Pedido {{ o.code }} · [FECHA]</div>
+</div>
+<div style="font-weight:600">S/ [PRECIO]</div>
+<span style="{{ o.badgeStyle }}">{{ o.status }}</span>
+</div>
+</sc-for>
+<sc-if value="{{noOrders}}" hint-placeholder-val="{{false}}">
+<div style="background:#fff;border:1px solid #E4E7EC;border-radius:16px;padding:40px;text-align:center;color:#475467">No tienes pedidos en esta categoría.</div>
+</sc-if>
+<a href="Checkout.dc.html" style="align-self:flex-start;display:inline-flex;align-items:center;min-height:44px;color:#0A58E0;font-weight:600">Completar el pago pendiente →</a>
+</section>
+
+<aside style="flex:1 1 380px;max-width:460px;background:#fff;border:1px solid #E4E7EC;border-radius:16px;padding:28px;box-sizing:border-box">
+<span style="background:#DCFAE6;color:#067647;padding:4px 10px;border-radius:999px;font-size:13px;font-weight:600">Entregado</span>
+<h2 style="margin:12px 0 4px;font-family:'Space Grotesk',system-ui,sans-serif;font-size:20px">[Herramienta 1] · Activación nueva · 30 días</h2>
+<div style="color:#475467;font-size:14px;margin-bottom:20px">Pedido [N.º 1]</div>
+<div style="color:#475467;font-size:14px;margin-bottom:6px">Tu clave de licencia</div>
+<div style="font-weight:600;font-size:20px;letter-spacing:0.04em;background:#F2F4F7;border-radius:10px;padding:14px 16px;word-break:break-all;margin-bottom:12px">{{keyText}}</div>
+<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px">
+<button type="button" onClick="{{toggle}}" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 24px;border-radius:10px;font-weight:600;font-size:16px;text-decoration:none;border:0;cursor:pointer;box-sizing:border-box;background:#fff;color:#101828;border:1px solid #D0D5DD">{{toggleLabel}}</button>
+<button type="button" onClick="{{copy}}" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 24px;border-radius:10px;font-weight:600;font-size:16px;text-decoration:none;border:0;cursor:pointer;box-sizing:border-box;background:{{accent}};color:#fff">{{copyLabel}}</button>
+</div>
+<div style="border-top:1px solid #EAECF0;padding-top:20px;margin-bottom:8px;font-weight:600">Seguimiento</div>
+<div style="display:flex;gap:14px"><div style="display:flex;flex-direction:column;align-items:center"><div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#067647;color:#fff"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;"><path d="M5 12l5 5 9-10"/></svg></div><div style="width:2px;flex:1;background:#D0D5DD;margin-top:4px"></div></div><div style="padding-bottom:16px"><div style="font-weight:600">Pedido creado</div><div style="color:#475467;font-size:14px">[FECHA]</div></div></div><div style="display:flex;gap:14px"><div style="display:flex;flex-direction:column;align-items:center"><div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#067647;color:#fff"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;"><path d="M5 12l5 5 9-10"/></svg></div><div style="width:2px;flex:1;background:#D0D5DD;margin-top:4px"></div></div><div style="padding-bottom:16px"><div style="font-weight:600">Pago aprobado</div><div style="color:#475467;font-size:14px">[FECHA]</div></div></div><div style="display:flex;gap:14px"><div style="display:flex;flex-direction:column;align-items:center"><div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#067647;color:#fff"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;"><path d="M5 12l5 5 9-10"/></svg></div></div><div style="padding-bottom:16px"><div style="font-weight:600">Licencia entregada</div><div style="color:#475467;font-size:14px">[FECHA]</div></div></div>
+<a href="#como-activar" style="display:inline-flex;align-items:center;min-height:44px;color:#0A58E0;font-weight:600">Ver cómo activar mi licencia →</a>
+<div style="margin-top:12px;background:#F6F7F9;border-radius:12px;padding:16px 18px">
+<div style="font-weight:600;margin-bottom:4px">¿La clave no funciona?</div>
+<div style="color:#475467;font-size:14px;margin-bottom:8px">Repórtala y te respondemos en [X] horas con una clave de reemplazo.</div>
+<a href="#reclamo" style="display:inline-flex;align-items:center;min-height:44px;color:#B42318;font-weight:600">Reportar un problema</a>
+</div>
+</aside>
+</div>
+</div>
+</main>
+<footer id="soporte" style="background:#101828;color:#CBD5E1;margin-top:auto">
+<div style="max-width:1200px;margin:0 auto;padding:40px 24px;display:flex;flex-wrap:wrap;gap:24px 64px;box-sizing:border-box">
+<div style="flex:1 1 260px">
+<div style="font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;font-size:20px;color:#fff;margin-bottom:8px">[TU MARCA]</div>
+<div style="max-width:360px">Licencias para herramientas de reparación y desbloqueo de equipos móviles.</div>
+</div>
+<div style="flex:1 1 200px">
+<div style="color:#fff;font-weight:600;margin-bottom:8px">Soporte</div>
+<div>WhatsApp: [NÚMERO]</div><div>Correo: [CORREO]</div><div>Horario: [HORARIO DE ATENCIÓN]</div>
+</div>
+<div style="flex:1 1 200px">
+<div style="color:#fff;font-weight:600;margin-bottom:8px">Legal</div>
+<a href="#terminos" style="display:block;color:#CBD5E1;padding:6px 0">Términos de uso</a>
+<a href="#reposicion" style="display:block;color:#CBD5E1;padding:6px 0">Política de reposición</a>
+</div>
+</div>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent": {"editor": "color", "default": "#0A58E0", "options": ["#0A58E0", "#0F766E", "#B42318"]}, "$preview": {"width": 1280, "height": 1150}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const tiles = [
+      { bg: '#EAF1FE', fg: '#0A3FA3' }, { bg: '#DCF5EF', fg: '#0B5C52' },
+      { bg: '#FEF0C7', fg: '#93370D' }, { bg: '#EFE8FD', fg: '#5321B5' }
+    ];
+    const tileStyle = (n, size) => 'width:' + size + 'px;height:' + size + 'px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:' + Math.round(size * 0.36) + 'px;background:' + tiles[n % 4].bg + ';color:' + tiles[n % 4].fg;
+    const show = !!(this.state && this.state.show);
+    const copied = !!(this.state && this.state.copied);
+    const fil = (this.state && this.state.fil) || 'all';
+    const KEY = '[CLAVE DE LICENCIA]';
+    const kinds = {
+      del: { label: 'Entregado', style: 'background:#DCFAE6;color:#067647' },
+      rev: { label: 'Pago en revisión', style: 'background:#EAF1FE;color:#0A4AB8' },
+      pen: { label: 'Esperando pago', style: 'background:#FEF0C7;color:#93370D' },
+      can: { label: 'Cancelado', style: 'background:#EAECF0;color:#344054' }
+    };
+    const filters = [
+      { id: 'all', label: 'Todos' }, { id: 'del', label: 'Entregados' }, { id: 'pen', label: 'Pendientes' }, { id: 'can', label: 'Cancelados' }
+    ].map((f) => {
+      const on = f.id === fil;
+      return { ...f, pressed: on, pick: () => this.setState({ fil: f.id }),
+        style: 'min-height:44px;padding:0 18px;border-radius:999px;font-weight:500;font-size:15px;cursor:pointer;border:1px solid ' + (on ? '#101828' : '#D0D5DD') + ';background:' + (on ? '#101828' : '#fff') + ';color:' + (on ? '#fff' : '#101828') };
+    });
+    const all = [
+      { n: 1, code: '[N.º 1]', k: 'del' }, { n: 2, code: '[N.º 2]', k: 'rev' },
+      { n: 3, code: '[N.º 3]', k: 'pen' }, { n: 4, code: '[N.º 4]', k: 'can' }
+    ];
+    const match = (k) => fil === 'all' || fil === k || (fil === 'pen' && k === 'rev');
+    const orders = all.filter((o) => match(o.k)).map((o) => ({
+      code: o.code, initials: 'H' + o.n, tile: tileStyle(o.n, 44) + ';flex:none',
+      title: '[Herramienta ' + o.n + '] · Licencia [plan]',
+      status: kinds[o.k].label,
+      badgeStyle: 'padding:4px 12px;border-radius:999px;font-size:13px;font-weight:600;white-space:nowrap;' + kinds[o.k].style
+    }));
+    return {
+      filters, orders, noOrders: orders.length === 0,
+      keyText: show ? KEY : '••••-••••-••••-••••',
+      toggleLabel: show ? 'Ocultar' : 'Mostrar',
+      toggle: () => this.setState({ show: !show, copied: false }),
+      copyLabel: copied ? 'Copiado' : 'Copiar',
+      copy: () => { try { navigator.clipboard.writeText(KEY); } catch (e) {} this.setState({ copied: true }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

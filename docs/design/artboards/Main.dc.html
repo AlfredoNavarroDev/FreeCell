@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Tienda de licencias — Catálogo</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #7DB3FF;outline-offset:2px}
+button,input{font-family:inherit}
+</style>
+</helmet>
+<div style="background:#F6F7F9;color:#101828;font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:16px;line-height:1.5;min-height:2900px;display:flex;flex-direction:column">
+<div style="background:#EAF1FE;color:#0A3FA3;font-size:14px">
+<div style="max-width:1200px;margin:0 auto;padding:8px 24px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 24px;box-sizing:border-box">
+<span style="display:inline-flex;align-items:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Entrega estimada: [X] min después de aprobar tu pago</span>
+<span style="display:inline-flex;align-items:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>Soporte por WhatsApp: [NÚMERO]</span>
+</div></div>
+<header style="background:#fff;border-bottom:1px solid #E4E7EC">
+<div style="max-width:1200px;margin:0 auto;padding:12px 24px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 24px;box-sizing:border-box">
+<a href="Main.dc.html" style="display:flex;align-items:center;gap:10px;color:#101828;text-decoration:none;font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;font-size:20px;min-height:44px">
+<svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true"><rect x="2" y="2" width="24" height="24" rx="6" fill="#101828"/><path d="M9 14h10M14 9v10" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+[TU MARCA]</a>
+<nav aria-label="Principal" style="display:flex;flex-wrap:wrap;gap:4px">
+<a href="Main.dc.html" style="display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:8px;color:#101828;text-decoration:none;font-weight:500;background:#F2F4F7;">Catálogo</a>
+<a href="Pedidos.dc.html" style="display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:8px;color:#101828;text-decoration:none;font-weight:500;">Mis pedidos</a>
+<a href="#soporte" style="display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:8px;color:#101828;text-decoration:none;font-weight:500">Soporte</a>
+</nav>
+<a href="#ingresar" style="display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border-radius:8px;border:1px solid #D0D5DD;color:#101828;text-decoration:none;font-weight:500">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>Ingresar</a>
+</div>
+</header>
+<main style="flex:1">
+<section style="max-width:1200px;margin:0 auto;padding:0 24px;box-sizing:border-box;padding-top:32px">
+<div style="background:#EAF1FE;border-radius:24px;padding:48px;display:flex;flex-wrap:wrap;gap:32px 48px;align-items:center">
+<div style="flex:1 1 480px">
+<span style="display:inline-block;background:#fff;color:#0A3FA3;border-radius:999px;padding:4px 12px;font-size:14px;font-weight:600;margin-bottom:16px">Licencias para técnicos</span>
+<h1 style="margin:0 0 16px;font-family:'Space Grotesk',system-ui,sans-serif;font-size:46px;line-height:1.1;letter-spacing:-0.02em">Licencias para reparar y desbloquear equipos móviles</h1>
+<p style="margin:0 0 24px;font-size:18px;color:#344054;max-width:520px">Elige tu licencia, paga con Yape, Plin o transferencia y recibe tu clave en tu cuenta.</p>
+<div style="display:flex;flex-wrap:wrap;gap:10px;max-width:560px">
+<input type="search" aria-label="Buscar herramienta" placeholder="Buscar herramienta o licencia" value="{{q}}" onInput="{{onSearch}}" style="flex:1 1 260px;min-height:52px;border:1px solid #D0D5DD;border-radius:10px;padding:0 16px;font-size:16px;background:#fff;color:#101828;box-sizing:border-box">
+<a href="#catalogo" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 24px;border-radius:10px;font-weight:600;font-size:16px;text-decoration:none;border:0;cursor:pointer;box-sizing:border-box;min-height:52px;background:{{accent}};color:#fff">Buscar</a>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;color:#344054;font-size:14px;align-items:center">
+<span>Populares:</span>
+<a href="#catalogo" style="color:#0A3FA3;font-weight:600;padding:8px 4px">[Herramienta 1]</a>
+<a href="#catalogo" style="color:#0A3FA3;font-weight:600;padding:8px 4px">[Herramienta 2]</a>
+<a href="#catalogo" style="color:#0A3FA3;font-weight:600;padding:8px 4px">[Herramienta 3]</a>
+</div>
+</div>
+<div style="flex:1 1 340px;display:flex;justify-content:center">
+<div style="background:#fff;border:1px solid #E4E7EC;border-radius:16px;padding:24px;width:100%;max-width:380px;box-sizing:border-box;box-shadow:0 12px 32px rgba(16,24,40,0.10)">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px">
+<div style="display:flex;align-items:center;gap:12px">
+<div style="width:44px;height:44px;border-radius:12px;background:#EAF1FE;display:flex;align-items:center;justify-content:center;color:#0A58E0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3"/></svg></div>
+<div><div style="font-weight:600">[Herramienta 1]</div><div style="color:#475467;font-size:14px">Licencia 30 días</div></div>
+</div>
+<span style="background:#DCFAE6;color:#067647;padding:4px 10px;border-radius:999px;font-size:13px;font-weight:600">Entregado</span>
+</div>
+<div style="background:#F2F4F7;border-radius:10px;padding:14px 16px;font-weight:600;font-size:18px;letter-spacing:0.04em">••••-••••-••••-••••</div>
+<div style="margin-top:12px;color:#475467;font-size:14px">Tu clave aparece aquí cuando se aprueba el pago.</div>
+</div>
+</div>
+</div>
+</section>
+
+<section style="max-width:1200px;margin:0 auto;padding:0 24px;box-sizing:border-box;padding-top:24px">
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">
+<div style="display:flex;gap:14px;align-items:flex-start;padding:8px 4px"><div style="flex:none;width:44px;height:44px;border-radius:50%;background:#fff;border:1px solid #E4E7EC;display:flex;align-items:center;justify-content:center;color:#0A58E0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div><div style="font-weight:600">Entrega estimada</div><div style="color:#475467;font-size:15px">[X] min tras aprobar tu pago</div></div></div>
+<div style="display:flex;gap:14px;align-items:flex-start;padding:8px 4px"><div style="flex:none;width:44px;height:44px;border-radius:50%;background:#fff;border:1px solid #E4E7EC;display:flex;align-items:center;justify-content:center;color:#0A58E0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 11h18"/></svg></div><div><div style="font-weight:600">Yape, Plin y transferencia</div><div style="color:#475467;font-size:15px">Sube tu comprobante y listo</div></div></div>
+<div style="display:flex;gap:14px;align-items:flex-start;padding:8px 4px"><div style="flex:none;width:44px;height:44px;border-radius:50%;background:#fff;border:1px solid #E4E7EC;display:flex;align-items:center;justify-content:center;color:#0A58E0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div><div><div style="font-weight:600">Reposición de claves</div><div style="color:#475467;font-size:15px">Si una clave falla, la reemplazamos</div></div></div>
+<div style="display:flex;gap:14px;align-items:flex-start;padding:8px 4px"><div style="flex:none;width:44px;height:44px;border-radius:50%;background:#fff;border:1px solid #E4E7EC;display:flex;align-items:center;justify-content:center;color:#0A58E0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg></div><div><div style="font-weight:600">Soporte por WhatsApp</div><div style="color:#475467;font-size:15px">[HORARIO DE ATENCIÓN]</div></div></div>
+</div>
+</section>
+
+<section style="max-width:1200px;margin:0 auto;padding:0 24px;box-sizing:border-box;padding-top:48px">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:20px;flex-wrap:wrap">
+<h2 style="margin:0;font-family:'Space Grotesk',system-ui,sans-serif;font-size:28px">Más vendidos</h2>
+<a href="#catalogo" style="color:#0A58E0;font-weight:600;min-height:44px;display:inline-flex;align-items:center">Ver todo el catálogo →</a>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px">
+<sc-for list="{{featured}}" as="f" hint-placeholder-count="3">
+<a href="Producto.dc.html" style="background:#fff;border:1px solid #E4E7EC;border-radius:16px;display:flex;align-items:center;gap:16px;padding:20px 24px;color:#101828;text-decoration:none">
+<div style="{{ f.tile }}">{{ f.initials }}</div>
+<div style="flex:1;min-width:0">
+<div style="color:#B54708;font-size:13px;font-weight:600">Más vendido #{{ f.rank }}</div>
+<div style="font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;font-size:18px">{{ f.name }}</div>
+<div style="color:#475467;font-size:14px">Desde S/ [PRECIO]</div>
+</div>
+<span style="color:#0A58E0;font-weight:600">Ver →</span>
+</a>
+</sc-for>
+</div>
+</section>
+
+<section id="catalogo" style="max-width:1200px;margin:0 auto;padding:0 24px;box-sizing:border-box;padding-top:56px;padding-bottom:56px">
+<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px">
+<h2 style="margin:0;font-family:'Space Grotesk',system-ui,sans-serif;font-size:28px">Catálogo</h2>
+<div style="display:flex;flex-wrap:wrap;gap:8px">
+<sc-for list="{{cats}}" as="c" hint-placeholder-count="3">
+<button type="button" onClick="{{ c.pick }}" aria-pressed="{{ c.pressed }}" style="{{ c.style }}">{{ c.label }}</button>
+</sc-for>
+</div>
+</div>
+<sc-if value="{{empty}}" hint-placeholder-val="{{false}}">
+<div style="background:#fff;border:1px solid #E4E7EC;border-radius:16px;padding:40px;text-align:center;color:#475467">No encontramos herramientas con esa búsqueda. Prueba con otro nombre o escríbenos por WhatsApp.</div>
+</sc-if>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px">
+<sc-for list="{{products}}" as="p" hint-placeholder-count="8">
+<a href="Producto.dc.html" style="background:#fff;border:1px solid #E4E7EC;border-radius:16px;display:flex;flex-direction:column;gap:14px;padding:22px;color:#101828;text-decoration:none">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+<div style="{{ p.tile }}">{{ p.initials }}</div>
+<span style="{{ p.badgeStyle }}">{{ p.badge }}</span>
+</div>
+<div>
+<div style="color:#475467;font-size:14px">{{ p.cat }}</div>
+<div style="font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;font-size:19px">{{ p.name }}</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;font-size:15px">
+<div style="display:flex;justify-content:space-between"><span style="color:#475467">30 días</span><span style="font-weight:600">S/ [PRECIO]</span></div>
+<div style="display:flex;justify-content:space-between"><span style="color:#475467">90 días</span><span style="font-weight:600">S/ [PRECIO]</span></div>
+<div style="display:flex;justify-content:space-between"><span style="color:#475467">1 año</span><span style="font-weight:600">S/ [PRECIO]</span></div>
+</div>
+<div style="margin-top:auto;padding-top:12px;border-top:1px solid #EAECF0;display:flex;align-items:center;justify-content:space-between;font-size:14px">
+<span style="display:inline-flex;align-items:center;gap:6px;color:#475467"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Entrega ~[X] min</span>
+<span style="color:#0A58E0;font-weight:600">Ver planes →</span>
+</div>
+</a>
+</sc-for>
+</div>
+</section>
+
+<section style="background:#fff;border-top:1px solid #E4E7EC;border-bottom:1px solid #E4E7EC">
+<div style="max-width:1200px;margin:0 auto;padding:0 24px;box-sizing:border-box;padding-top:56px;padding-bottom:56px">
+<h2 style="margin:0 0 8px;font-family:'Space Grotesk',system-ui,sans-serif;font-size:28px">Lo que dicen otros técnicos</h2>
+<p style="margin:0 0 24px;color:#475467">[Usa solo reseñas reales de clientes cuando las tengas.]</p>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px">
+<div style="background:#F6F7F9;border-radius:16px;padding:24px"><div style="display:flex;gap:2px;margin-bottom:12px"><svg width="18" height="18" viewBox="0 0 24 24" fill="#F79009" aria-hidden="true"><path d="M12 2l3 6.5 7 .8-5.2 4.7 1.5 7L12 17.5 5.7 21l1.5-7L2 9.3l7-.8z"/></svg><svg width="18" height="18" viewBox="0 0 24 24" fill="#F79009" aria-hidden="true"><path d="M12 2l3 6.5 7 .8-5.2 4.7 1.5 7L12 17.5 5.7 21l1.5-7L2 9.3l7-.8z"/></svg><svg width="18" height="18" viewBox="0 0 24 24" fill="#F79009" aria-hidden="true"><path d="M12 2l3 6.5 7 .8-5.2 4.7 1.5 7L12 17.5 5.7 21l1.5-7L2 9.3l7-.8z"/></svg><svg width="18" height="18" viewBox="0 0 24 24" fill="#F79009" aria-hidden="true"><path d="M12 2l3 6.5 7 .8-5.2 4.7 1.5 7L12 17.5 5.7 21l1.5-7L2 9.3l7-.8z"/></svg><svg width="18" height="18" viewBox="0 0 24 24" fill="#F79009" aria-hidden="true"><path d="M12 2l3 6.5 7 .8-5.2 4.7 1.5 7L12 17.5 5.7 21l1.5-7L2 9.3l7-.8z"/></svg></div><p style="margin:0 0 16px">[Reseña de un comprador verificado sobre la entrega y la clave.]</p><div style="color:#475467;font-size:14px">[Nombre] · [Fecha] · Compra verificada</div></div>
+<div style="background:#F6F7F9;border-radius:16px;padding:24px"><div style="display:flex;gap:2px;margin-bottom:12px"><svg width="18" height="18" viewBox="0 0 24 24" fill="#F79009" aria-hidden="true"><path d="M12 2l3 6.5 7 .8-5.2 4.7 1.5 7L12 17.5 5.7 21l1.5-7L2 9.3l7-.8z"/></svg><svg width="18" height="18" viewBox="0 0 24 24" fill="#F79009" aria-hidden="true"><path d="M12 2l3 6.5 7 .8-5.2 4.7 1.5 7L12 17.5 5.7 21l1.5-7L2 9.3l7-.8z"/></svg><svg width="18" height="18" viewBox="0 0 24 24" fill="#F79009" aria-hidden="true"><path d="M12 2l3 6.5 7 .8-5.2 4.7 1.5 7L12 17.5 5.7 21l1.5-7L2 9.3l7-.8z"/></svg><svg width="18" height="18" viewBox="0 0 24 24" fill="#F79009" aria-hidden="true"><path d="M12 2l3 6.5 7 .8-5.2 4.7 1.5 7L12 17.5 5.7 21l1.5-7L2 9.3l7-.8z"/></svg><svg width="18" height="18" viewBox="0 0 24 24" fill="#F79009" aria-hidden="true"><path d="M12 2l3 6.5 7 .8-5.2 4.7 1.5 7L12 17.5 5.7 21l1.5-7L2 9.3l7-.8z"/></svg></div><p style="margin:0 0 16px">[Reseña de un comprador verificado sobre el soporte.]</p><div style="color:#475467;font-size:14px">[Nombre] · [Fecha] · Compra verificada</div></div>
+<div style="background:#F6F7F9;border-radius:16px;padding:24px"><div style="display:flex;gap:2px;margin-bottom:12px"><svg width="18" height="18" viewBox="0 0 24 24" fill="#F79009" aria-hidden="true"><path d="M12 2l3 6.5 7 .8-5.2 4.7 1.5 7L12 17.5 5.7 21l1.5-7L2 9.3l7-.8z"/></svg><svg width="18" height="18" viewBox="0 0 24 24" fill="#F79009" aria-hidden="true"><path d="M12 2l3 6.5 7 .8-5.2 4.7 1.5 7L12 17.5 5.7 21l1.5-7L2 9.3l7-.8z"/></svg><svg width="18" height="18" viewBox="0 0 24 24" fill="#F79009" aria-hidden="true"><path d="M12 2l3 6.5 7 .8-5.2 4.7 1.5 7L12 17.5 5.7 21l1.5-7L2 9.3l7-.8z"/></svg><svg width="18" height="18" viewBox="0 0 24 24" fill="#F79009" aria-hidden="true"><path d="M12 2l3 6.5 7 .8-5.2 4.7 1.5 7L12 17.5 5.7 21l1.5-7L2 9.3l7-.8z"/></svg><svg width="18" height="18" viewBox="0 0 24 24" fill="#F79009" aria-hidden="true"><path d="M12 2l3 6.5 7 .8-5.2 4.7 1.5 7L12 17.5 5.7 21l1.5-7L2 9.3l7-.8z"/></svg></div><p style="margin:0 0 16px">[Reseña de un comprador verificado sobre una reposición.]</p><div style="color:#475467;font-size:14px">[Nombre] · [Fecha] · Compra verificada</div></div>
+</div>
+</div>
+</section>
+
+<section style="max-width:1200px;margin:0 auto;padding:0 24px;box-sizing:border-box;padding-top:56px;padding-bottom:72px">
+<h2 style="margin:0 0 24px;font-family:'Space Grotesk',system-ui,sans-serif;font-size:28px">Preguntas frecuentes</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px">
+<div style="background:#fff;border:1px solid #E4E7EC;border-radius:16px;padding:24px"><div style="font-weight:600;margin-bottom:6px">¿Cuánto demora la entrega?</div><div style="color:#475467">[X] minutos después de aprobar tu pago, dentro del horario [HORARIO DE ATENCIÓN].</div></div>
+<div style="background:#fff;border:1px solid #E4E7EC;border-radius:16px;padding:24px"><div style="font-weight:600;margin-bottom:6px">¿Qué pasa si la clave no funciona?</div><div style="color:#475467">Repórtala desde Mis pedidos y te entregamos una de reemplazo.</div></div>
+<div style="background:#fff;border:1px solid #E4E7EC;border-radius:16px;padding:24px"><div style="font-weight:600;margin-bottom:6px">¿Cómo puedo pagar?</div><div style="color:#475467">Con Yape, Plin o transferencia bancaria. Subes tu comprobante y revisamos el pago.</div></div>
+<div style="background:#fff;border:1px solid #E4E7EC;border-radius:16px;padding:24px"><div style="font-weight:600;margin-bottom:6px">¿Necesito algún equipo adicional?</div><div style="color:#475467">[Respuesta según la herramienta: caja, dongle o solo cuenta.]</div></div>
+</div>
+</section>
+</main>
+<footer id="soporte" style="background:#101828;color:#CBD5E1;margin-top:auto">
+<div style="max-width:1200px;margin:0 auto;padding:40px 24px;display:flex;flex-wrap:wrap;gap:24px 64px;box-sizing:border-box">
+<div style="flex:1 1 260px">
+<div style="font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;font-size:20px;color:#fff;margin-bottom:8px">[TU MARCA]</div>
+<div style="max-width:360px">Licencias para herramientas de reparación y desbloqueo de equipos móviles.</div>
+</div>
+<div style="flex:1 1 200px">
+<div style="color:#fff;font-weight:600;margin-bottom:8px">Soporte</div>
+<div>WhatsApp: [NÚMERO]</div><div>Correo: [CORREO]</div><div>Horario: [HORARIO DE ATENCIÓN]</div>
+</div>
+<div style="flex:1 1 200px">
+<div style="color:#fff;font-weight:600;margin-bottom:8px">Legal</div>
+<a href="#terminos" style="display:block;color:#CBD5E1;padding:6px 0">Términos de uso</a>
+<a href="#reposicion" style="display:block;color:#CBD5E1;padding:6px 0">Política de reposición</a>
+</div>
+</div>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent": {"editor": "color", "default": "#0A58E0", "options": ["#0A58E0", "#0F766E", "#B42318"]}, "$preview": {"width": 1280, "height": 2900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const tiles = [
+      { bg: '#EAF1FE', fg: '#0A3FA3' }, { bg: '#DCF5EF', fg: '#0B5C52' },
+      { bg: '#FEF0C7', fg: '#93370D' }, { bg: '#EFE8FD', fg: '#5321B5' }
+    ];
+    const tileStyle = (n, size) => 'width:' + size + 'px;height:' + size + 'px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:' + Math.round(size * 0.36) + 'px;background:' + tiles[n % 4].bg + ';color:' + tiles[n % 4].fg;
+    const cat = (this.state && this.state.cat) || 'all';
+    const q = ((this.state && this.state.q) || '').trim().toLowerCase();
+    const cats = [
+      { id: 'all', label: 'Todos' }, { id: 'a', label: '[Categoría A]' }, { id: 'b', label: '[Categoría B]' }
+    ].map((c) => {
+      const on = c.id === cat;
+      return { ...c, pressed: on, pick: () => this.setState({ cat: c.id }),
+        style: 'min-height:44px;padding:0 18px;border-radius:999px;font-weight:500;font-size:15px;cursor:pointer;border:1px solid ' + (on ? '#101828' : '#D0D5DD') + ';background:' + (on ? '#101828' : '#fff') + ';color:' + (on ? '#fff' : '#101828') };
+    });
+    const states = {
+      ok: { badge: 'En stock', style: 'background:#DCFAE6;color:#067647' },
+      low: { badge: 'Pocas unidades', style: 'background:#FEF0C7;color:#93370D' },
+      out: { badge: 'Agotado', style: 'background:#EAECF0;color:#344054' }
+    };
+    const all = [
+      { n: 1, c: 'a', s: 'ok' }, { n: 2, c: 'b', s: 'ok' }, { n: 3, c: 'a', s: 'low' }, { n: 4, c: 'b', s: 'ok' },
+      { n: 5, c: 'a', s: 'out' }, { n: 6, c: 'b', s: 'ok' }, { n: 7, c: 'a', s: 'ok' }, { n: 8, c: 'b', s: 'low' }
+    ];
+    const products = all
+      .filter((p) => (cat === 'all' || p.c === cat) && ('[herramienta ' + p.n + ']').indexOf(q) !== -1)
+      .map((p) => ({
+        name: '[Herramienta ' + p.n + ']',
+        initials: 'H' + p.n,
+        tile: tileStyle(p.n, 48),
+        cat: p.c === 'a' ? '[Categoría A]' : '[Categoría B]',
+        badge: states[p.s].badge,
+        badgeStyle: 'padding:4px 10px;border-radius:999px;font-size:13px;font-weight:600;white-space:nowrap;' + states[p.s].style
+      }));
+    const featured = [1, 2, 3].map((n) => ({ rank: n, name: '[Herramienta ' + n + ']', initials: 'H' + n, tile: tileStyle(n, 56) + ';flex:none' }));
+    return { cats, products, featured, empty: products.length === 0, q: (this.state && this.state.q) || '',
+      onSearch: (e) => this.setState({ q: e.target.value }) };
+  }
+}
+</script>
+</body>
+</html>
