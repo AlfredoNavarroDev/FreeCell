@@ -7,7 +7,10 @@ Códigos usados: 400 validación · 401 sin sesión · 403 rol insuficiente · 4
 **Leyenda de acceso:** 🌐 público · 👤 cliente autenticado (solo sus recursos) · 🛡️ ADMIN.
 **Estado:** ✅ implementado · ⬜ pendiente.
 
-## Implementados (Sprint 1)
+> ⚠️ 2026-10-05: `backend/` se reinició desde cero (scaffold vacío vía NestJS CLI). La tabla "Implementados" de abajo
+> describe el código **descartado** (sigue en el historial de git, commit `dd8c197`) — por reconstruir.
+
+## Implementados (Sprint 1) — por reconstruir
 | | Método y ruta | Acceso | Descripción |
 |---|---|---|---|
 | ✅ | `GET /health` | 🌐 | `{status:'ok'}` |

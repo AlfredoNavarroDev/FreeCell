@@ -1,5 +1,8 @@
 # 02 · Requerimientos funcionales
 
+> ⚠️ 2026-10-05: `backend/` se reinició desde cero (scaffold vacío vía NestJS CLI). Los ✅ de este documento son el
+> **objetivo** ya definido en el brainstorming, no el estado actual del código — verifica contra `backend/src/`.
+
 **Leyenda de prioridad (MoSCoW):** **M** = debe (MVP) · **S** = debería · **C** = podría · **W** = fuera por ahora.
 **Estado:** ✅ implementado y probado · 🟡 parcial · ⬜ pendiente.
 **Pantallas:** ver `07-diseno-ui.md` (S1–S8). **Endpoints:** ver `06-api.md`.

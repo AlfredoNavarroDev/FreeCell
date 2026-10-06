@@ -1,5 +1,8 @@
 # 03 · Requerimientos no funcionales
 
+> ⚠️ 2026-10-05: `backend/` se reinició desde cero (scaffold vacío vía NestJS CLI). Los ✅ de este documento son el
+> **objetivo** ya definido, no el estado actual del código — verifica contra `backend/src/`.
+
 **Convención:** los valores numéricos marcados *(propuesto)* son un punto de partida razonable para el volumen inicial;
 deben validarse con el negocio. **Estado:** ✅ cumplido y probado · 🟡 parcial · ⬜ pendiente.
 

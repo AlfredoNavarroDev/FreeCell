@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --ink: #101828;
+  --muted: #475467;
+  --line: #e4e7ec;
+  --line-soft: #eaecf0;
+  --line-strong: #d0d5dd;
+  --accent: #0a58e0;
+  --accent-soft-bg: #eaf1fe;
+  --accent-soft-ink: #0a3fa3;
+  --success-ink: #067647;
+  --success-bg: #dcfae6;
+  --warning-ink: #93370d;
+  --warning-bg: #fef0c7;
+  --danger-ink: #b42318;
+  --danger-bg: #fee4e2;
+  --focus-ring: #7db3ff;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-soft-bg: var(--accent-soft-bg);
+  --color-accent-soft-ink: var(--accent-soft-ink);
+  --color-success-ink: var(--success-ink);
+  --color-success-bg: var(--success-bg);
+  --color-warning-ink: var(--warning-ink);
+  --color-warning-bg: var(--warning-bg);
+  --color-danger-ink: var(--danger-ink);
+  --color-danger-bg: var(--danger-bg);
+  --font-display: var(--font-space-grotesk);
+  --font-sans: var(--font-ibm-plex-sans);
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}

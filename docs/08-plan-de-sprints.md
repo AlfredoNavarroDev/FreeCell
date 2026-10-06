@@ -11,9 +11,13 @@ Duración orientativa: 1 semana por sprint. Cada sprint termina con funcionalida
 - `npm run typecheck`, `npm test` y `npm run test:e2e` pasan.
 - Documentación actualizada (`docs/` y, si cambia el esquema, migración generada).
 
-## Sprint 1 — Fundaciones ✅ (completado)
+## Sprint 1 — Fundaciones ⬜ (por reconstruir, reiniciado 2026-10-05)
 Modelo de datos y migración inicial · auth con roles · cifrado de claves · colas BullMQ · reserva con `SKIP LOCKED` ·
 liberación diferida idempotente + barrido · cola de notificaciones idempotente · seed · Docker Compose · 12 pruebas (5 unit + 7 e2e).
+
+> El código que cumplía este sprint se descartó a propósito al reorganizar el repo (`backend/` regenerado vacío con
+> el CLI de NestJS). El alcance de arriba sigue siendo el objetivo; queda en el historial de git (commit `dd8c197`)
+> por si hace falta consultarlo como referencia al reconstruirlo.
 
 > Alcance de Sprint 2–4 revisado tras el brainstorming de 2026-10-05 (`docs/09`, decisiones D14–D52). Creció frente al plan
 > original: carrito desde el MVP (D30), CRUD de catálogo adelantado (D38), sistema de tickets (D34), reseñas moderadas (D33)
@@ -35,8 +39,9 @@ liberación diferida idempotente + barrido · cola de notificaciones idempotente
 - [ ] Verificación de correo obligatoria antes de la primera compra; límite de monto para cliente nuevo (RF-AUT-07, D22).
 - [ ] Rate limiting y helmet.
 - [ ] `POST /auth/google`: find-or-create por correo, `emailVerifiedAt` automático (D53, D54, RF-AUT-10).
-- [ ] Crear `web/` (Next.js + Tailwind/CSS Modules, D45) con sesión NextAuth: credentials + **Google provider** (D46, D53):
-      S1, S2, S3 (con carrito), S4, S9 (tickets cliente), S10 (catálogo admin).
+- [x] Scaffold `frontend/` (`create-next-app`, Tailwind v4, App Router) + **S1 (Catálogo)** con datos de ejemplo (2026-10-05).
+- [ ] Sesión NextAuth: credentials + **Google provider** (D46, D53).
+- [ ] Conectar S1 a la API real; construir S2, S3 (con carrito), S4, S9 (tickets cliente), S10 (catálogo admin).
 - Pruebas: reserva de carrito (N ítems, algunos agotados → rechazo completo); `IN_REVIEW` no se libera; IDOR (cliente B no ve
   pedido de A); comprobante con `operationNumber` repetido → 409; límites de archivo.
 

@@ -7,8 +7,8 @@ entrega la(s) licencia(s) reservada(s). Autor: Alfredo (desarrollo). Idioma del 
 ## Estructura del repositorio
 ```
 FreeCell/
-  backend/   API NestJS (Sprint 1 implementado y probado)
-  frontend/  App Next.js (Sprint 2, aún no existe — ver frontend/README.md)
+  backend/   API NestJS (scaffold del CLI, 2026-10-05 — lógica de Sprint 1 por reconstruir)
+  frontend/  App Next.js (scaffold + pantalla S1/Catálogo con datos de ejemplo)
   docs/      Documentación de producto (fuente de verdad del alcance)
   docs/design/  Mockups visuales de referencia (no son código a reutilizar)
 ```
@@ -16,10 +16,21 @@ Todo lo que no sea `backend/` o `frontend/` vive en `docs/` (complementario). Re
 `git@github.com:AlfredoNavarroDev/FreeCell.git`.
 
 ## Estado
-- ✅ **Sprint 1** (`backend/`): modelo de datos, migración, auth con roles, cifrado de claves, reserva con `SKIP LOCKED`, colas BullMQ, notificaciones idempotentes. 5 pruebas unitarias + 7 e2e en verde.
-- ⬜ **Sprints 2–4**: catálogo, carrito, CRUD de catálogo, comprobantes (R2), panel admin, reclamos, soporte (tickets), reseñas, NextAuth (+Google), correo/WhatsApp, despliegue en Fly.io. Ver `docs/08-plan-de-sprints.md`.
-- ⬜ `frontend/` (Next.js) **aún no existe**. Referencias visuales en `docs/design/` (pantallas S1–S11).
+- ⚠️ **2026-10-05 — reinicio total del backend.** `backend/` se borró y se regeneró vacío con el CLI oficial
+  (`nest new`). El código de Sprint 1 (modelo de datos, auth con roles, cifrado, reserva `SKIP LOCKED`, colas BullMQ,
+  12 pruebas en verde) se descartó a propósito; sigue en el historial de git (commit `dd8c197`) si hace falta
+  consultarlo, pero **no está en el working tree**. Por reconstruir con el mismo alcance — ver `backend/README.md`.
+- 🟡 `frontend/`: scaffold (`create-next-app`, TypeScript + Tailwind v4 + App Router) + **pantalla S1 (Catálogo)**
+  construida con datos de ejemplo (sin conectar a la API todavía). S2–S11 van por sprint.
+- ⬜ **Sprints 2–4**: catálogo (resto), carrito, CRUD de catálogo, comprobantes (R2), panel admin, reclamos, soporte
+  (tickets), reseñas, NextAuth (+Google), correo/WhatsApp, despliegue en Fly.io. Ver `docs/08-plan-de-sprints.md`.
+  Nota: el alcance de "Sprint 1" también queda pendiente de reconstrucción (ver arriba).
+- Referencias visuales en `docs/design/` (pantallas S1–S11).
 - Brainstorming de Sprint 2–4 **completado** (2026-10-05): decisiones **D14–D55** en `docs/09-decisiones-y-preguntas-abiertas.md`. Sin preguntas abiertas. Incluye login con Google (D53/D54) y reportes admin con KPIs definidos (D55: ventas día/semana, margen, stock valorizado, top planes).
+
+> Los estados ✅ dentro de `docs/02`, `docs/03` y `docs/06` describen el **objetivo** ya definido en el brainstorming,
+> no necesariamente el código actual tras el reinicio del backend. Verifica contra `backend/src/` antes de asumir que
+> algo ya está implementado.
 
 ## Mapa de documentación
 | Archivo | Contenido |
@@ -36,6 +47,8 @@ Todo lo que no sea `backend/` o `frontend/` vive en `docs/` (complementario). Re
 | `docs/09-decisiones-y-preguntas-abiertas.md` | Decisiones tomadas, preguntas abiertas, riesgos |
 
 ## Comandos (`cd backend`)
+> Scaffold vacío del CLI (2026-10-05): hoy solo existen `npm install`, `npm run start:dev`, `npm test`, `npm run test:e2e`.
+> El resto de esta lista (`.env.example`, Docker Compose, migraciones, seed) es el objetivo de Sprint 1 por reconstruir.
 ```bash
 cp .env.example .env     # completa LICENSE_ENC_KEY (32 bytes base64), JWT_SECRET, ADMIN_*
 docker compose up -d     # PostgreSQL 16 + Redis 7
@@ -69,10 +82,14 @@ Las pruebas e2e usan la base `licencias_test` y Redis `/1` (Docker la crea al pr
 - **No subir** `@nestjs/config`, `jwt`, `passport`, `bullmq`, `typeorm` a la v12: son solo ESM y rompen con CommonJS/Jest.
 - No inventar datos de negocio: usar placeholders `[..]` (productos, precios, números de pago, reseñas).
 
-**Frontend (cuando se cree)**
-- Next.js (App Router) + TypeScript + Tailwind/CSS Modules. Sesión con **NextAuth** (credentials provider contra la API). Seguir tokens y pantallas de `docs/07-diseno-ui.md`.
-- Accesibilidad AA: elementos nativos (`button`, `a`, `label`), objetivos ≥ 44 px, el color nunca es el único indicador.
+**Frontend** (`cd frontend`; `npm run dev` → http://localhost:3000)
+- Next.js 16 (App Router) + TypeScript + Tailwind v4. Componentes en `src/components/`, datos de ejemplo en `src/lib/`.
+- ⚠️ Next.js 16 tiene cambios de ruptura frente a versiones anteriores (ver `frontend/AGENTS.md` y
+  `frontend/node_modules/next/dist/docs/`): `params`/`searchParams` son `Promise`, `middleware` se renombró a `proxy`.
+- Sesión con **NextAuth** (credentials + Google) — pendiente, Sprint 2 (D46, D53). Seguir tokens y pantallas de `docs/07-diseno-ui.md`.
+- Accesibilidad AA: elementos nativos (`button`, `a`, `label`), objetivos ≥ 44 px, el color nunca es el único indicador (ver `StockBadge`).
 - Panel admin (ruta `/admin`, misma app): aprobar un pago en ≤ 2 clics, avance automático al siguiente, sin recargas.
+- No inventar datos de negocio: seguir el patrón de `src/lib/mock-catalog.ts` (placeholders `[..]`) hasta conectar la API.
 
 **Despliegue**
 - API + workers + Redis en **Fly.io**; web en Vercel; Postgres en Neon; archivos en Cloudflare R2 (reemplaza Render/Upstash, D48/D49).
