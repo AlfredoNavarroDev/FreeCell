@@ -23,15 +23,17 @@ Cada sub-proyecto tiene su propio ciclo spec → plan → implementación.
 |---|---|---|
 | — | La migración inicial trae el **esquema completo** de `docs/05` (todas las tablas de Sprint 1–4). | Ninguna migración se ha aplicado; evita ALTERs posteriores y mantiene el modelo coherente desde el día 1. |
 | — | Arquitectura: **módulos de dominio + TypeORM en servicios** (enfoque A). Un servicio por flujo cuando un archivo supere ~300 líneas. | Menos capas; las reglas críticas viven en Postgres de todos modos. |
-| D56 | Tokens: **access JWT de 15 min + refresh opaco rotativo de 30 días**, guardado como hash en `refresh_tokens`, con detección de reuso por familia. | Revocación real (cuentas admin), cierra RNF-SEG-04. |
+| D56 | Tokens: **access JWT de 15 min + refresh opaco rotativo de 30 días**, guardado como hash en `refresh_tokens`, con detección de reuso por familia y **ventana de gracia de 30 s** para refresh concurrentes. | Revocación real (cuentas admin), cierra RNF-SEG-04. |
 | D57 | **Lógica en base de datos** como defensa en profundidad: triggers de transición de estado, invariantes diferidas, `audit_logs` inmutable, vistas de stock y ventas, funciones de liberación. La reserva se queda en TypeScript. | Un bug en un servicio no puede violar las reglas 1 y 3; la reserva necesita mensajes 409 por ítem. |
 | D58 | `license_items.secretHash` = **HMAC-SHA256** con clave derivada de `LICENSE_ENC_KEY` (no SHA-256 plano). | Un SHA-256 plano permite confirmar claves por fuerza bruta a quien lea la DB. |
 | D59 | **Auth propia** (se mantienen D46/D53). Clerk se evaluó y se descartó. | Control total, sin dependencia externa para el login, sin datos personales fuera del país (Ley 29733), mayor valor de portafolio. |
 | D60 | Puertos locales: **API 3000**, **web 3001**. | Ambos usaban 3000; la API conserva la base de `docs/06`. |
 | — | Workers: **una imagen, dos procesos** (`dist/main.js` HTTP, `dist/worker.js` processors). `APP_ROLE=all` en dev corre ambos en un proceso. | La API escala sin duplicar workers; un job pesado no afecta la latencia HTTP. |
 | — | `POST /orders` nace con **carrito** `items[]` (D30). | Evita reescribir la parte más delicada en Sprint 2. |
+| D61 | **Soles y dólares, un plan con dos precios.** Los precios salen de `plans` y pasan a `plan_prices (planId, currency, priceCents)`. El cliente elige la moneda del pedido; todas las líneas se cobran en esa moneda. Monedas permitidas: `PEN` y `USD` (`CHECK`). Sin conversión ni tipo de cambio. Reemplaza en parte a D51 (`plans.currency` desaparece; `orders.currency` se mantiene). | Decisión del usuario: vender en ambas monedas con el mismo catálogo. |
+| D62 | El costo del lote lleva su moneda: `license_batches.costCurrency`. El margen solo se calcula cuando la moneda de venta y la del costo coinciden; si no, queda `NULL` hasta que Sprint 3 defina la conversión para reportes. | Restar dólares de soles da un margen falso. |
 
-D56–D60 se registran en `docs/09` (sección A).
+D56–D62 se registran en `docs/09` (sección A).
 
 ## 2. Estructura, arranque y configuración
 
@@ -75,11 +77,20 @@ CommonJS/Jest, se fija la última compatible y se anota en `docs/04`.
 ## 3. Modelo de datos
 
 ### 3.1 Migración `InitialSchema` (generada)
-Las 17 tablas de `docs/05` más `refresh_tokens`. Convenciones: PK `uuid`, `timestamptz`, dinero `int` en céntimos,
-enums nativos de Postgres, `createdAt`/`updatedAt` en todas las tablas salvo `audit_logs` (solo `createdAt`).
+Las 17 tablas de `docs/05` más `refresh_tokens` y `plan_prices`. Convenciones: PK `uuid`, `timestamptz`, dinero `int`
+en céntimos (de sol o de dólar), enums nativos de Postgres, `createdAt`/`updatedAt` en todas las tablas salvo
+`audit_logs` (solo `createdAt`).
+
+**Monedas (D61, D62).** Toda columna de moneda es `char(3)` con `CHECK (… IN ('PEN','USD'))`:
+- **`plan_prices`** (nueva): `id`, `planId`, `currency`, `priceCents` (`CHECK > 0`), timestamps. Único `(planId, currency)`.
+  Un plan puede tener precio solo en PEN, solo en USD o en ambas. Un plan sin ningún precio no se puede comprar.
+- `plans` **pierde** `priceCents` y `currency`.
+- `orders.currency` se mantiene (sin default: la elige el cliente).
+- `license_batches` gana `costCurrency` (default `'PEN'`) junto a `unitCostCents`.
 
 **`refresh_tokens`** (nueva): `id`, `userId`, `tokenHash` único, `familyId`, `expiresAt`, `revokedAt` (nullable),
-`replacedById` (nullable), `createdAt`. Índice `(familyId)`.
+`revokedReason` (enum `ROTATED` | `LOGOUT` | `REUSE_DETECTED`, nullable), `replacedById` (nullable), `createdAt`.
+Índice `(familyId)`.
 
 **Ajuste a `docs/05`:** `claims` gana la columna `orderId` (FK), necesaria para el índice único parcial "un reclamo
 `OPEN` por pedido" (invariante 6).
@@ -110,14 +121,15 @@ enums nativos de Postgres, `createdAt`/`updatedAt` en todas las tablas salvo `au
    `PENDING_ACTIVATION→DELIVERED`.
 4. `trg_order_total_check`: `CONSTRAINT TRIGGER ... DEFERRABLE INITIALLY DEFERRED` en `orders` y `order_items`. Al
    hacer COMMIT verifica `orders.totalCents = Σ order_items.unitPriceCents` (invariante 5). La moneda única por
-   pedido (invariante 8) la garantiza el servicio, porque `order_items` no tiene columna `currency`.
+   pedido (invariante 8) la garantiza el servicio, porque `order_items` no tiene columna `currency`: hereda la del pedido.
 5. `trg_audit_logs_immutable`: BEFORE UPDATE OR DELETE en `audit_logs` lanza excepción.
 
 **Vistas** (mapeadas con `@ViewEntity`, solo lectura)
 - `v_plan_stock`: `planId`, `available`, `reserved`, `sold`, `void`, `stockState`
   (`OUT_OF_STOCK` si available = 0, `LOW` si available ≤ `lowStockThreshold`, si no `IN_STOCK`).
 - `v_sales_lines`: una fila por licencia `SOLD`: `orderId`, `orderItemId`, `planId`, `productId`,
-  `unitPriceCents`, `unitCostCents` (del lote), `marginCents`, `currency`, `soldAt`.
+  `currency` (del pedido), `unitPriceCents`, `costCurrency` y `unitCostCents` (del lote), `soldAt` y
+  `marginCents = unitPriceCents − unitCostCents` solo si `currency = costCurrency` (si no, `NULL`, D62).
 - Ninguna vista expone `secretEncrypted` ni `secretHash`.
 
 **Funciones**
@@ -132,9 +144,10 @@ enums nativos de Postgres, `createdAt`/`updatedAt` en todas las tablas salvo `au
 
 ### 3.3 Seed (`npm run seed`, idempotente por upsert)
 - Admin desde `ADMIN_EMAIL`/`ADMIN_PASSWORD`, rol `ADMIN`, `emailVerifiedAt` presente.
-- Categoría `[Categoría demo]`, producto `[Producto demo]` (`requiresToolUsername=false`), plan `[Plan demo]` con
-  `priceCents=1000` como valor placeholder de desarrollo, `currency='PEN'`.
-- Lote con 5 licencias `DEMO-0001` … `DEMO-0005`, cifradas.
+- Categoría `[Categoría demo]`, producto `[Producto demo]` (`requiresToolUsername=false`), plan `[Plan demo]` con dos
+  precios placeholder de desarrollo en `plan_prices`: `PEN 1000` y `USD 300`. Un segundo plan `[Plan demo solo PEN]`
+  con un único precio, para probar el caso sin precio en USD.
+- Lote (`costCurrency='PEN'`) con 5 licencias `DEMO-0001` … `DEMO-0005`, cifradas.
 - `settings`: `reservationTtlMinutes = 30`.
 
 Las tablas de Sprint 2+ (`support_tickets`, `ticket_messages`, `reviews`, `payments`, `claims`) tienen entidad pero
@@ -155,9 +168,15 @@ ningún servicio ni controlador en este sub-proyecto.
 - Refresh: 64 bytes aleatorios en base64url, 30 días. Se guarda solo `tokenHash = HMAC-SHA256(JWT_REFRESH_PEPPER, token)`.
 - **Rotación**, en una transacción: `SELECT ... FOR UPDATE` de la fila por `tokenHash`.
   - No existe o está vencido: 401.
-  - `revokedAt` no nulo (reuso): se revoca toda la familia, se audita `auth.refresh_reuse_detected` y se responde 401.
-  - Válido: se marca `revokedAt`, se crea el nuevo token en la misma familia con `replacedById` y se devuelve el par.
-  - Dos refresh simultáneos con el mismo token: uno gana; el otro encuentra la fila revocada y cae en la detección de reuso.
+  - Válido (`revokedAt` nulo): se marca `revokedAt = now()` con `revokedReason = 'ROTATED'`, se crea el nuevo token en
+    la misma familia con `replacedById` y se devuelve el par.
+  - **Ventana de gracia (30 s):** si `revokedReason = 'ROTATED'` y `revokedAt > now() - 30 s`, no se trata como robo.
+    Se emite otro token de la misma familia y no se revoca nada. Esto cubre varias pestañas o requests paralelos que
+    refrescan con el mismo token.
+  - Cualquier otro token revocado (fuera de la ventana, o con `LOGOUT` / `REUSE_DETECTED`) es **reuso**: se revocan
+    todos los tokens activos de la familia con `REUSE_DETECTED`, se audita `auth.refresh_reuse_detected` y se responde 401.
+  - El `FOR UPDATE` serializa los refresh simultáneos con el mismo token: el primero rota y el segundo entra por la
+    ventana de gracia.
 
 **Contraseñas:** bcryptjs con cost 12. DTO: contraseña de 8 a 72 caracteres, correo válido, `name` opcional de hasta 80.
 
@@ -176,20 +195,21 @@ refresh 10/min. Superarlo da 429 "Demasiados intentos, espera un momento".
 
 | Ruta | Acceso | Notas |
 |---|---|---|
-| `POST /orders` | 👤 | Body `{items:[{planId, qty}], toolUsername?}`, de 1 a 10 ítems, `qty` de 1 a 5, `planId` sin repetir. `201 {id, orderNumber, status, totalCents, currency, expiresAt, items:[{planId, unitPriceCents}]}`. |
+| `POST /orders` | 👤 | Body `{currency, items:[{planId, qty}], toolUsername?}`; `currency` obligatoria, `PEN` o `USD`; de 1 a 10 ítems, `qty` de 1 a 5, `planId` sin repetir. `201 {id, orderNumber, status, totalCents, currency, expiresAt, items:[{planId, unitPriceCents}]}`. |
 | `GET /orders/:id` | 👤 | El mismo shape más `cancelReason`. 404 si no es del usuario. |
 | `POST /orders/:id/cancel` | 👤 | Solo en `PENDING_PAYMENT`; si no, 409. Si ya está `CANCELLED`, `200` sin cambios (idempotente). |
 
 **`OrdersService.create`**, en una transacción:
-1. Carga los planes con su producto. Si un plan no existe o está inactivo (él o su producto), 404. Si mezclan monedas,
-   409 "El carrito tiene planes en monedas distintas". Si un producto `requiresToolUsername` llega sin `toolUsername`,
+1. Carga los planes con su producto y su precio en la `currency` pedida. Si un plan no existe o está inactivo (él o su
+   producto), 404. Si un plan no tiene precio en esa moneda, 409 "{nombre del plan} no está disponible en {moneda}".
+   Si un producto `requiresToolUsername` llega sin `toolUsername`,
    400 (invariante 9).
 2. Ordena los ítems por `planId`, para que todas las transacciones bloqueen en el mismo orden.
 3. Por plan: `SELECT id FROM license_items WHERE "planId"=$1 AND status='AVAILABLE' ORDER BY "createdAt"
    LIMIT $qty FOR UPDATE SKIP LOCKED`. Si vuelven menos filas que `qty`, rollback y 409 "Sin stock suficiente de
    {nombre del plan}". No queda nada reservado.
 4. Lee el TTL de `settings.reservationTtlMinutes` (30 si falta). Inserta el pedido con `expiresAt = now() + TTL` y
-   `totalCents`, una `order_item` por unidad con `unitPriceCents = plan.priceCents`, y pasa cada licencia a
+   `totalCents`, una `order_item` por unidad con `unitPriceCents = plan_prices.priceCents` de la moneda elegida, y pasa cada licencia a
    `RESERVED` con `orderItemId` y `reservedUntil = expiresAt`.
 5. Audita `order.created` (`meta: {items, totalCents}`).
 6. Después del COMMIT encola `release` (`jobId=release-{orderId}`, retraso = TTL) y la notificación
@@ -243,11 +263,11 @@ auditoría; validación de entorno (`LICENSE_ENC_KEY` de longitud inválida); ro
 **e2e**
 | Archivo | Casos |
 |---|---|
-| `auth.e2e-spec.ts` | Registro como CUSTOMER; `role` en el body da 400; correo duplicado da 409; login fallido da 401 genérico; rotación de refresh; reuso que revoca la familia; 2 refresh simultáneos dan un solo éxito; login 6/min da 429; `/me` sin datos sensibles; sin token da 401; CUSTOMER en una ruta `@Roles('ADMIN')` de prueba da 403. |
-| `orders.e2e-spec.ts` | Carrito de N ítems reserva todo; un ítem agotado da 409 y no deja nada reservado; precio congelado tras cambiar `priceCents`; monedas mezcladas dan 409; sin `toolUsername` da 400; B no ve el pedido de A (404); cancelar libera; cancelar dos veces es idempotente; cancelar `IN_REVIEW` da 409. |
+| `auth.e2e-spec.ts` | Registro como CUSTOMER; `role` en el body da 400; correo duplicado da 409; login fallido da 401 genérico; rotación de refresh; reuso fuera de la ventana revoca la familia; reuso dentro de 30 s emite un token nuevo sin revocar; 2 refresh simultáneos dan 2 éxitos y la familia sigue activa; login 6/min da 429; `/me` sin datos sensibles; sin token da 401; CUSTOMER en una ruta `@Roles('ADMIN')` de prueba da 403. |
+| `orders.e2e-spec.ts` | Carrito de N ítems reserva todo; un ítem agotado da 409 y no deja nada reservado; precio congelado tras cambiar `plan_prices.priceCents`; el mismo carrito en PEN y en USD cobra el precio de cada moneda; plan sin precio en USD da 409; `currency` fuera de `PEN`/`USD` da 400; sin `toolUsername` da 400; B no ve el pedido de A (404); cancelar libera; cancelar dos veces es idempotente; cancelar `IN_REVIEW` da 409. |
 | `concurrency.e2e-spec.ts` | 20 compras simultáneas contra 5 licencias: 5 aceptadas, 15 con 409, licencias reservadas distintas; carritos cruzados (A,B) y (B,A) terminan sin deadlock. |
 | `release.e2e-spec.ts` | Job sobre pedido vencido lo libera; sobre `IN_REVIEW` no hace nada; el barrido libera un pedido sin job; job y barrido en paralelo no fallan ni duplican auditoría. |
-| `db-logic.e2e-spec.ts` | UPDATE `SOLD→AVAILABLE` falla; UPDATE/DELETE en `audit_logs` falla; total descuadrado falla al COMMIT; `v_plan_stock` cuenta bien. |
+| `db-logic.e2e-spec.ts` | UPDATE `SOLD→AVAILABLE` falla; UPDATE/DELETE en `audit_logs` falla; `INSERT` en `plan_prices` con `currency='EUR'` falla; `v_sales_lines` da `marginCents` `NULL` cuando las monedas difieren; total descuadrado falla al COMMIT; `v_plan_stock` cuenta bien. |
 | `notifications.e2e-spec.ts` | El mismo job dos veces envía una sola vez; un fallo libera la fila y el reintento envía. |
 | `health.e2e-spec.ts` | `/health` y `/health/ready` responden 200. |
 
@@ -274,12 +294,13 @@ auditoría; validación de entorno (`LICENSE_ENC_KEY` de longitud inválida); ro
 - **`docs/backend/`** se genera con la skill `/document` a partir del código terminado: `README.md`, `auth.md`,
   `orders.md`, `queues.md`, `database.md`, `deployment.md`.
 - **Actualizaciones en el mismo cambio:**
-  - `docs/05`: `refresh_tokens`, `claims.orderId`, sección de triggers, vistas y funciones.
+  - `docs/05`: `refresh_tokens`, `plan_prices`, `license_batches.costCurrency`, `plans` sin precio, `claims.orderId`,
+    sección de triggers, vistas y funciones; cálculo de margen por moneda.
   - `docs/06`: refresh y logout, `items[]`, cancelar, `/health/ready`, `/docs`; estados ⬜ → ✅.
   - `docs/02` y `docs/03`: estados de RF-AUT-01..05, RF-COM-01..02, RNF-SEG-03/04/08, RNF-OBS-01/02.
   - `docs/04`: estructura de código real y dos procesos.
   - `docs/08`: Sprint 1 ✅.
-  - `docs/09`: D56–D60.
+  - `docs/09`: D56–D62; nota en D51 de que D61 la reemplaza en parte.
   - `CLAUDE.md` y `backend/README.md`: comandos reales y web en el puerto 3001.
 - **Commits** por bloque (configuración, esquema, lógica en DB, auth, pedidos, colas, observabilidad, Docker, docs),
   sin línea de coautor. Push y PR solo cuando el usuario lo pida.
@@ -289,3 +310,7 @@ auditoría; validación de entorno (`LICENSE_ENC_KEY` de longitud inválida); ro
 Catálogo público, pagos y comprobantes, R2, revelar clave, `POST /auth/google`, verificación de correo, límite de
 monto para clientes nuevos, CRUD admin, inventario y lotes por API, reclamos, soporte, reseñas, reportes, Resend,
 Bull Board, Sentry, CI y despliegue real.
+
+**Pendiente para Sprint 2 por D61:** Yape y Plin solo cobran en soles, así que el módulo `payments` debe limitar los
+métodos según `orders.currency` (USD solo por transferencia). Y el catálogo debe mostrar el precio en cada moneda
+disponible del plan.
