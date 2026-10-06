@@ -1,8 +1,10 @@
-# Tienda de licencias
+# Free Cell
 
-Backend (NestJS + PostgreSQL + BullMQ) y documentación de producto para una tienda de licencias de herramientas de servicio técnico de celulares.
+Tienda web para vender licencias (claves) de herramientas de servicio técnico de celulares. Backend NestJS + PostgreSQL +
+BullMQ, frontend Next.js (pendiente), documentación de producto completa en `docs/`.
 
-- `api/` — Sprint 1 implementado y probado. Ver `api/README.md`.
-- `docs/` — requerimientos, arquitectura, modelo de datos, API, diseño UI, plan de sprints y preguntas abiertas.
-- `docs/design/` — copia de las 8 pantallas diseñadas (referencia visual).
+- `backend/` — API NestJS. Sprint 1 implementado y probado. Ver `backend/README.md`.
+- `frontend/` — app Next.js (Sprint 2, pendiente). Ver `frontend/README.md`.
+- `docs/` — requerimientos, arquitectura, modelo de datos, API, diseño UI, plan de sprints y decisiones.
+- `docs/design/` — mockups visuales de referencia (no son código a reutilizar).
 - `CLAUDE.md` — guía para Claude Code. Empieza por `docs/00-brief-brainstorming.md`.

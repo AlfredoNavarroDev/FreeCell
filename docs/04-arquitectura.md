@@ -34,10 +34,11 @@ flowchart LR
 | Colas | BullMQ + Redis 7 | Reservas y notificaciones |
 | Auth | JWT (passport-jwt) + bcryptjs + roles | |
 | Cifrado | AES-256-GCM (módulo `crypto` de Node) | |
-| Web (por crear) | Next.js (App Router) + TypeScript | Estilos por decidir (Tailwind propuesto) |
+| Web (por crear) | Next.js (App Router) + TypeScript | Tailwind + CSS Modules (D45) |
+| Sesión web | NextAuth: credentials provider + **Google provider** contra la API | Reabre mecanismo de sesión del frontend (D46, D53); backend JWT no cambia. Google: `POST /auth/google` hace find-or-create por correo y marca `emailVerifiedAt` (D54) |
 | Pruebas | Jest + Supertest | e2e contra Postgres/Redis reales |
 | Local | Docker Compose (Postgres + Redis) | |
-| Prod (propuesto) | Render · Vercel · Neon · Upstash · R2 | |
+| Prod | Fly.io (API+workers, Redis) · Vercel (web) · Neon (Postgres) · R2 | D48, D49 — reemplaza Render/Upstash |
 
 > **Versiones fijadas:** `@nestjs/config@4`, `@nestjs/jwt@11`, `@nestjs/passport@11`, `@nestjs/bullmq@11`, `@nestjs/typeorm@11`.
 > Las v12 son solo ESM y rompen con Jest/CommonJS. Prisma se descartó en el entorno de desarrollo del Sprint 1 por descarga de motores bloqueada; **no es una decisión de producto**.
@@ -58,7 +59,7 @@ orders/                  OrdersService (reserva, liberación, barrido), processo
 notifications/           Cola con idempotencia (notification_logs)
 queues/                  Conexión Redis, constantes (TTL 30 min, barrido 5 min)
 ```
-Módulos pendientes: `catalog`, `inventory`, `payments`, `claims`, `admin`, `storage` (R2), `reports`.
+Módulos pendientes: `catalog`, `inventory`, `payments`, `claims`, `admin`, `storage` (R2), `support` (tickets, D34), `reviews` (D33), `settings` (D39/B5.25), `reports` (diferido, D39).
 
 ## Máquinas de estado
 
@@ -68,9 +69,11 @@ stateDiagram-v2
   [*] --> PENDING_PAYMENT: reservar
   PENDING_PAYMENT --> IN_REVIEW: subir comprobante
   PENDING_PAYMENT --> CANCELLED: expira / cancela cliente
-  IN_REVIEW --> DELIVERED: admin aprueba
-  IN_REVIEW --> PENDING_PAYMENT: admin rechaza (reintento) [?]
-  IN_REVIEW --> CANCELLED: admin rechaza (definitivo) [?]
+  IN_REVIEW --> DELIVERED: admin aprueba (producto normal)
+  IN_REVIEW --> PENDING_ACTIVATION: admin aprueba (requiresToolUsername, D14)
+  PENDING_ACTIVATION --> DELIVERED: admin marca "activado"
+  IN_REVIEW --> PENDING_PAYMENT: admin rechaza, reintento 1 o 2 (D18)
+  IN_REVIEW --> CANCELLED: admin rechaza tras 2 reintentos (D18)
   DELIVERED --> [*]
   CANCELLED --> [*]
 ```
@@ -90,10 +93,13 @@ stateDiagram-v2
 
 | Evento | Pedido | Licencia | Pago |
 |---|---|---|---|
-| Reservar | → PENDING_PAYMENT | AVAILABLE → RESERVED | — |
+| Reservar | → PENDING_PAYMENT | AVAILABLE → RESERVED (todas las líneas, D30) | — |
 | Subir comprobante | → IN_REVIEW | — | crea PENDING |
-| Aprobar | → DELIVERED | RESERVED → SOLD | → APPROVED |
-| Rechazar | [?] | [?] | → REJECTED |
+| Aprobar (sin `requiresToolUsername`) | → DELIVERED | RESERVED → SOLD | → APPROVED |
+| Aprobar (con `requiresToolUsername`) | → PENDING_ACTIVATION | RESERVED → SOLD | → APPROVED |
+| Marcar activado | PENDING_ACTIVATION → DELIVERED | — | — |
+| Rechazar (reintento 1–2) | → PENDING_PAYMENT | se mantiene RESERVED | → REJECTED, nuevo PENDING al reintentar |
+| Rechazar (3.er intento) | → CANCELLED | RESERVED → AVAILABLE | → REJECTED |
 | Expirar sin pago | → CANCELLED | RESERVED → AVAILABLE | — |
 
 ## Flujo principal
@@ -134,13 +140,13 @@ sequenceDiagram
 ## Seguridad en capas
 Red (HTTPS, CORS) → autenticación (JWT) → autorización (rol + propiedad) → validación (DTO whitelist) → datos (cifrado, transacciones, restricciones únicas) → auditoría.
 
-## Despliegue (propuesto)
+## Despliegue (confirmado, D48/D49)
 | Servicio | Plataforma | Variables clave |
 |---|---|---|
-| API + workers | Render (web service) | `DATABASE_URL` (+`DB_SSL=true`), `REDIS_URL` (`rediss://`), `JWT_SECRET`, `LICENSE_ENC_KEY`, `CORS_ORIGIN` |
-| Web | Vercel | URL de la API, secreto de sesión |
+| API + workers | Fly.io | `DATABASE_URL` (+`DB_SSL=true`), `REDIS_URL`, `JWT_SECRET`, `LICENSE_ENC_KEY`, `CORS_ORIGIN` |
+| Redis | Fly.io (instancia propia) | sin límite de comandos; red privada con la API |
+| Web | Vercel | URL de la API, secreto de NextAuth |
 | BD | Neon | pooled connection recomendada |
-| Redis | Upstash / Redis Cloud | TLS |
 | Archivos | Cloudflare R2 | credenciales S3-compatibles, bucket privado |
 
 Despliegue: `npm run build` → `npm run migration:run` → `node dist/main`.

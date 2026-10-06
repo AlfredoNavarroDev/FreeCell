@@ -47,14 +47,17 @@ Cola + detalle (patrón maestro-detalle) · Barra de stock · Tarjeta de acción
 | **S2** | Producto y planes (`Producto`) | Migas; cabecera con ficha, categoría, stock y reseñas; **pestañas** Descripción / Cómo activar / Preguntas; "Qué incluye"; ficha técnica (compatibilidad, tipo, actualizaciones); aviso "datos para activar"; otras herramientas. Panel de compra: **Activación nueva ↔ Renovación**, planes con precio y disponibilidad, total, **Comprar ahora**, entrega estimada, reposición, medios de pago, aviso de reserva 30 min. | `GET /catalog/products/:slug`, `POST /orders` |
 | **S3** | Checkout y pago (`Checkout`) | Pasos Resumen → Pago → Entrega; **Tus datos** (correo, usuario de la herramienta opcional); método (Yape/Plin o transferencia) con instrucciones y monto; **subir comprobante**; resumen con **cuenta regresiva** de la reserva; tarjeta de soporte. | `POST /orders/:id/payment/upload-url`, `POST /orders/:id/payment` |
 | **S4** | Mis pedidos (`Pedidos`) | Filtros (Todos/Entregados/Pendientes/Cancelados); lista con estado; panel de licencia entregada: clave **oculta + Mostrar + Copiar**, línea de seguimiento, enlace "cómo activar", bloque **Reportar un problema**. | `GET /orders`, `GET /orders/:id`, `POST /orders/:id/license/reveal`, `POST /claims` |
+| **S9** | Soporte (`Tickets`) | Lista de tickets del cliente con estado (Abierto/Cerrado); detalle con historial de mensajes y campo para responder (D34). | `GET/POST /support-tickets`, `POST /support-tickets/:id/messages` |
 
-### Panel admin (sidebar fija: Inicio · Pagos · Inventario · Reclamos · Ver tienda)
+### Panel admin (sidebar fija: Inicio · Pagos · Inventario · Reclamos · Catálogo · Soporte · Ver tienda)
 | ID | Pantalla | Contenido clave | Endpoints |
 |---|---|---|---|
 | **S5** | Inicio "Hoy" (`AdminInicio`) | **Requiere tu atención** (3 tarjetas: pagos por revisar [destacada], reclamos abiertos, stock bajo); resumen del día (ventas, entregas, margen); actividad reciente; acciones rápidas. | `GET /admin/summary` |
 | **S6** | Pagos (`AdminPagos`) | **Maestro-detalle:** cola a la izquierda; a la derecha comprobante + monto esperado + método + reserva restante + stock; checklist de verificación; **Aprobar y entregar** (un clic, avanza al siguiente); **Rechazar** con motivos predefinidos (confirmar bloqueado hasta elegir); banner de éxito; estado vacío "Estás al día". | `GET /admin/payments`, `POST …/approve`, `POST …/reject` |
 | **S7** | Inventario (`AdminInventario`) | Totales; filtros Todos/Stock bajo/Agotados; fila por plan con barra y badge; panel **Cargar licencias** (plan, costo, pegar claves o CSV, resumen válidas/duplicadas/error). | `GET /admin/inventory`, `POST …/batches/preview`, `POST …/batches` |
 | **S8** | Reclamos (`AdminReclamos`) | Maestro-detalle: motivo del cliente, clave entregada (oculta), stock para reponer; **Entregar reemplazo** / **Rechazar** / WhatsApp. | `GET /admin/claims`, `POST …/replace`, `POST …/reject` |
+| **S10** | Catálogo (gestión) (`AdminCatalogo`) | CRUD de categorías/productos/planes; toggle `requiresToolUsername`; campo moneda (D38, adelantado a Sprint 2). | `GET/POST/PATCH /admin/products`, `/admin/plans`, `/admin/categories` |
+| **S11** | Soporte y reseñas (`AdminSoporte`) | Dos pestañas: cola de tickets (responder/cerrar) y cola de reseñas pendientes (aprobar/ocultar) (D34, D33). | `GET/POST /admin/support-tickets…`, `GET/POST /admin/reviews…` |
 
 ## Comportamiento interactivo ya prototipado (replicar)
 - Filtro por categoría y búsqueda en el catálogo.
@@ -66,7 +69,8 @@ Cola + detalle (patrón maestro-detalle) · Barra de stock · Tarjeta de acción
 
 ## Propuesta para el frontend (por confirmar)
 - Next.js App Router + TypeScript + Tailwind con los tokens de arriba como tema.
-- Rutas: `/` · `/p/[slug]` · `/checkout/[orderId]` · `/pedidos` · `/pedidos/[id]` · `/ingresar` · `/registro` · `/admin` · `/admin/pagos` · `/admin/inventario` · `/admin/reclamos` · `/admin/catalogo`.
-- Sesión: token en cookie `httpOnly` gestionada por rutas del servidor de Next (evita exponerlo a JS). Alternativa: NextAuth con secreto compartido (patrón ya usado en otro proyecto).
+- Rutas: `/` · `/p/[slug]` · `/checkout/[orderId]` · `/pedidos` · `/pedidos/[id]` · `/tickets` · `/tickets/[id]` · `/ingresar` · `/registro` · `/admin` · `/admin/pagos` · `/admin/inventario` · `/admin/reclamos` · `/admin/catalogo` · `/admin/soporte`.
+- Sesión: **NextAuth**, credentials provider contra la API NestJS (D46).
 - Datos: componentes de servidor para lectura; acciones de servidor/handlers para mutaciones; caché corta en catálogo.
-- Admin en la misma app bajo rutas protegidas por rol (decisión de separar en otro despliegue: **[?]**).
+- Admin en la misma app bajo rutas protegidas por rol, en `/admin` (D47, sin despliegue aparte).
+- Carrito (D30): S2/S3 agregan selector de cantidad/añadir-más-planes antes del checkout; S3 muestra lista de ítems en vez de un plan único.

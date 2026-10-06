@@ -76,16 +76,15 @@ Los paquetes `@nestjs/config`, `jwt`, `passport`, `bullmq` y `typeorm` están en
 (4, 11, 11, 11 y 11). Las versiones 12 son solo ESM y no funcionan con la configuración estándar de Nest ni con Jest.
 Si actualizas, hazlo con la migración a ESM completa.
 
-## Producción (Render + Neon + Upstash)
+## Producción (Fly.io + Neon)
 
+- API, workers y Redis corren en **Fly.io** (instancia propia de Redis, sin límite de comandos).
 - `DATABASE_URL` de Neon con `DB_SSL=true` y `DB_SYNC=false`; ejecuta `npm run migration:run` en cada despliegue.
-- `REDIS_URL` de Upstash o Redis Cloud con `rediss://` (el TLS se activa solo).
 - `CORS_ORIGIN` con la URL del frontend en Vercel.
 - Genera valores nuevos de `JWT_SECRET` y `LICENSE_ENC_KEY`. **Si pierdes `LICENSE_ENC_KEY`, no podrás descifrar las licencias guardadas.**
 
 ## Plan de sprints
 
-- [x] **Sprint 1 (hecho):** modelo de datos, migración inicial, auth con roles, colas BullMQ, reserva de licencias con pruebas.
-- [ ] **Sprint 2:** catálogo público con estado de stock, subida del comprobante (Cloudflare R2), pedido pasa a `IN_REVIEW`, "Mis pedidos".
-- [ ] **Sprint 3:** panel admin: carga de stock (texto y CSV), aprobar/rechazar pagos con entrega de la licencia, reclamos con reposición, notificaciones reales.
-- [ ] **Sprint 4:** alerta de stock bajo (`low-stock-check`), Bull Board en `/admin/queues`, auditoría completa, despliegue.
+Ver `../docs/08-plan-de-sprints.md` (fuente de verdad, se actualiza ahí). Resumen: Sprint 1 hecho; Sprint 2 agrega
+catálogo, carrito, CRUD de catálogo y NextAuth; Sprint 3 agrega operación (pagos, inventario, reclamos), soporte,
+reseñas y reportes; Sprint 4 es robustez y despliegue.

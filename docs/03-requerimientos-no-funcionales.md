@@ -7,7 +7,7 @@ deben validarse con el negocio. **Estado:** ✅ cumplido y probado · 🟡 parci
 | ID | Requerimiento | Estado |
 |---|---|---|
 | RNF-SEG-01 | Las claves de licencia se guardan cifradas con **AES-256-GCM**; la llave (`LICENSE_ENC_KEY`, 32 bytes) vive fuera de la base de datos. | ✅ |
-| RNF-SEG-02 | Las claves **nunca** aparecen en logs, errores, respuestas de listados ni en el correo si se decide enviar solo un enlace **[?]**. | 🟡 |
+| RNF-SEG-02 | Las claves **nunca** aparecen en logs, errores, respuestas de listados ni en el correo (correo solo lleva enlace, D24). | 🟡 |
 | RNF-SEG-03 | Contraseñas con bcrypt (cost ≥ 10); límite de 72 caracteres. | ✅ |
 | RNF-SEG-04 | JWT firmado con secreto de entorno, expiración definida (hoy 7 días; evaluar 15 min + refresh). | 🟡 |
 | RNF-SEG-05 | Validación estricta de entrada (whitelist de DTOs, rechazo de campos extra). | ✅ |
@@ -16,9 +16,9 @@ deben validarse con el negocio. **Estado:** ✅ cumplido y probado · 🟡 parci
 | RNF-SEG-08 | Cabeceras de seguridad (helmet), CORS restringido a los orígenes del frontend, HTTPS obligatorio. | 🟡 (CORS ✅) |
 | RNF-SEG-09 | Comprobantes en almacenamiento **privado** (Cloudflare R2) con URLs firmadas de corta duración; validar tipo MIME real y tamaño. | ⬜ |
 | RNF-SEG-10 | Revelado de claves y acciones críticas auditadas (quién, cuándo, IP). | ⬜ |
-| RNF-SEG-11 | Rotación de la llave de cifrado soportada: guardar `keyVersion` por licencia y aceptar varias llaves en descifrado. | ⬜ (requiere cambio de esquema) |
+| RNF-SEG-11 | Rotación de la llave de cifrado soportada: guardar `keyVersion` por licencia y aceptar varias llaves en descifrado. | ⬜ (diferido, D50) |
 | RNF-SEG-12 | Secretos solo en variables de entorno; `.env` fuera del repositorio; llaves distintas por entorno. | ✅ |
-| RNF-SEG-13 | 2FA o contraseña reforzada para cuentas ADMIN **[?]**. | ⬜ |
+| RNF-SEG-13 | Contraseña reforzada para cuentas ADMIN; **sin 2FA obligatorio en el MVP** (D36). | ⬜ |
 | RNF-SEG-14 | Dependencias auditadas (`npm audit`, Dependabot) y fijadas por `package-lock.json`. | 🟡 |
 | RNF-SEG-15 | Principio de mínimo privilegio en la base de datos de producción (usuario de app sin permisos DDL). | ⬜ |
 
@@ -49,7 +49,7 @@ deben validarse con el negocio. **Estado:** ✅ cumplido y probado · 🟡 parci
 | RNF-DIS-01 | Disponibilidad objetivo 99 % mensual en la etapa inicial (tiers gratuitos/baratos). |
 | RNF-DIS-02 | Copias de seguridad automáticas de PostgreSQL (Neon PITR) con RPO ≤ 24 h y RTO ≤ 4 h. |
 | RNF-DIS-03 | Probar al menos una vez la restauración antes de salir a producción. |
-| RNF-DIS-04 | Mitigar *cold start* del hosting (Render): ping de salud periódico o plan sin suspensión. |
+| RNF-DIS-04 | API y Redis en Fly.io (D49, D48): sin cold starts de plan gratuito compartido; monitoreo propio de la instancia. |
 | RNF-DIS-05 | Si Redis cae, la API sigue vendiendo; las liberaciones se recuperan con el barrido al volver. |
 | RNF-DIS-06 | Cierre ordenado (`enableShutdownHooks`) para no perder trabajos en despliegues. |
 
@@ -99,16 +99,17 @@ deben validarse con el negocio. **Estado:** ✅ cumplido y probado · 🟡 parci
 |---|---|
 | RNF-LEG-01 | Protección de datos personales (Perú, Ley N.º 29733 y su reglamento): política de privacidad, consentimiento en el registro, derechos ARCO, mínimo de datos. |
 | RNF-LEG-02 | Términos de uso y política de reposición visibles antes de pagar. |
-| RNF-LEG-03 | Comprobantes de pago electrónicos (boleta/factura, SUNAT) **[?]**: decidir si el negocio los emite y cómo. |
-| RNF-LEG-04 | Cláusula de uso lícito de las herramientas (el cliente declara ser titular/autorizado del equipo). |
+| RNF-LEG-03 | Comprobantes de pago electrónicos (boleta/factura, SUNAT): **no se emiten en el MVP** (D40); se revisa por volumen/cumplimiento más adelante. |
+| RNF-LEG-04 | Cláusula de uso lícito de las herramientas: checkbox obligatorio al pagar, el cliente declara ser titular/autorizado del equipo (D43). |
 | RNF-LEG-05 | Retención y borrado de datos: definir plazos para comprobantes subidos y pedidos. |
-| RNF-LEG-06 | No usar logos ni marcas de las herramientas sin autorización; usar el nombre solo de forma descriptiva. |
+| RNF-LEG-06 | No usar logos ni marcas de las herramientas sin autorización; usar el nombre solo de forma descriptiva (D42). |
+| RNF-LEG-07 | Términos de uso / privacidad / reposición: borrador propio marcado `[PENDIENTE REVISIÓN LEGAL]` hasta validación de un abogado antes de producción (D41). |
 
 ## RNF-OPS · Operación, despliegue y costos
 | ID | Requerimiento |
 |---|---|
 | RNF-OPS-01 | Entornos: local (Docker Compose), staging, producción; configuración 100 % por variables de entorno. |
-| RNF-OPS-02 | Despliegue propuesto: API en Render, web en Vercel, PostgreSQL en Neon, Redis en Upstash/Redis Cloud, archivos en Cloudflare R2. |
+| RNF-OPS-02 | Despliegue: API + workers y Redis en Fly.io (D48, D49), web en Vercel, PostgreSQL en Neon, archivos en Cloudflare R2. |
 | RNF-OPS-03 | Migraciones aplicadas en cada despliegue antes de iniciar la nueva versión. |
 | RNF-OPS-04 | Costo mensual objetivo en etapa inicial: [US$ X] (priorizar tiers gratuitos). |
 | RNF-OPS-05 | Zona horaria de servidor UTC; presentación en America/Lima. |
@@ -116,5 +117,5 @@ deben validarse con el negocio. **Estado:** ✅ cumplido y probado · 🟡 parci
 
 ## RNF-I18N · Localización
 - Idioma de la interfaz: español (es-PE). Textos fuera del código para facilitar cambios.
-- Moneda: PEN, formato `S/ 1 234,50` (a validar con el negocio). Fechas en America/Lima.
-- Preparar el modelo para un segundo idioma/moneda sin reescribir (no es requisito del MVP).
+- Moneda: PEN por defecto, formato `S/ 1 234,50` (a validar con el negocio). Fechas en America/Lima.
+- Campo `currency` en `plans`/`orders` desde el esquema (D51): el modelo ya soporta otra moneda sin migración destructiva, aunque hoy solo se opere en PEN.
