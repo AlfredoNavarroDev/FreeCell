@@ -1,7 +1,7 @@
 # Backend — Fundaciones (Sub-proyecto 1) · Diseño
 
 - **Fecha:** 2026-10-05
-- **Estado:** aprobado en brainstorming, pendiente de revisión escrita
+- **Estado:** aprobado (2026-10-06)
 - **Alcance:** reconstrucción de Sprint 1 (`docs/08`) sobre el scaffold vacío de `backend/`, con el esquema final
   de datos (D14–D55) y transversales adelantados (Swagger, pino, helmet/throttler, `/health/ready`).
 - **Rama:** `feat/backend-foundations` (desde `main`).
@@ -32,7 +32,6 @@ Cada sub-proyecto tiene su propio ciclo spec → plan → implementación.
 | — | `POST /orders` nace con **carrito** `items[]` (D30). | Evita reescribir la parte más delicada en Sprint 2. |
 | D61 | **Soles y dólares, un plan con dos precios.** Los precios salen de `plans` y pasan a `plan_prices (planId, currency, priceCents)`. El cliente elige la moneda del pedido; todas las líneas se cobran en esa moneda. Monedas permitidas: `PEN` y `USD` (`CHECK`). Sin conversión ni tipo de cambio. Reemplaza en parte a D51 (`plans.currency` desaparece; `orders.currency` se mantiene). | Decisión del usuario: vender en ambas monedas con el mismo catálogo. |
 | D62 | El lote guarda el costo como se pagó: `costCurrency`, `unitCostCents` y **`fxRatePen`** (soles que costó realmente cada dólar/USDT de ese lote). El margen se calcula en la moneda de la venta convirtiendo el costo con el `fxRatePen` del lote, obligatorio en lotes en USD (Joseph confirmó que conoce la tasa de cada compra y que varía entre compras). USDT se registra como `USD` 1:1. | Joseph paga a los proveedores con USDT y parte de su ganancia viene de conseguir el dólar más barato: el margen real debe incluir el tipo de cambio que pagó. |
-
 | D63 | **Métodos de pago como datos**, no como enum: tabla `payment_methods` administrable (`code`, `name`, `kind` = `WALLET` \| `BANK_TRANSFER` \| `CRYPTO`, `currencies`, `instructions`, `active`, `sortOrder`). Así Joseph agrega cualquier billetera (Yape, Plin u otras) o cripto sin tocar código. Los métodos `CRYPTO` solo admiten `USD`, cobrado en USDT 1:1. Verificación manual para todos: captura + N.º de operación. | Joseph cobra por transferencia, cripto y "todas las billeteras que hay"; un enum obligaría a migrar cada vez que se sume una. |
 | D64 | `payments.operationNumber` es único **por método** `(paymentMethodId, operationNumber)`, normalizado (sin espacios, en minúsculas). | Códigos de billeteras o bancos distintos pueden coincidir por casualidad; el bloqueo de D21 no debe dar falsos positivos. |
 | D65 | Los datos para pagar (número de la billetera, cuenta bancaria, Pay ID o dirección de wallet y red) viven en `payment_methods.instructions` (jsonb). **Crear, editar o desactivar un método se audita** y notifica al operador. | Cambiar la cuenta destino es la forma más directa de desviar pagos. |
@@ -82,7 +81,7 @@ CommonJS/Jest, se fija la última compatible y se anota en `docs/04`.
 ## 3. Modelo de datos
 
 ### 3.1 Migración `InitialSchema` (generada)
-Las 17 tablas de `docs/05` más `refresh_tokens` y `plan_prices`. Convenciones: PK `uuid`, `timestamptz`, dinero `int`
+Las 16 tablas de `docs/05` más `refresh_tokens`, `plan_prices` y `payment_methods` (19 en total). Convenciones: PK `uuid`, `timestamptz`, dinero `int`
 en céntimos (de sol o de dólar), enums nativos de Postgres, `createdAt`/`updatedAt` en todas las tablas salvo
 `audit_logs` (solo `createdAt`).
 
@@ -148,8 +147,8 @@ en céntimos (de sol o de dólar), enums nativos de Postgres, `createdAt`/`updat
 - `v_sales_lines`: una fila por licencia `SOLD`: `orderId`, `orderItemId`, `planId`, `productId`,
   `currency` (del pedido), `unitPriceCents`, `costCurrency` y `unitCostCents` (del lote), `soldAt` y
   `fxRatePen`, y `marginCents` en la moneda de la venta (D62): misma moneda, `unitPriceCents − unitCostCents`; venta PEN
-  con costo USD, `unitPriceCents − round(unitCostCents × fxRatePen)`; venta USD con costo PEN, `unitPriceCents −
-  round(unitCostCents / fxRatePen)`.
+  con costo USD, `unitPriceCents − round(unitCostCents × fxRatePen)`; venta USD con costo PEN, `NULL` (un lote en soles
+  no guarda tasa; Joseph compra en USDT, así que es un caso marginal).
 - Ninguna vista expone `secretEncrypted` ni `secretHash`.
 
 **Funciones**
@@ -233,7 +232,7 @@ refresh 10/min. Superarlo da 429 "Demasiados intentos, espera un momento".
    `RESERVED` con `orderItemId` y `reservedUntil = expiresAt`.
 5. Audita `order.created` (`meta: {items, totalCents}`).
 6. Después del COMMIT encola `release` (`jobId=release-{orderId}`, retraso = TTL) y la notificación
-   `order-created:{orderId}`. Si Redis falla, registra una advertencia y responde 201 igual: el barrido cubre la liberación.
+   `order-created-{orderId}`. Si Redis falla, registra una advertencia y responde 201 igual: el barrido cubre la liberación.
 
 **Cancelación:** `fn_release_order(id, 'CUSTOMER_CANCELLED', false)` más auditoría `order.cancelled`, en una transacción.
 
@@ -278,7 +277,8 @@ refresh 10/min. Superarlo da 429 "Demasiados intentos, espera un momento".
 - `--runInBand`. `test/factories.ts` crea usuarios, categorías, productos, planes y licencias.
 
 **Unitarias:** `CryptoService` (ida y vuelta, IV distinto, tag alterado, HMAC determinista); sanitización de
-auditoría; validación de entorno (`LICENSE_ENC_KEY` de longitud inválida); rotación de refresh con repositorio simulado.
+auditoría; validación de entorno (`LICENSE_ENC_KEY` de longitud inválida); la decisión de rotación de refresh como función pura
+(`decideRefresh`: rotar, gracia, reuso o inválido).
 
 **e2e**
 | Archivo | Casos |
