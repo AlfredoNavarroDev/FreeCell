@@ -33,7 +33,12 @@ Cada sub-proyecto tiene su propio ciclo spec → plan → implementación.
 | D61 | **Soles y dólares, un plan con dos precios.** Los precios salen de `plans` y pasan a `plan_prices (planId, currency, priceCents)`. El cliente elige la moneda del pedido; todas las líneas se cobran en esa moneda. Monedas permitidas: `PEN` y `USD` (`CHECK`). Sin conversión ni tipo de cambio. Reemplaza en parte a D51 (`plans.currency` desaparece; `orders.currency` se mantiene). | Decisión del usuario: vender en ambas monedas con el mismo catálogo. |
 | D62 | El costo del lote lleva su moneda: `license_batches.costCurrency`. El margen solo se calcula cuando la moneda de venta y la del costo coinciden; si no, queda `NULL` hasta que Sprint 3 defina la conversión para reportes. | Restar dólares de soles da un margen falso. |
 
-D56–D62 se registran en `docs/09` (sección A).
+| D63 | Métodos de pago: `YAPE`, `PLIN` (solo PEN), `BANK_TRANSFER` (PEN o USD, cuenta por moneda) y **`BINANCE_PAY`** (solo USD, cobrado en **USDT 1:1**). Sin otras criptomonedas ni redes on-chain por ahora. Verificación manual igual que el resto: captura + N.º de operación (Order ID de Binance Pay). | El usuario quiere USDT sin comisión: Binance Pay no cobra comisión de red. USDT 1:1 evita tipo de cambio y volatilidad. |
+| D64 | `payments.operationNumber` es único **por método** `(method, operationNumber)`, normalizado (sin espacios, en minúsculas). | Un código de Yape y uno bancario pueden coincidir por casualidad; el bloqueo de D21 no debe dar falsos positivos. |
+| D65 | Los datos para pagar (números de Yape y Plin, cuentas bancarias, Binance Pay ID) viven en `settings.paymentMethods`. **Todo cambio se audita** y notifica al operador. | Cambiar la cuenta destino es la forma más directa de desviar pagos. |
+
+D56–D65 se registran en `docs/09` (sección A). Riesgo nuevo en `docs/09`: implicancias tributarias (SUNAT) y de
+prevención de lavado (UIF) por cobrar en criptoactivos; revisar con un contador antes de activar `BINANCE_PAY`.
 
 ## 2. Estructura, arranque y configuración
 
@@ -88,6 +93,15 @@ en céntimos (de sol o de dólar), enums nativos de Postgres, `createdAt`/`updat
 - `orders.currency` se mantiene (sin default: la elige el cliente).
 - `license_batches` gana `costCurrency` (default `'PEN'`) junto a `unitCostCents`.
 
+**Pagos (D63–D65).** La tabla existe desde `InitialSchema`; su lógica es Sprint 2.
+- `payments.method`: enum `YAPE | PLIN | BANK_TRANSFER | BINANCE_PAY`.
+- `payments.operationNumber`: obligatorio, único `(method, operationNumber)`. `payments.proofHash`: obligatorio y único
+  (todos los métodos suben captura).
+- Trigger `trg_payment_method_currency` (en `DatabaseLogic`): `YAPE`/`PLIN` exigen `orders.currency = 'PEN'` y
+  `BINANCE_PAY` exige `'USD'`. El servicio valida lo mismo antes, con un mensaje claro.
+- `settings.paymentMethods` (jsonb): `{YAPE:{phone, holder}, PLIN:{phone, holder}, BANK_TRANSFER:{PEN:{bank, account, cci,
+  holder}, USD:{…}}, BINANCE_PAY:{payId, holder}}`. El seed carga placeholders `[..]`.
+
 **`refresh_tokens`** (nueva): `id`, `userId`, `tokenHash` único, `familyId`, `expiresAt`, `revokedAt` (nullable),
 `revokedReason` (enum `ROTATED` | `LOGOUT` | `REUSE_DETECTED`, nullable), `replacedById` (nullable), `createdAt`.
 Índice `(familyId)`.
@@ -104,7 +118,7 @@ en céntimos (de sol o de dólar), enums nativos de Postgres, `createdAt`/`updat
   `status IN ('RESERVED','SOLD')` ⇒ `orderItemId IS NOT NULL` (invariantes 1 y 2).
 - `orders.orderNumber` único, por defecto `nextval('order_number_seq')`, secuencia que empieza en 1001.
   Índice `(status, expiresAt)`.
-- `payments.operationNumber` único, `payments.proofHash` único, único parcial `(orderId) WHERE status='PENDING'`.
+- `payments`: único `(method, operationNumber)`, `proofHash` único, único parcial `(orderId) WHERE status='PENDING'`.
 - `claims` único parcial `(orderId) WHERE status='OPEN'`.
 - `notification_logs.key` único, `settings.key` único, índice `audit_logs(entity, entityId)`.
 - Índices de colas: `payments(status)`, `claims(status)`, `support_tickets(status)`.
@@ -267,7 +281,7 @@ auditoría; validación de entorno (`LICENSE_ENC_KEY` de longitud inválida); ro
 | `orders.e2e-spec.ts` | Carrito de N ítems reserva todo; un ítem agotado da 409 y no deja nada reservado; precio congelado tras cambiar `plan_prices.priceCents`; el mismo carrito en PEN y en USD cobra el precio de cada moneda; plan sin precio en USD da 409; `currency` fuera de `PEN`/`USD` da 400; sin `toolUsername` da 400; B no ve el pedido de A (404); cancelar libera; cancelar dos veces es idempotente; cancelar `IN_REVIEW` da 409. |
 | `concurrency.e2e-spec.ts` | 20 compras simultáneas contra 5 licencias: 5 aceptadas, 15 con 409, licencias reservadas distintas; carritos cruzados (A,B) y (B,A) terminan sin deadlock. |
 | `release.e2e-spec.ts` | Job sobre pedido vencido lo libera; sobre `IN_REVIEW` no hace nada; el barrido libera un pedido sin job; job y barrido en paralelo no fallan ni duplican auditoría. |
-| `db-logic.e2e-spec.ts` | UPDATE `SOLD→AVAILABLE` falla; UPDATE/DELETE en `audit_logs` falla; `INSERT` en `plan_prices` con `currency='EUR'` falla; `v_sales_lines` da `marginCents` `NULL` cuando las monedas difieren; total descuadrado falla al COMMIT; `v_plan_stock` cuenta bien. |
+| `db-logic.e2e-spec.ts` | UPDATE `SOLD→AVAILABLE` falla; UPDATE/DELETE en `audit_logs` falla; `INSERT` en `plan_prices` con `currency='EUR'` falla; `v_sales_lines` da `marginCents` `NULL` cuando las monedas difieren; un pago `BINANCE_PAY` en un pedido PEN falla; el mismo `operationNumber` con distinto `method` se acepta; total descuadrado falla al COMMIT; `v_plan_stock` cuenta bien. |
 | `notifications.e2e-spec.ts` | El mismo job dos veces envía una sola vez; un fallo libera la fila y el reintento envía. |
 | `health.e2e-spec.ts` | `/health` y `/health/ready` responden 200. |
 
@@ -300,7 +314,8 @@ auditoría; validación de entorno (`LICENSE_ENC_KEY` de longitud inválida); ro
   - `docs/02` y `docs/03`: estados de RF-AUT-01..05, RF-COM-01..02, RNF-SEG-03/04/08, RNF-OBS-01/02.
   - `docs/04`: estructura de código real y dos procesos.
   - `docs/08`: Sprint 1 ✅.
-  - `docs/09`: D56–D62; nota en D51 de que D61 la reemplaza en parte.
+  - `docs/09`: D56–D65; nota en D51 de que D61 la reemplaza en parte; riesgo tributario y UIF por cripto.
+  - `docs/01` y `docs/02`: Binance Pay (USDT) como método para pedidos en USD (RF-COM-03).
   - `CLAUDE.md` y `backend/README.md`: comandos reales y web en el puerto 3001.
 - **Commits** por bloque (configuración, esquema, lógica en DB, auth, pedidos, colas, observabilidad, Docker, docs),
   sin línea de coautor. Push y PR solo cuando el usuario lo pida.
@@ -311,6 +326,6 @@ Catálogo público, pagos y comprobantes, R2, revelar clave, `POST /auth/google`
 monto para clientes nuevos, CRUD admin, inventario y lotes por API, reclamos, soporte, reseñas, reportes, Resend,
 Bull Board, Sentry, CI y despliegue real.
 
-**Pendiente para Sprint 2 por D61:** Yape y Plin solo cobran en soles, así que el módulo `payments` debe limitar los
-métodos según `orders.currency` (USD solo por transferencia). Y el catálogo debe mostrar el precio en cada moneda
-disponible del plan.
+**Pendiente para Sprint 2 por D61 y D63:** el checkout muestra solo los métodos válidos para `orders.currency` (PEN: Yape,
+Plin, transferencia; USD: transferencia, Binance Pay), con las instrucciones de `settings.paymentMethods`. El catálogo
+muestra el precio en cada moneda disponible del plan. Los cambios a `settings.paymentMethods` se auditan (D65).
