@@ -31,7 +31,7 @@ Cada sub-proyecto tiene su propio ciclo spec → plan → implementación.
 | — | Workers: **una imagen, dos procesos** (`dist/main.js` HTTP, `dist/worker.js` processors). `APP_ROLE=all` en dev corre ambos en un proceso. | La API escala sin duplicar workers; un job pesado no afecta la latencia HTTP. |
 | — | `POST /orders` nace con **carrito** `items[]` (D30). | Evita reescribir la parte más delicada en Sprint 2. |
 | D61 | **Soles y dólares, un plan con dos precios.** Los precios salen de `plans` y pasan a `plan_prices (planId, currency, priceCents)`. El cliente elige la moneda del pedido; todas las líneas se cobran en esa moneda. Monedas permitidas: `PEN` y `USD` (`CHECK`). Sin conversión ni tipo de cambio. Reemplaza en parte a D51 (`plans.currency` desaparece; `orders.currency` se mantiene). | Decisión del usuario: vender en ambas monedas con el mismo catálogo. |
-| D62 | El lote guarda el costo como se pagó: `costCurrency`, `unitCostCents` y **`fxRatePen`** (soles que costó realmente cada dólar/USDT de ese lote). El margen se calcula en la moneda de la venta convirtiendo el costo con el `fxRatePen` del lote; si falta el tipo de cambio, el margen queda `NULL`. USDT se registra como `USD` 1:1. | Joseph paga a los proveedores con USDT y parte de su ganancia viene de conseguir el dólar más barato: el margen real debe incluir el tipo de cambio que pagó. |
+| D62 | El lote guarda el costo como se pagó: `costCurrency`, `unitCostCents` y **`fxRatePen`** (soles que costó realmente cada dólar/USDT de ese lote). El margen se calcula en la moneda de la venta convirtiendo el costo con el `fxRatePen` del lote, obligatorio en lotes en USD (Joseph confirmó que conoce la tasa de cada compra y que varía entre compras). USDT se registra como `USD` 1:1. | Joseph paga a los proveedores con USDT y parte de su ganancia viene de conseguir el dólar más barato: el margen real debe incluir el tipo de cambio que pagó. |
 
 | D63 | **Métodos de pago como datos**, no como enum: tabla `payment_methods` administrable (`code`, `name`, `kind` = `WALLET` \| `BANK_TRANSFER` \| `CRYPTO`, `currencies`, `instructions`, `active`, `sortOrder`). Así Joseph agrega cualquier billetera (Yape, Plin u otras) o cripto sin tocar código. Los métodos `CRYPTO` solo admiten `USD`, cobrado en USDT 1:1. Verificación manual para todos: captura + N.º de operación. | Joseph cobra por transferencia, cripto y "todas las billeteras que hay"; un enum obligaría a migrar cada vez que se sume una. |
 | D64 | `payments.operationNumber` es único **por método** `(paymentMethodId, operationNumber)`, normalizado (sin espacios, en minúsculas). | Códigos de billeteras o bancos distintos pueden coincidir por casualidad; el bloqueo de D21 no debe dar falsos positivos. |
@@ -91,8 +91,8 @@ en céntimos (de sol o de dólar), enums nativos de Postgres, `createdAt`/`updat
   Un plan puede tener precio solo en PEN, solo en USD o en ambas. Un plan sin ningún precio no se puede comprar.
 - `plans` **pierde** `priceCents` y `currency`.
 - `orders.currency` se mantiene (sin default: la elige el cliente).
-- `license_batches` gana `costCurrency` (default `'USD'`) y `fxRatePen numeric(10,4)` nullable (`CHECK > 0`), junto a
-  `unitCostCents`. `CHECK`: si `costCurrency = 'PEN'`, `fxRatePen` es `NULL`.
+- `license_batches` gana `costCurrency` (default `'USD'`) y `fxRatePen numeric(10,4)` (`CHECK > 0`), junto a
+  `unitCostCents`. `CHECK`: si `costCurrency = 'USD'`, `fxRatePen` es obligatorio; si es `'PEN'`, es `NULL`.
 
 **Pagos (D63–D65).** La tabla existe desde `InitialSchema`; su lógica es Sprint 2.
 - **`payment_methods`** (nueva): `id`, `code` único (por ejemplo `yape`), `name`, `kind` (enum `WALLET | BANK_TRANSFER |
@@ -149,7 +149,7 @@ en céntimos (de sol o de dólar), enums nativos de Postgres, `createdAt`/`updat
   `currency` (del pedido), `unitPriceCents`, `costCurrency` y `unitCostCents` (del lote), `soldAt` y
   `fxRatePen`, y `marginCents` en la moneda de la venta (D62): misma moneda, `unitPriceCents − unitCostCents`; venta PEN
   con costo USD, `unitPriceCents − round(unitCostCents × fxRatePen)`; venta USD con costo PEN, `unitPriceCents −
-  round(unitCostCents / fxRatePen)`; sin `fxRatePen` cuando hace falta, `NULL`.
+  round(unitCostCents / fxRatePen)`.
 - Ninguna vista expone `secretEncrypted` ni `secretHash`.
 
 **Funciones**
@@ -287,7 +287,7 @@ auditoría; validación de entorno (`LICENSE_ENC_KEY` de longitud inválida); ro
 | `orders.e2e-spec.ts` | Carrito de N ítems reserva todo; un ítem agotado da 409 y no deja nada reservado; precio congelado tras cambiar `plan_prices.priceCents`; el mismo carrito en PEN y en USD cobra el precio de cada moneda; plan sin precio en USD da 409; `currency` fuera de `PEN`/`USD` da 400; sin `toolUsername` da 400; B no ve el pedido de A (404); cancelar libera; cancelar dos veces es idempotente; cancelar `IN_REVIEW` da 409. |
 | `concurrency.e2e-spec.ts` | 20 compras simultáneas contra 5 licencias: 5 aceptadas, 15 con 409, licencias reservadas distintas; carritos cruzados (A,B) y (B,A) terminan sin deadlock. |
 | `release.e2e-spec.ts` | Job sobre pedido vencido lo libera; sobre `IN_REVIEW` no hace nada; el barrido libera un pedido sin job; job y barrido en paralelo no fallan ni duplican auditoría. |
-| `db-logic.e2e-spec.ts` | UPDATE `SOLD→AVAILABLE` falla; UPDATE/DELETE en `audit_logs` falla; `INSERT` en `plan_prices` con `currency='EUR'` falla; `v_sales_lines` convierte el costo con `fxRatePen` y da `marginCents` `NULL` si falta; un pago con método `CRYPTO` en un pedido PEN falla; un método inactivo falla; un método `CRYPTO` con `currencies={PEN}` falla; el mismo `operationNumber` con distinto método se acepta; total descuadrado falla al COMMIT; `v_plan_stock` cuenta bien. |
+| `db-logic.e2e-spec.ts` | UPDATE `SOLD→AVAILABLE` falla; UPDATE/DELETE en `audit_logs` falla; `INSERT` en `plan_prices` con `currency='EUR'` falla; `v_sales_lines` convierte el costo con `fxRatePen`; un lote en USD sin `fxRatePen` falla; un pago con método `CRYPTO` en un pedido PEN falla; un método inactivo falla; un método `CRYPTO` con `currencies={PEN}` falla; el mismo `operationNumber` con distinto método se acepta; total descuadrado falla al COMMIT; `v_plan_stock` cuenta bien. |
 | `notifications.e2e-spec.ts` | El mismo job dos veces envía una sola vez; un fallo libera la fila y el reintento envía. |
 | `health.e2e-spec.ts` | `/health` y `/health/ready` responden 200. |
 
