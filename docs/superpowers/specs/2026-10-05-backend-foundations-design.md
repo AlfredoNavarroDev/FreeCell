@@ -31,14 +31,14 @@ Cada sub-proyecto tiene su propio ciclo spec → plan → implementación.
 | — | Workers: **una imagen, dos procesos** (`dist/main.js` HTTP, `dist/worker.js` processors). `APP_ROLE=all` en dev corre ambos en un proceso. | La API escala sin duplicar workers; un job pesado no afecta la latencia HTTP. |
 | — | `POST /orders` nace con **carrito** `items[]` (D30). | Evita reescribir la parte más delicada en Sprint 2. |
 | D61 | **Soles y dólares, un plan con dos precios.** Los precios salen de `plans` y pasan a `plan_prices (planId, currency, priceCents)`. El cliente elige la moneda del pedido; todas las líneas se cobran en esa moneda. Monedas permitidas: `PEN` y `USD` (`CHECK`). Sin conversión ni tipo de cambio. Reemplaza en parte a D51 (`plans.currency` desaparece; `orders.currency` se mantiene). | Decisión del usuario: vender en ambas monedas con el mismo catálogo. |
-| D62 | El costo del lote lleva su moneda: `license_batches.costCurrency`. El margen solo se calcula cuando la moneda de venta y la del costo coinciden; si no, queda `NULL` hasta que Sprint 3 defina la conversión para reportes. | Restar dólares de soles da un margen falso. |
+| D62 | El lote guarda el costo como se pagó: `costCurrency`, `unitCostCents` y **`fxRatePen`** (soles que costó realmente cada dólar/USDT de ese lote). El margen se calcula en la moneda de la venta convirtiendo el costo con el `fxRatePen` del lote; si falta el tipo de cambio, el margen queda `NULL`. USDT se registra como `USD` 1:1. | Joseph paga a los proveedores con USDT y parte de su ganancia viene de conseguir el dólar más barato: el margen real debe incluir el tipo de cambio que pagó. |
 
-| D63 | Métodos de pago: `YAPE`, `PLIN` (solo PEN), `BANK_TRANSFER` (PEN o USD, cuenta por moneda) y **`BINANCE_PAY`** (solo USD, cobrado en **USDT 1:1**). Sin otras criptomonedas ni redes on-chain por ahora. Verificación manual igual que el resto: captura + N.º de operación (Order ID de Binance Pay). | El usuario quiere USDT sin comisión: Binance Pay no cobra comisión de red. USDT 1:1 evita tipo de cambio y volatilidad. |
-| D64 | `payments.operationNumber` es único **por método** `(method, operationNumber)`, normalizado (sin espacios, en minúsculas). | Un código de Yape y uno bancario pueden coincidir por casualidad; el bloqueo de D21 no debe dar falsos positivos. |
-| D65 | Los datos para pagar (números de Yape y Plin, cuentas bancarias, Binance Pay ID) viven en `settings.paymentMethods`. **Todo cambio se audita** y notifica al operador. | Cambiar la cuenta destino es la forma más directa de desviar pagos. |
+| D63 | **Métodos de pago como datos**, no como enum: tabla `payment_methods` administrable (`code`, `name`, `kind` = `WALLET` \| `BANK_TRANSFER` \| `CRYPTO`, `currencies`, `instructions`, `active`, `sortOrder`). Así Joseph agrega cualquier billetera (Yape, Plin u otras) o cripto sin tocar código. Los métodos `CRYPTO` solo admiten `USD`, cobrado en USDT 1:1. Verificación manual para todos: captura + N.º de operación. | Joseph cobra por transferencia, cripto y "todas las billeteras que hay"; un enum obligaría a migrar cada vez que se sume una. |
+| D64 | `payments.operationNumber` es único **por método** `(paymentMethodId, operationNumber)`, normalizado (sin espacios, en minúsculas). | Códigos de billeteras o bancos distintos pueden coincidir por casualidad; el bloqueo de D21 no debe dar falsos positivos. |
+| D65 | Los datos para pagar (número de la billetera, cuenta bancaria, Pay ID o dirección de wallet y red) viven en `payment_methods.instructions` (jsonb). **Crear, editar o desactivar un método se audita** y notifica al operador. | Cambiar la cuenta destino es la forma más directa de desviar pagos. |
 
 D56–D65 se registran en `docs/09` (sección A). Riesgo nuevo en `docs/09`: implicancias tributarias (SUNAT) y de
-prevención de lavado (UIF) por cobrar en criptoactivos; revisar con un contador antes de activar `BINANCE_PAY`.
+prevención de lavado (UIF) por cobrar en criptoactivos; revisar con un contador antes de activar métodos `CRYPTO`.
 
 ## 2. Estructura, arranque y configuración
 
@@ -91,16 +91,20 @@ en céntimos (de sol o de dólar), enums nativos de Postgres, `createdAt`/`updat
   Un plan puede tener precio solo en PEN, solo en USD o en ambas. Un plan sin ningún precio no se puede comprar.
 - `plans` **pierde** `priceCents` y `currency`.
 - `orders.currency` se mantiene (sin default: la elige el cliente).
-- `license_batches` gana `costCurrency` (default `'PEN'`) junto a `unitCostCents`.
+- `license_batches` gana `costCurrency` (default `'USD'`) y `fxRatePen numeric(10,4)` nullable (`CHECK > 0`), junto a
+  `unitCostCents`. `CHECK`: si `costCurrency = 'PEN'`, `fxRatePen` es `NULL`.
 
 **Pagos (D63–D65).** La tabla existe desde `InitialSchema`; su lógica es Sprint 2.
-- `payments.method`: enum `YAPE | PLIN | BANK_TRANSFER | BINANCE_PAY`.
-- `payments.operationNumber`: obligatorio, único `(method, operationNumber)`. `payments.proofHash`: obligatorio y único
+- **`payment_methods`** (nueva): `id`, `code` único (por ejemplo `yape`), `name`, `kind` (enum `WALLET | BANK_TRANSFER |
+  CRYPTO`), `currencies char(3)[]` (`CHECK` subconjunto de `{PEN,USD}`, no vacío; si `kind = CRYPTO`, solo `{USD}`),
+  `instructions jsonb`, `active`, `sortOrder`, timestamps.
+- `payments.paymentMethodId` (FK) reemplaza a `method`.
+- `payments.operationNumber`: obligatorio, único `(paymentMethodId, operationNumber)`. `payments.proofHash`: obligatorio y único
   (todos los métodos suben captura).
-- Trigger `trg_payment_method_currency` (en `DatabaseLogic`): `YAPE`/`PLIN` exigen `orders.currency = 'PEN'` y
-  `BINANCE_PAY` exige `'USD'`. El servicio valida lo mismo antes, con un mensaje claro.
-- `settings.paymentMethods` (jsonb): `{YAPE:{phone, holder}, PLIN:{phone, holder}, BANK_TRANSFER:{PEN:{bank, account, cci,
-  holder}, USD:{…}}, BINANCE_PAY:{payId, holder}}`. El seed carga placeholders `[..]`.
+- Trigger `trg_payment_method_currency` (en `DatabaseLogic`): `orders.currency` debe estar en
+  `payment_methods.currencies` y el método debe estar `active`. El servicio valida lo mismo antes, con un mensaje claro.
+- Seed de métodos con placeholders `[..]` en `instructions`: `yape` y `plin` (WALLET, PEN), `transfer-pen` y
+  `transfer-usd` (BANK_TRANSFER), `binance-pay` (CRYPTO, USD). Joseph agrega las demás billeteras desde el admin (Sprint 2).
 
 **`refresh_tokens`** (nueva): `id`, `userId`, `tokenHash` único, `familyId`, `expiresAt`, `revokedAt` (nullable),
 `revokedReason` (enum `ROTATED` | `LOGOUT` | `REUSE_DETECTED`, nullable), `replacedById` (nullable), `createdAt`.
@@ -118,7 +122,7 @@ en céntimos (de sol o de dólar), enums nativos de Postgres, `createdAt`/`updat
   `status IN ('RESERVED','SOLD')` ⇒ `orderItemId IS NOT NULL` (invariantes 1 y 2).
 - `orders.orderNumber` único, por defecto `nextval('order_number_seq')`, secuencia que empieza en 1001.
   Índice `(status, expiresAt)`.
-- `payments`: único `(method, operationNumber)`, `proofHash` único, único parcial `(orderId) WHERE status='PENDING'`.
+- `payments`: único `(paymentMethodId, operationNumber)`, `proofHash` único, único parcial `(orderId) WHERE status='PENDING'`.
 - `claims` único parcial `(orderId) WHERE status='OPEN'`.
 - `notification_logs.key` único, `settings.key` único, índice `audit_logs(entity, entityId)`.
 - Índices de colas: `payments(status)`, `claims(status)`, `support_tickets(status)`.
@@ -143,7 +147,9 @@ en céntimos (de sol o de dólar), enums nativos de Postgres, `createdAt`/`updat
   (`OUT_OF_STOCK` si available = 0, `LOW` si available ≤ `lowStockThreshold`, si no `IN_STOCK`).
 - `v_sales_lines`: una fila por licencia `SOLD`: `orderId`, `orderItemId`, `planId`, `productId`,
   `currency` (del pedido), `unitPriceCents`, `costCurrency` y `unitCostCents` (del lote), `soldAt` y
-  `marginCents = unitPriceCents − unitCostCents` solo si `currency = costCurrency` (si no, `NULL`, D62).
+  `fxRatePen`, y `marginCents` en la moneda de la venta (D62): misma moneda, `unitPriceCents − unitCostCents`; venta PEN
+  con costo USD, `unitPriceCents − round(unitCostCents × fxRatePen)`; venta USD con costo PEN, `unitPriceCents −
+  round(unitCostCents / fxRatePen)`; sin `fxRatePen` cuando hace falta, `NULL`.
 - Ninguna vista expone `secretEncrypted` ni `secretHash`.
 
 **Funciones**
@@ -161,7 +167,7 @@ en céntimos (de sol o de dólar), enums nativos de Postgres, `createdAt`/`updat
 - Categoría `[Categoría demo]`, producto `[Producto demo]` (`requiresToolUsername=false`), plan `[Plan demo]` con dos
   precios placeholder de desarrollo en `plan_prices`: `PEN 1000` y `USD 300`. Un segundo plan `[Plan demo solo PEN]`
   con un único precio, para probar el caso sin precio en USD.
-- Lote (`costCurrency='PEN'`) con 5 licencias `DEMO-0001` … `DEMO-0005`, cifradas.
+- Lote (`costCurrency='USD'`, `unitCostCents=200`, `fxRatePen=3.6200`, valores placeholder) con 5 licencias `DEMO-0001` … `DEMO-0005`, cifradas.
 - `settings`: `reservationTtlMinutes = 30`.
 
 Las tablas de Sprint 2+ (`support_tickets`, `ticket_messages`, `reviews`, `payments`, `claims`) tienen entidad pero
@@ -281,7 +287,7 @@ auditoría; validación de entorno (`LICENSE_ENC_KEY` de longitud inválida); ro
 | `orders.e2e-spec.ts` | Carrito de N ítems reserva todo; un ítem agotado da 409 y no deja nada reservado; precio congelado tras cambiar `plan_prices.priceCents`; el mismo carrito en PEN y en USD cobra el precio de cada moneda; plan sin precio en USD da 409; `currency` fuera de `PEN`/`USD` da 400; sin `toolUsername` da 400; B no ve el pedido de A (404); cancelar libera; cancelar dos veces es idempotente; cancelar `IN_REVIEW` da 409. |
 | `concurrency.e2e-spec.ts` | 20 compras simultáneas contra 5 licencias: 5 aceptadas, 15 con 409, licencias reservadas distintas; carritos cruzados (A,B) y (B,A) terminan sin deadlock. |
 | `release.e2e-spec.ts` | Job sobre pedido vencido lo libera; sobre `IN_REVIEW` no hace nada; el barrido libera un pedido sin job; job y barrido en paralelo no fallan ni duplican auditoría. |
-| `db-logic.e2e-spec.ts` | UPDATE `SOLD→AVAILABLE` falla; UPDATE/DELETE en `audit_logs` falla; `INSERT` en `plan_prices` con `currency='EUR'` falla; `v_sales_lines` da `marginCents` `NULL` cuando las monedas difieren; un pago `BINANCE_PAY` en un pedido PEN falla; el mismo `operationNumber` con distinto `method` se acepta; total descuadrado falla al COMMIT; `v_plan_stock` cuenta bien. |
+| `db-logic.e2e-spec.ts` | UPDATE `SOLD→AVAILABLE` falla; UPDATE/DELETE en `audit_logs` falla; `INSERT` en `plan_prices` con `currency='EUR'` falla; `v_sales_lines` convierte el costo con `fxRatePen` y da `marginCents` `NULL` si falta; un pago con método `CRYPTO` en un pedido PEN falla; un método inactivo falla; un método `CRYPTO` con `currencies={PEN}` falla; el mismo `operationNumber` con distinto método se acepta; total descuadrado falla al COMMIT; `v_plan_stock` cuenta bien. |
 | `notifications.e2e-spec.ts` | El mismo job dos veces envía una sola vez; un fallo libera la fila y el reintento envía. |
 | `health.e2e-spec.ts` | `/health` y `/health/ready` responden 200. |
 
@@ -308,14 +314,14 @@ auditoría; validación de entorno (`LICENSE_ENC_KEY` de longitud inválida); ro
 - **`docs/backend/`** se genera con la skill `/document` a partir del código terminado: `README.md`, `auth.md`,
   `orders.md`, `queues.md`, `database.md`, `deployment.md`.
 - **Actualizaciones en el mismo cambio:**
-  - `docs/05`: `refresh_tokens`, `plan_prices`, `license_batches.costCurrency`, `plans` sin precio, `claims.orderId`,
+  - `docs/05`: `refresh_tokens`, `plan_prices`, `payment_methods`, `license_batches.costCurrency`/`fxRatePen`, `plans` sin precio, `claims.orderId`,
     sección de triggers, vistas y funciones; cálculo de margen por moneda.
   - `docs/06`: refresh y logout, `items[]`, cancelar, `/health/ready`, `/docs`; estados ⬜ → ✅.
   - `docs/02` y `docs/03`: estados de RF-AUT-01..05, RF-COM-01..02, RNF-SEG-03/04/08, RNF-OBS-01/02.
   - `docs/04`: estructura de código real y dos procesos.
   - `docs/08`: Sprint 1 ✅.
   - `docs/09`: D56–D65; nota en D51 de que D61 la reemplaza en parte; riesgo tributario y UIF por cripto.
-  - `docs/01` y `docs/02`: Binance Pay (USDT) como método para pedidos en USD (RF-COM-03).
+  - `docs/01` y `docs/02`: métodos de pago configurables (billeteras, transferencia, cripto en USDT para USD) (RF-COM-03).
   - `CLAUDE.md` y `backend/README.md`: comandos reales y web en el puerto 3001.
 - **Commits** por bloque (configuración, esquema, lógica en DB, auth, pedidos, colas, observabilidad, Docker, docs),
   sin línea de coautor. Push y PR solo cuando el usuario lo pida.
@@ -326,6 +332,6 @@ Catálogo público, pagos y comprobantes, R2, revelar clave, `POST /auth/google`
 monto para clientes nuevos, CRUD admin, inventario y lotes por API, reclamos, soporte, reseñas, reportes, Resend,
 Bull Board, Sentry, CI y despliegue real.
 
-**Pendiente para Sprint 2 por D61 y D63:** el checkout muestra solo los métodos válidos para `orders.currency` (PEN: Yape,
-Plin, transferencia; USD: transferencia, Binance Pay), con las instrucciones de `settings.paymentMethods`. El catálogo
-muestra el precio en cada moneda disponible del plan. Los cambios a `settings.paymentMethods` se auditan (D65).
+**Pendiente para Sprint 2 por D61–D65:** CRUD admin de `payment_methods` (auditado, D65); el checkout lista solo los
+métodos activos que aceptan `orders.currency`, con sus `instructions`; el catálogo muestra el precio en cada moneda
+disponible del plan; la carga de lotes pide `costCurrency`, `unitCostCents` y `fxRatePen`.
