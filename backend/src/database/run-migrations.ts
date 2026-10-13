@@ -8,7 +8,10 @@ async function main(): Promise<void> {
     throw new Error('Falta DATABASE_URL');
   }
   const ds = await new DataSource(
-    buildDataSourceOptions({ DATABASE_URL: url, DB_SSL: process.env.DB_SSL === 'true' }),
+    buildDataSourceOptions({
+      DATABASE_URL: url,
+      DB_SSL: process.env.DB_SSL === 'true',
+    }),
   ).initialize();
   try {
     const applied = await ds.runMigrations({ transaction: 'each' });
