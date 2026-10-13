@@ -49,11 +49,37 @@ export class RefreshTokensService {
   /**
    * Rota un refresh token (D56). El FOR UPDATE serializa refresh simultáneos del mismo token:
    * el primero rota y el segundo entra por la ventana de gracia.
+   *
+   * Mutex por familia (hallazgo de revisión de seguridad post-implementación): un `UPDATE`
+   * masivo por `familyId` solo bloquea sobre las filas que YA EXISTÍAN cuando tomó su foto
+   * (snapshot) — bajo READ COMMITTED, una fila nueva insertada por otra transacción concurrente
+   * (el hijo de una rotación legítima en curso) es invisible para ese `UPDATE`, así haya esperado
+   * un lock sobre una fila vieja de la misma familia. Sin este mutex, un reuso detectado podía
+   * "revocar la familia" en auditoría mientras un token hijo recién emitido por una rotación
+   * legítima paralela sobrevivía, vivo, hasta 30 días. `pg_advisory_xact_lock` serializa TODA
+   * rotación/barrido de reuso de la misma familia dentro de la transacción: se libera solo al
+   * confirmar o revertir, así que cuando una transacción lo obtiene, cualquier otra que ya haya
+   * tocado esta familia ya quedó commiteada (sus filas nuevas son visibles) o todavía no empezó
+   * (y al reintentar verá el estado ya revocado y no rotará).
    */
   async rotate(raw: string): Promise<{ userId: string; refreshToken: string }> {
     const outcome = await this.ds.transaction(async (m) => {
+      const tokenHash = this.hash(raw);
+
+      // Lectura sin lock: solo para ubicar la familia (es inmutable desde que la fila nace).
+      // Si el token no existe no hay familia que proteger: INVALID de una.
+      const existing = await m.findOne(RefreshToken, {
+        where: { tokenHash },
+        select: ['familyId'],
+      });
+      if (!existing) return null;
+
+      await m.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [
+        existing.familyId,
+      ]);
+
       const token = await m.findOne(RefreshToken, {
-        where: { tokenHash: this.hash(raw) },
+        where: { tokenHash },
         lock: { mode: 'pessimistic_write' },
       });
       const familyRevoked = token

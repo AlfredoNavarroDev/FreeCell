@@ -172,6 +172,45 @@ describe('Auth', () => {
       ).toBeGreaterThanOrEqual(1);
     });
 
+    it('reuso fuera de la ventana en paralelo con una rotación legítima no deja ningún token vivo', async () => {
+      // Reproduce la condición de carrera del hallazgo de seguridad: un token viejo (ya rotado,
+      // fuera de la ventana de gracia) se reusa justo cuando el usuario legítimo hace su propio
+      // refresh rutinario con el token vigente de la misma familia. Sin el mutex por familia,
+      // el UPDATE masivo de la revocación por reuso podía no ver el token hijo que la rotación
+      // legítima concurrente estaba insertando, dejándolo vivo hasta 30 días: una sola repetición
+      // no alcanza para disparar la carrera de forma confiable (depende de la ventana exacta de
+      // entrelazado entre las dos transacciones), así que se repite varias veces con familias
+      // nuevas; sin el mutex, esto reproducía un huérfano antes de la 5.ª iteración en la práctica.
+      for (let i = 0; i < 15; i++) {
+        const { body } = await register(`race-${i}-${Math.random()}@test.pe`);
+        const vigente = (await refresh(body.refreshToken).expect(200)).body
+          .refreshToken as string;
+        await ds.query(
+          `UPDATE refresh_tokens SET "revokedAt" = now() - interval '1 minute' WHERE "revokedReason" = 'ROTATED'`,
+        );
+        const [reuso, legitima] = await Promise.all([
+          refresh(body.refreshToken),
+          refresh(vigente),
+        ]);
+        // El reuso del token viejo siempre se detecta y responde 401.
+        expect([reuso.status, legitima.status]).toContain(401);
+        // Si la rotación legítima llegó a completarse antes del barrido, su token hijo
+        // también debe quedar revocado: no debe sobrevivir ningún token vivo de la familia.
+        if (legitima.status === 200) {
+          await refresh(legitima.body.refreshToken as string).expect(401);
+        }
+        const rows: { revokedAt: string | null }[] = await ds.query(
+          `SELECT "revokedAt" FROM refresh_tokens WHERE "userId" = $1`,
+          [body.user.id],
+        );
+        expect(rows.length).toBeGreaterThanOrEqual(2);
+        expect(rows.every((r) => r.revokedAt !== null)).toBe(true);
+      }
+      expect(
+        await auditCount('auth.refresh_reuse_detected'),
+      ).toBeGreaterThanOrEqual(1);
+    });
+
     it('dos refresh simultáneos con el mismo token tienen éxito y la familia sigue activa', async () => {
       const { body } = await register();
       const [a, b] = await Promise.all([
