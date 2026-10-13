@@ -1,4 +1,15 @@
 # Servicios de desarrollo: PostgreSQL 16 + Redis 7.
+# Perfil "app" (opcional): migrate/api/worker con la imagen de producción (Tarea 11).
+x-backend: &backend
+  build: .
+  image: freecell-backend:local
+  env_file: .env
+  environment:
+    NODE_ENV: production
+    DATABASE_URL: postgresql://freecell:freecell@postgres:5432/freecell
+    REDIS_URL: redis://redis:6379/0
+    DB_SSL: 'false'
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -31,6 +42,51 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  migrate:
+    <<: *backend
+    profiles: ['app']
+    command: ['node', 'dist/database/run-migrations.js']
+    healthcheck:
+      disable: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    <<: *backend
+    profiles: ['app']
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: production
+      APP_ROLE: api
+      DATABASE_URL: postgresql://freecell:freecell@postgres:5432/freecell
+      REDIS_URL: redis://redis:6379/0
+      DB_SSL: 'false'
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  worker:
+    <<: *backend
+    profiles: ['app']
+    command: ['node', 'dist/worker.js']
+    environment:
+      NODE_ENV: production
+      APP_ROLE: worker
+      DATABASE_URL: postgresql://freecell:freecell@postgres:5432/freecell
+      REDIS_URL: redis://redis:6379/0
+      DB_SSL: 'false'
+    healthcheck:
+      disable: true
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
 
 volumes:
   pgdata:
