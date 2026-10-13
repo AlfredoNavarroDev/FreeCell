@@ -10,6 +10,18 @@ import { CoreModule } from './core/core.module';
 import { REDIS_CLIENT } from './core/redis/redis.module';
 import { HealthModule } from './health/health.module';
 import { OrdersModule } from './orders/orders.module';
+import { WorkersModule } from './workers.module';
+
+/**
+ * Se evalúa al cargar el módulo; main.ts carga .env antes (import 'dotenv/config').
+ * En desarrollo (`all`) los processors corren dentro de la API; en producción, en su propio proceso.
+ */
+function runWorkersInApi(): boolean {
+  const role =
+    process.env.APP_ROLE ??
+    (process.env.NODE_ENV === 'production' ? 'api' : 'all');
+  return role === 'all';
+}
 
 @Module({
   imports: [
@@ -28,6 +40,7 @@ import { OrdersModule } from './orders/orders.module';
     HealthModule,
     AuthModule,
     OrdersModule,
+    ...(runWorkersInApi() ? [WorkersModule] : []),
   ],
   providers: [
     // Orden: rate limit → sesión → rol.
