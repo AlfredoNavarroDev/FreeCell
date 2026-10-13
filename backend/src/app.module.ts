@@ -9,6 +9,7 @@ import { RolesGuard } from './auth/guards/roles.guard';
 import { CoreModule } from './core/core.module';
 import { REDIS_CLIENT } from './core/redis/redis.module';
 import { HealthModule } from './health/health.module';
+import { OrdersModule } from './orders/orders.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { HealthModule } from './health/health.module';
     }),
     HealthModule,
     AuthModule,
+    OrdersModule,
   ],
   providers: [
     // Orden: rate limit → sesión → rol.
