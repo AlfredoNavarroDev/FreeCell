@@ -43,6 +43,10 @@ services:
       timeout: 3s
       retries: 10
 
+  # ADVERTENCIA: "docker compose --profile app down" también detiene/elimina postgres y redis,
+  # porque no tienen "profiles:" y Compose los trata como siempre-habilitados (unión con el perfil "app").
+  # Para bajar solo estos tres: "docker compose --profile app down migrate api worker"
+  # o "docker compose stop migrate api worker && docker compose rm -f migrate api worker".
   migrate:
     <<: *backend
     profiles: ['app']
