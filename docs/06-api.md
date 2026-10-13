@@ -14,8 +14,10 @@ Códigos usados: 400 validación · 401 sin sesión · 403 rol insuficiente · 4
 | | Método y ruta | Acceso | Descripción |
 |---|---|---|---|
 | ✅ | `GET /health` | 🌐 | `{status:'ok'}` |
-| ✅ | `POST /auth/register` | 🌐 | Body `{email, password, name?}` → `{accessToken, user}`. 409 si el correo existe. |
-| ✅ | `POST /auth/login` | 🌐 | Body `{email, password}` → `{accessToken, user}`. 401 genérico. |
+| ✅ | `POST /auth/register` | 🌐 | Body `{email, password, name?}` → `{accessToken, refreshToken, user}`. 409 si el correo existe. Reconstruido en Task 6 (rama `feat/backend-foundations`). |
+| ✅ | `POST /auth/login` | 🌐 | Body `{email, password}` → `{accessToken, refreshToken, user}`. 401 genérico. |
+| ✅ | `POST /auth/refresh` | 🌐 | Body `{refreshToken}` → `{accessToken, refreshToken}`. Rotación con ventana de gracia de 30 s (D56); reuso fuera de la ventana revoca toda la familia (401). |
+| ✅ | `POST /auth/logout` | 👤 | Body `{refreshToken}` → 204. Revoca la familia del refresh token. |
 | ✅ | `GET /auth/me` | 👤 | Perfil sin datos sensibles. |
 | ⬜ | `POST /auth/google` | 🌐 | Body `{idToken}` (token de Google verificado por NextAuth) → find-or-create por correo, `emailVerifiedAt` automático, `role=CUSTOMER` si es nuevo → `{accessToken, user}` (D53, D54, RF-AUT-10). |
 | ✅ | `POST /orders` | 👤 | Body `{planId, toolUsername?}` → `{id, status, totalCents, expiresAt}`. 404 plan inactivo; **409 agotado**. ⚠️ Sprint 2 cambia el body a `{items:[{planId, qty}], toolUsername?}` para soportar carrito (D30); reserva todos los ítems en una transacción. |
