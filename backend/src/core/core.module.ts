@@ -8,7 +8,8 @@ import { LoggerModule } from 'nestjs-pino';
 import { AuditModule } from '../audit/audit.module';
 import { CryptoModule } from '../common/crypto/crypto.module';
 import { buildDataSourceOptions } from '../database/data-source-options';
-import { EnvironmentVariables, validateEnv } from './config/env.validation';
+import { validateEnv } from './config/env.validation';
+import type { EnvironmentVariables } from './config/env.validation';
 import { parseRedisUrl, RedisModule } from './redis/redis.module';
 
 /** Nunca se registran credenciales, tokens ni claves (regla 4). */

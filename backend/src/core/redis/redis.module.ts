@@ -2,15 +2,18 @@ import {
   Global,
   Inject,
   Injectable,
+  Logger,
   Module,
   OnApplicationShutdown,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Redis } from 'ioredis';
-import { EnvironmentVariables } from '../config/env.validation';
+import type { EnvironmentVariables } from '../config/env.validation';
 
 /** Cliente ioredis para throttling y health. BullMQ abre sus propias conexiones. */
 export const REDIS_CLIENT = Symbol('REDIS_CLIENT');
+
+const logger = new Logger('RedisModule');
 
 /** Convierte REDIS_URL (redis:// o rediss://) en opciones de conexión para BullMQ. */
 export function parseRedisUrl(raw: string) {
@@ -40,10 +43,17 @@ class RedisShutdown implements OnApplicationShutdown {
     {
       provide: REDIS_CLIENT,
       inject: [ConfigService],
-      useFactory: (config: ConfigService<EnvironmentVariables, true>) =>
-        new Redis(config.get('REDIS_URL', { infer: true }), {
+      useFactory: (config: ConfigService<EnvironmentVariables, true>) => {
+        const redis = new Redis(config.get('REDIS_URL', { infer: true }), {
           maxRetriesPerRequest: 3,
-        }),
+        });
+        // ioredis no silencia 'error': sin listener, una caída de Redis tumba el proceso completo.
+        // El health/readiness ya degrada con gracia (RedisHealthIndicator); aquí solo registramos.
+        redis.on('error', (err) =>
+          logger.error('Error de conexión con Redis', err),
+        );
+        return redis;
+      },
     },
     RedisShutdown,
   ],

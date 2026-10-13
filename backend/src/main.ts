@@ -1,11 +1,11 @@
 import 'dotenv/config';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
-import { NestExpressApplication } from '@nestjs/platform-express';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import { configureApp } from './configure-app';
-import { EnvironmentVariables } from './core/config/env.validation';
+import type { EnvironmentVariables } from './core/config/env.validation';
 import { setupSwagger } from './swagger';
 
 async function bootstrap(): Promise<void> {

@@ -1,7 +1,8 @@
-import { INestApplication, Type } from '@nestjs/common';
-import { NestExpressApplication } from '@nestjs/platform-express';
-import { Test, TestingModuleBuilder } from '@nestjs/testing';
-import { Redis } from 'ioredis';
+import type { INestApplication, Type } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
+import { Test } from '@nestjs/testing';
+import type { TestingModuleBuilder } from '@nestjs/testing';
+import type { Redis } from 'ioredis';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../../src/app.module';
 import { configureApp } from '../../src/configure-app';

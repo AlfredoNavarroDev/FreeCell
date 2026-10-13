@@ -1,10 +1,10 @@
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpAdapterHost } from '@nestjs/core';
-import { NestExpressApplication } from '@nestjs/platform-express';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
-import { EnvironmentVariables } from './core/config/env.validation';
+import type { EnvironmentVariables } from './core/config/env.validation';
 
 /** Configuración HTTP común a main.ts y a las pruebas e2e. */
 export function configureApp(app: NestExpressApplication): void {
