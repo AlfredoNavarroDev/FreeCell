@@ -1,6 +1,6 @@
 # 02 · Requerimientos funcionales
 
-> ✅ Sprint 1 (Fundaciones) reconstruido — ver `docs/backend/`. Los ✅ de RF-AUT-01..05, RF-COM-01..02 y RF-NOT-01..02
+> ✅ Sprint 1 (Fundaciones) reconstruido — ver `docs/backend/`. Los ✅ de RF-AUT-01..05 y RF-COM-01..02
 > ya están verificados contra `backend/src/`. El resto de los ✅ de este documento sigue siendo el **objetivo** del
 > brainstorming de Sprint 2–4, no código actual.
 
