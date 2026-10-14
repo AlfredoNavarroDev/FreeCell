@@ -13,4 +13,7 @@ async function bootstrap(): Promise<void> {
   app.get(Logger).log('Worker iniciado');
 }
 
-void bootstrap();
+bootstrap().catch((err: unknown) => {
+  console.error(err);
+  process.exit(1);
+});

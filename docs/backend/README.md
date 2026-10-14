@@ -82,6 +82,26 @@ borra el esquema y corre las migraciones reales (no `synchronize`), así existen
 Postgres. Cada archivo trunca las tablas al empezar (excepto `migrations`) y vacía Redis `/1`: no tocan datos de
 desarrollo.
 
+### Variables de entorno de las pruebas e2e
+`test/setup-env.ts` (y `test/global-setup.ts`) leen estas dos, con default apuntando al puerto estándar:
+
+| Variable | Default | Uso |
+|---|---|---|
+| `TEST_DATABASE_URL` | `postgresql://freecell:freecell@localhost:5432/licencias_test` | Postgres de las pruebas e2e |
+| `TEST_REDIS_URL` | `redis://localhost:6379/1` | Redis de las pruebas e2e |
+
+El default apunta al puerto 5432/6379 "normal" de Docker Compose, pero en una máquina con un PostgreSQL o Redis
+**nativo** ya escuchando ahí, `docker compose up -d` puede fallar en bindear ese puerto sin que se note a simple
+vista (el contenedor arranca igual, solo que el puerto publicado no es el esperado) y entonces `npm run test:e2e`
+se conecta al servicio nativo equivocado en vez de al contenedor. Si te pasa, define `DB_PORT`/`REDIS_PORT` en tu
+`.env` (ver `docker-compose.yml`) con puertos libres (p. ej. `5433`/`6380`) y exporta estas dos antes de correr las
+pruebas:
+```bash
+TEST_DATABASE_URL=postgresql://freecell:freecell@localhost:5433/licencias_test \
+TEST_REDIS_URL=redis://localhost:6380/1 \
+npm run test:e2e
+```
+
 ## Puertos
 - API (y worker en dev con `APP_ROLE=all`): **3000**.
 - Web (frontend Next.js): **3001** (D60).

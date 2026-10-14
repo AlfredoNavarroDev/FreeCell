@@ -35,10 +35,12 @@ DTOs (`class-validator`, mensajes en español):
 ### Rotación, ventana de gracia y detección de reuso
 
 `RefreshTokensService.rotate()` corre dentro de una transacción Postgres. Primero toma
-`pg_advisory_xact_lock(hashtextextended(familyId, 0))` para serializar **toda** rotación o barrido de reuso de la
-misma familia (ver el comentario en el archivo: sin este mutex, bajo `READ COMMITTED` una fila hija recién insertada
-por una rotación legítima concurrente podía quedar invisible para el `UPDATE` masivo que revoca la familia por
-reuso). Luego bloquea la fila del token con `FOR UPDATE` y decide con `decideRefresh` (función pura,
+`pg_advisory_xact_lock(hashtextextended(familyId, 0))` para serializar **toda** rotación, logout (`revokeFamily`) o
+barrido de reuso de la misma familia (ver el comentario en el archivo: sin este mutex, bajo `READ COMMITTED` una fila
+hija recién insertada por una rotación legítima concurrente podía quedar invisible para el `UPDATE` masivo que
+revoca la familia por reuso o por logout). `revokeFamily` toma el mismo lock, con la misma derivación de la clave,
+antes de su propio `UPDATE` masivo — por eso un logout no puede dejar vivo el hijo de una rotación concurrente.
+Luego `rotate()` bloquea la fila del token con `FOR UPDATE` y decide con `decideRefresh` (función pura,
 `src/auth/refresh-policy.ts`):
 
 ```mermaid
@@ -46,7 +48,9 @@ flowchart TD
   A[Token presentado] --> B{¿Existe la fila?}
   B -- no --> INVALID
   B -- sí --> C{revokedAt es nulo?}
-  C -- sí --> D{expiresAt <= ahora?}
+  C -- sí --> C2{familia ya revocada\npor LOGOUT/REUSE_DETECTED?}
+  C2 -- sí --> INVALID2[INVALID: huérfano de\nfamilia ya muerta]
+  C2 -- no --> D{expiresAt <= ahora?}
   D -- sí --> INVALID
   D -- no --> ROTATE[ROTATE: revoca este, emite hijo]
   C -- no --> E{revokedReason=ROTATED Y\ndentro de 30s Y\nfamilia no revocada Y\nno vencido?}
@@ -63,10 +67,15 @@ flowchart TD
 - **REUSE**: cualquier otro caso de token revocado (fuera de la ventana, o revocado por `LOGOUT`/`REUSE_DETECTED`).
   Se revocan con `UPDATE` todos los tokens activos (`revokedAt IS NULL`) de la familia con
   `revokedReason = REUSE_DETECTED`, se audita `auth.refresh_reuse_detected` (`meta: {familyId}`) y se responde `401`.
-- **INVALID**: el token no existe o venció sin haber sido revocado → `401`.
+- **INVALID**: el token no existe, venció sin haber sido revocado, o es un **huérfano**: su propia fila nunca se
+  marcó revocada pero su familia ya fue matada por `LOGOUT`/`REUSE_DETECTED` (p. ej. el hijo de una rotación
+  legítima que ganó la carrera de commit contra un logout/reuso concurrente de la misma familia) → `401` sin tocar
+  la base (la familia ya está revocada).
 
-`revokeFamily` (logout): revoca con `LOGOUT` todos los tokens activos de la familia del token presentado, solo si
-pertenece al `userId` dado.
+`revokeFamily` (logout): toma el mismo `pg_advisory_xact_lock` por familia que `rotate()` antes de revocar con
+`LOGOUT` todos los tokens activos de la familia del token presentado, solo si pertenece al `userId` dado. Sin este
+lock, el `UPDATE` masivo de logout corre la misma carrera que el de reuso: puede no ver el token hijo que una
+rotación legítima concurrente está insertando.
 
 ## Guards y decoradores
 

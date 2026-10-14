@@ -245,9 +245,10 @@ export class OrdersService {
           data: { orderNumber: order.orderNumber },
         });
       }
-    } catch (error) {
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
       this.logger.warn(
-        { err: error, orderId: order.id },
+        { err, orderId: order.id },
         'No se pudo encolar la liberación o la notificación',
       );
     }

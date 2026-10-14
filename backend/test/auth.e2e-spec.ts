@@ -1,4 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
@@ -211,6 +212,39 @@ describe('Auth', () => {
       ).toBeGreaterThanOrEqual(1);
     });
 
+    it('logout en paralelo con una rotación legítima no deja ningún token vivo', async () => {
+      // Mismo hallazgo que el test de reuso de arriba, pero la contraparte concurrente es un
+      // logout (revokeFamily) en vez de un barrido de reuso: sin el mutex por familia en
+      // revokeFamily, el UPDATE masivo de LOGOUT podía no ver el token hijo que una rotación
+      // legítima concurrente estaba insertando, dejándolo vivo hasta 30 días pese al logout.
+      // Una sola repetición no alcanza para disparar la carrera de forma confiable, así que se
+      // repite varias veces con familias nuevas.
+      for (let i = 0; i < 15; i++) {
+        const { body } = await register(
+          `logout-race-${i}-${Math.random()}@test.pe`,
+        );
+        const [logoutRes, refreshRes] = await Promise.all([
+          http()
+            .post('/auth/logout')
+            .set('Authorization', `Bearer ${body.accessToken}`)
+            .send({ refreshToken: body.refreshToken }),
+          refresh(body.refreshToken),
+        ]);
+        expect(logoutRes.status).toBe(204);
+        // Si la rotación legítima llegó a completarse antes del logout, su token hijo también
+        // debe quedar revocado: no debe sobrevivir ningún token vivo de la familia.
+        if (refreshRes.status === 200) {
+          await refresh(refreshRes.body.refreshToken as string).expect(401);
+        }
+        const rows: { revokedAt: string | null }[] = await ds.query(
+          `SELECT "revokedAt" FROM refresh_tokens WHERE "userId" = $1`,
+          [body.user.id],
+        );
+        expect(rows.length).toBeGreaterThanOrEqual(1);
+        expect(rows.every((r) => r.revokedAt !== null)).toBe(true);
+      }
+    });
+
     it('dos refresh simultáneos con el mismo token tienen éxito y la familia sigue activa', async () => {
       const { body } = await register();
       const [a, b] = await Promise.all([
@@ -238,7 +272,11 @@ describe('Auth', () => {
   });
 
   it('limita los intentos de login: el sexto en un minuto da 429', async () => {
-    process.env.THROTTLE_ENABLED = 'true';
+    // El guard lee THROTTLE_ENABLED de ConfigService (Minor 6), que cachea el valor validado al
+    // arrancar: mutar `process.env` en caliente ya no lo cambia. `ConfigService.set()` sí actualiza
+    // ese valor en caliente (y de paso `process.env`), que es como esta prueba lo activa solo aquí.
+    const config = app.get(ConfigService);
+    config.set('THROTTLE_ENABLED', true);
     try {
       for (let i = 0; i < 5; i++) {
         await login('nadie@test.pe').expect(401);
@@ -246,7 +284,7 @@ describe('Auth', () => {
       const res = await login('nadie@test.pe').expect(429);
       expect(res.body.message).toBe('Demasiados intentos, espera un momento');
     } finally {
-      process.env.THROTTLE_ENABLED = 'false';
+      config.set('THROTTLE_ENABLED', false);
     }
   });
 });

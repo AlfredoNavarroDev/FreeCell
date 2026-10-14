@@ -1,8 +1,8 @@
 import { JwtService } from '@nestjs/jwt';
-import { NestExpressApplication } from '@nestjs/platform-express';
+import { type NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
-import { User } from '../src/database/entities';
+import { type User } from '../src/database/entities';
 import { createCatalog, createUser } from './utils/factories';
 import { createTestApp, resetState } from './utils/test-app';
 

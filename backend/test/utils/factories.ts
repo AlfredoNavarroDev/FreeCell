@@ -1,6 +1,6 @@
 import { hashSync } from 'bcryptjs';
 import { randomBytes, randomUUID } from 'node:crypto';
-import { DataSource } from 'typeorm';
+import { type DataSource } from 'typeorm';
 import { type Currency } from '../../src/database/currency';
 import {
   Category,

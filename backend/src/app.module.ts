@@ -1,5 +1,6 @@
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { Redis } from 'ioredis';
@@ -7,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { CoreModule } from './core/core.module';
+import type { EnvironmentVariables } from './core/config/env.validation';
 import { REDIS_CLIENT } from './core/redis/redis.module';
 import { HealthModule } from './health/health.module';
 import { OrdersModule } from './orders/orders.module';
@@ -27,14 +29,19 @@ function runWorkersInApi(): boolean {
   imports: [
     CoreModule,
     ThrottlerModule.forRootAsync({
-      inject: [REDIS_CLIENT],
-      useFactory: (redis: Redis) => ({
+      inject: [REDIS_CLIENT, ConfigService],
+      useFactory: (
+        redis: Redis,
+        config: ConfigService<EnvironmentVariables, true>,
+      ) => ({
         throttlers: [{ name: 'default', ttl: 60_000, limit: 100 }],
         // Contadores en Redis: el límite se comparte entre todas las máquinas de la API.
         storage: new ThrottlerStorageRedisService(redis),
         errorMessage: 'Demasiados intentos, espera un momento',
-        // Se lee en cada request para que las pruebas puedan activarlo solo donde lo verifican.
-        skipIf: () => process.env.THROTTLE_ENABLED === 'false',
+        // Se lee en cada request (no en el factory) para que las pruebas puedan activarlo solo
+        // donde lo verifican; se consulta el valor ya validado por ConfigService, no process.env
+        // directo, para que coincida con la validación de THROTTLE_ENABLED en env.validation.ts.
+        skipIf: () => !config.get('THROTTLE_ENABLED', { infer: true }),
       }),
     }),
     HealthModule,

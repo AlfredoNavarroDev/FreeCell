@@ -1,6 +1,6 @@
 # 02 · Requerimientos funcionales
 
-> ✅ Sprint 1 (Fundaciones) reconstruido — ver `docs/backend/`. Los ✅ de RF-AUT-01..05 y RF-COM-01..02
+> ✅ Sprint 1 (Fundaciones) reconstruido — ver `docs/backend/`. Los ✅ de RF-AUT-01..05 y RF-COM-01, 02, 05, 06
 > ya están verificados contra `backend/src/`. El resto de los ✅ de este documento sigue siendo el **objetivo** del
 > brainstorming de Sprint 2–4, no código actual.
 
@@ -59,9 +59,9 @@ Los criterios marcados con **[?]** dependen de una pregunta abierta en `09-decis
 | RF-COM-02 | Si algún ítem del carrito no tiene stock, la compra completa se rechaza con un mensaje claro (409), sin reservar el resto. | M | ✅ (rollback de toda la transacción) |
 | RF-COM-03 | El checkout muestra resumen (con todos los ítems del carrito), cuenta regresiva de la reserva e instrucciones de pago (métodos de pago configurables: billeteras, transferencia y cripto en USDT para pedidos en USD, D63). | M | ⬜ (UI y catálogo de métodos activos, Sprint 2) |
 | RF-COM-04 | El cliente sube el comprobante (JPG/PNG/PDF, máx. [N] MB); el pedido pasa a `IN_REVIEW`. | M | ⬜ |
-| RF-COM-05 | La reserva vencida sin comprobante cancela el pedido y devuelve todas sus licencias al stock. | M | ✅ para 1 ítem, ⬜ extender a carrito |
+| RF-COM-05 | La reserva vencida sin comprobante cancela el pedido y devuelve todas sus licencias al stock. | M | ✅ (`fn_release_order`, probado con carrito de N ítems: libera todas las licencias reservadas del pedido) |
 | RF-COM-06 | Una reserva con comprobante en revisión **no** se libera por expiración. | M | ✅ |
-| RF-COM-07 | Campo "usuario de la herramienta" obligatorio solo en productos con `requiresToolUsername = true` (D14); bloquea el paso a `IN_REVIEW` si falta. | M | 🟡 (campo existe en el pedido; falta bandera por producto y validación) |
+| RF-COM-07 | Campo "usuario de la herramienta" obligatorio solo en productos con `requiresToolUsername = true` (D14); bloquea el paso a `IN_REVIEW` si falta. | M | 🟡 (bandera `products.requiresToolUsername` y validación al crear el pedido ✅; falta el flujo de revisión/aprobación a `IN_REVIEW`, Sprint 2) |
 | RF-COM-08 | El cliente puede cancelar un pedido sin pago y liberar la reserva. | S | ⬜ |
 | RF-COM-09 | Se envía confirmación por correo al crear el pedido con las instrucciones de pago. | S | ⬜ |
 | RF-COM-10 | Carrito: varias licencias (de uno o más planes) en un mismo pedido, **dentro del MVP** (D30). | M | ⬜ |

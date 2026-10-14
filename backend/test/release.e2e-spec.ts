@@ -1,7 +1,7 @@
 import { getQueueToken } from '@nestjs/bullmq';
 import { JwtService } from '@nestjs/jwt';
-import { NestExpressApplication } from '@nestjs/platform-express';
-import { Job, Queue } from 'bullmq';
+import { type NestExpressApplication } from '@nestjs/platform-express';
+import { type Job, type Queue } from 'bullmq';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { QUEUE_NOTIFICATIONS } from '../src/notifications/notification.types';

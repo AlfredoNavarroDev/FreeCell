@@ -22,6 +22,13 @@ export function decideRefresh(
 ): RefreshDecision {
   if (!token) return 'INVALID';
   if (token.revokedAt === null) {
+    // Huérfano: esta fila concreta nunca se marcó revocada, pero su familia ya fue matada por
+    // LOGOUT o REUSE_DETECTED (p. ej. el hijo de una rotación legítima que ganó la carrera de
+    // commit contra un `revokeFamily`/barrido de reuso concurrente). No es un vencimiento normal:
+    // la sesión ya está muerta, así que es INVALID, no ROTATE. `familyRevoked` solo se vuelve
+    // true tras LOGOUT/REUSE_DETECTED — nunca durante una rotación legítima (ROTATED) — por lo
+    // que esta rama no interfiere con la ventana de GRACE de abajo.
+    if (familyRevoked) return 'INVALID';
     return token.expiresAt <= now ? 'INVALID' : 'ROTATE';
   }
   const withinGrace =

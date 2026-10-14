@@ -30,6 +30,16 @@ describe('decideRefresh', () => {
     ).toBe('INVALID');
   });
 
+  it('INVALID (huérfano) si no está revocado pero la familia ya fue matada', () => {
+    expect(
+      decideRefresh(
+        { expiresAt: future, revokedAt: null, revokedReason: null },
+        true,
+        now,
+      ),
+    ).toBe('INVALID');
+  });
+
   it('GRACE si se rotó hace menos de 30 s y la familia sigue activa', () => {
     const token = {
       expiresAt: future,

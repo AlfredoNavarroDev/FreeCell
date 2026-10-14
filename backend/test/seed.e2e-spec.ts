@@ -18,7 +18,12 @@ describe('Seed', () => {
   };
 
   beforeAll(async () => {
-    ds = await new DataSource(buildDataSourceOptions({ DATABASE_URL: TEST_DATABASE_URL, DB_SSL: false })).initialize();
+    ds = await new DataSource(
+      buildDataSourceOptions({
+        DATABASE_URL: TEST_DATABASE_URL,
+        DB_SSL: false,
+      }),
+    ).initialize();
     await truncateAll(ds);
   });
 
@@ -30,13 +35,25 @@ describe('Seed', () => {
     await runSeed(ds, env);
     await runSeed(ds, env);
 
-    expect(await count(`SELECT count(*) FROM users WHERE role = 'ADMIN' AND email = 'admin@freecell.local'`)).toBe(1);
+    expect(
+      await count(
+        `SELECT count(*) FROM users WHERE role = 'ADMIN' AND email = 'admin@freecell.local'`,
+      ),
+    ).toBe(1);
     expect(await count(`SELECT count(*) FROM plans`)).toBe(2);
     expect(await count(`SELECT count(*) FROM plan_prices`)).toBe(3);
     expect(await count(`SELECT count(*) FROM license_batches`)).toBe(1);
-    expect(await count(`SELECT count(*) FROM license_items WHERE status = 'AVAILABLE'`)).toBe(5);
+    expect(
+      await count(
+        `SELECT count(*) FROM license_items WHERE status = 'AVAILABLE'`,
+      ),
+    ).toBe(5);
     expect(await count(`SELECT count(*) FROM payment_methods`)).toBe(5);
-    expect(await count(`SELECT count(*) FROM settings WHERE key = 'reservationTtlMinutes'`)).toBe(1);
+    expect(
+      await count(
+        `SELECT count(*) FROM settings WHERE key = 'reservationTtlMinutes'`,
+      ),
+    ).toBe(1);
   });
 
   it('guarda las licencias cifradas y descifrables con LICENSE_ENC_KEY', async () => {
@@ -52,6 +69,23 @@ describe('Seed', () => {
       'DEMO-0004',
       'DEMO-0005',
     ]);
+  });
+
+  it('no se apropia de una cuenta de cliente existente que choque con ADMIN_EMAIL', async () => {
+    const collidingEmail = 'cliente-previo@test.pe';
+    await ds.query(
+      `INSERT INTO users (email, "passwordHash", name, role)
+       VALUES ($1, 'hash-no-real', 'Cliente previo', 'CUSTOMER')`,
+      [collidingEmail],
+    );
+
+    await runSeed(ds, { ...env, ADMIN_EMAIL: collidingEmail });
+
+    const rows: { role: string }[] = await ds.query(
+      `SELECT role FROM users WHERE email = $1`,
+      [collidingEmail],
+    );
+    expect(rows).toEqual([{ role: 'CUSTOMER' }]);
   });
 
   it('el único método CRYPTO acepta solo USD', async () => {

@@ -18,9 +18,8 @@ services:
       POSTGRES_PASSWORD: freecell
       POSTGRES_DB: freecell
     ports:
-      - '5432:5432'
-      # Puerto alterno: en máquinas con un PostgreSQL nativo ocupando 5432, usa este en DATABASE_URL.
-      - '5433:5432'
+      # En máquinas con un PostgreSQL nativo ocupando 5432, define DB_PORT=5433 (u otro libre) en .env.
+      - '${DB_PORT:-5432}:5432'
     volumes:
       - pgdata:/var/lib/postgresql/data
       # Crea la base "licencias_test" de las pruebas e2e (solo al crear el volumen).
@@ -34,9 +33,8 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - '6379:6379'
-      # Puerto alterno: en máquinas con un Redis/Memurai nativo ocupando 6379, usa este en REDIS_URL.
-      - '6380:6379'
+      # En máquinas con un Redis/Memurai nativo ocupando 6379, define REDIS_PORT=6380 (u otro libre) en .env.
+      - '${REDIS_PORT:-6379}:6379'
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
       interval: 5s

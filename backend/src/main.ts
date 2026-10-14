@@ -22,4 +22,7 @@ async function bootstrap(): Promise<void> {
   await app.listen(config.get('PORT', { infer: true }));
 }
 
-void bootstrap();
+bootstrap().catch((err: unknown) => {
+  console.error(err);
+  process.exit(1);
+});

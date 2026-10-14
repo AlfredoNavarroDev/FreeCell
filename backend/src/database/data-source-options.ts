@@ -1,4 +1,4 @@
-import { DataSourceOptions } from 'typeorm';
+import { type DataSourceOptions } from 'typeorm';
 import { ENTITIES } from './entities';
 
 // Al correr compilado (dist) se cargan los .js; con ts-node, los .ts. Evita cargar los .d.ts de dist.

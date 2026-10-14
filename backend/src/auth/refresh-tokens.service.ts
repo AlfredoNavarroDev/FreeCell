@@ -1,9 +1,9 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHmac, randomBytes, randomUUID } from 'node:crypto';
-import { DataSource, EntityManager, In, IsNull } from 'typeorm';
+import { DataSource, In, IsNull, type EntityManager } from 'typeorm';
 import { AuditService } from '../audit/audit.service';
-import { EnvironmentVariables } from '../core/config/env.validation';
+import type { EnvironmentVariables } from '../core/config/env.validation';
 import { RefreshToken } from '../database/entities';
 import { RefreshRevokeReason } from '../database/enums';
 import { decideRefresh } from './refresh-policy';
@@ -138,16 +138,31 @@ export class RefreshTokensService {
     return outcome;
   }
 
-  /** Logout: revoca la familia del token, solo si pertenece al usuario. */
+  /**
+   * Logout: revoca la familia del token, solo si pertenece al usuario.
+   *
+   * Mismo mutex que `rotate()` (ver el comentario ahí): sin `pg_advisory_xact_lock`, este `UPDATE`
+   * masivo por `familyId` corre la misma carrera bajo `READ COMMITTED` — puede no ver la fila hija
+   * que una rotación legítima concurrente está insertando, dejándola viva hasta 30 días pese al
+   * logout. Se envuelve en una transacción propia para que el lock se libere al confirmar.
+   */
   async revokeFamily(userId: string, raw: string): Promise<void> {
-    const repo = this.ds.getRepository(RefreshToken);
-    const token = await repo.findOne({
-      where: { tokenHash: this.hash(raw), userId },
+    await this.ds.transaction(async (m) => {
+      const token = await m.findOne(RefreshToken, {
+        where: { tokenHash: this.hash(raw), userId },
+        select: ['familyId'],
+      });
+      if (!token) return;
+
+      await m.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [
+        token.familyId,
+      ]);
+
+      await m.update(
+        RefreshToken,
+        { familyId: token.familyId, revokedAt: IsNull() },
+        { revokedAt: new Date(), revokedReason: RefreshRevokeReason.LOGOUT },
+      );
     });
-    if (!token) return;
-    await repo.update(
-      { familyId: token.familyId, revokedAt: IsNull() },
-      { revokedAt: new Date(), revokedReason: RefreshRevokeReason.LOGOUT },
-    );
   }
 }

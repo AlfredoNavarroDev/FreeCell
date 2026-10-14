@@ -26,7 +26,7 @@ Todo lo que no sea `backend/` o `frontend/` vive en `docs/` (complementario). Re
 - Brainstorming de Sprint 2–4 **completado** (2026-10-05): decisiones **D14–D55** en `docs/09-decisiones-y-preguntas-abiertas.md`. Sin preguntas abiertas. Incluye login con Google (D53/D54) y reportes admin con KPIs definidos (D55: ventas día/semana, margen, stock valorizado, top planes).
 - Diseño de Fundaciones (backend) **completado** (2026-10-06): decisiones **D56–D65** en `docs/09-decisiones-y-preguntas-abiertas.md` (tokens y refresh, lógica en Postgres, monedas PEN/USD, métodos de pago configurables).
 
-> Los estados ✅ dentro de `docs/02`, `docs/03` y `docs/06` para RF-AUT-01..05, RF-COM-01..02, RNF-SEG-03/04/08 y
+> Los estados ✅ dentro de `docs/02`, `docs/03` y `docs/06` para RF-AUT-01..05, RF-COM-01, 02, 05, 06, RNF-SEG-03/04/08 y
 > RNF-OBS-01/02 ya están verificados contra `backend/src/`; el resto sigue describiendo el **objetivo** del
 > brainstorming de Sprint 2–4, no código actual. Verifica contra `backend/src/` antes de asumir que algo más ya
 > está implementado.
@@ -82,6 +82,12 @@ Detalle completo (variables de entorno, scripts, puertos) en `docs/backend/READM
 - **No subir** `@nestjs/config`, `jwt`, `passport`, `bullmq`, `typeorm` a la v12: son solo ESM y rompen con CommonJS/Jest.
 - No inventar datos de negocio: usar placeholders `[..]` (productos, precios, números de pago, reseñas).
 - Lógica crítica también en Postgres (triggers, CHECK, funciones; D57): un cambio de reglas de estado exige migración nueva.
+- Tipos usados solo como tipo van con `import type` (o `type` inline en la misma línea si el módulo también exporta un
+  valor usado de verdad) — **excepto** un tipo usado como el tipo de un parámetro de constructor de una clase con DI
+  (`@Injectable()` y similares): ese debe quedar como import de valor normal, porque `emitDecoratorMetadata` necesita
+  la referencia real en el JS compilado para que Nest la resuelva (`import type` la borra y Nest ya no puede inyectarla).
+  `@typescript-eslint/consistent-type-imports` ya respeta este caso automáticamente cuando `emitDecoratorMetadata` está
+  activo en `tsconfig.json`.
 
 **Frontend** (`cd frontend`; `npm run dev -- --port 3001` → http://localhost:3001, D60)
 - Next.js 16 (App Router) + TypeScript + Tailwind v4. Componentes en `src/components/`, datos de ejemplo en `src/lib/`.

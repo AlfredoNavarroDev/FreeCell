@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner } from 'typeorm';
+import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /** Tablas con columna "updatedAt" que mantiene el trigger trg_set_updated_at. */
 const UPDATED_AT_TABLES = [

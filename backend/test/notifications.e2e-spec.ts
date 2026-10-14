@@ -1,13 +1,13 @@
 import { getQueueToken } from '@nestjs/bullmq';
-import { NestExpressApplication } from '@nestjs/platform-express';
-import { Queue } from 'bullmq';
+import { type NestExpressApplication } from '@nestjs/platform-express';
+import { type Queue } from 'bullmq';
 import { DataSource } from 'typeorm';
 import { NOTIFICATION_CHANNEL } from '../src/notifications/channels/notification-channel';
 import type { NotificationChannel } from '../src/notifications/channels/notification-channel';
 import { maskEmail } from '../src/notifications/channels/log.channel';
 import { NotificationSender } from '../src/notifications/notification-sender.service';
 import {
-  NotificationJob,
+  type NotificationJob,
   QUEUE_NOTIFICATIONS,
 } from '../src/notifications/notification.types';
 import { NotificationsDeliveryModule } from '../src/notifications/notifications-delivery.module';
