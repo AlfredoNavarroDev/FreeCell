@@ -61,8 +61,24 @@ Marca comercial confirmada: **Free Cell**. Nombre del repositorio/dominio intern
 | D48 | Redis para BullMQ: **instancia propia en Fly.io** (no Upstash). | Sin límite de comandos; el usuario acepta mantener esa pieza de infraestructura. |
 | D49 | API + workers NestJS también se despliegan en **Fly.io** (reemplaza Render). | Evita cold starts de Render; junto a Redis propio en la misma plataforma/red privada. |
 | D50 | Rotación de llave de cifrado (`keyVersion`): **más adelante**, no en Sprint 2–4. | Una sola llave activa es suficiente hoy; se agrega si hay necesidad real de rotar. |
-| D51 | Se diseña **multi-moneda desde ya**: columna `currency` (default `'PEN'`) en `orders` y `plans`, aunque hoy solo se opere en soles. | Decisión explícita del usuario para no reescribir el modelo de dinero más adelante. |
+| D51 | Se diseña **multi-moneda desde ya**: columna `currency` (default `'PEN'`) en `orders` y `plans`, aunque hoy solo se opere en soles. **Reemplazada en parte por D61** (precios en `plan_prices`; `plans.currency` desaparece, `orders.currency` se mantiene, sin default). | Decisión explícita del usuario para no reescribir el modelo de dinero más adelante. |
 | D52 | Estrategia de ramas: `main` + ramas de feature → PR → `main`. CI en GitHub Actions (typecheck + unit + e2e) en cada PR. Sin entorno de staging separado. | Simplicidad para un solo desarrollador; staging se agrega si el equipo crece. |
+
+### Decisiones del diseño de Fundaciones — backend Sprint 1 (2026-10-06)
+Copiadas de la sección 1 de `docs/superpowers/specs/2026-10-05-backend-foundations-design.md`.
+
+| Id | Decisión | Razón |
+|---|---|---|
+| D56 | Tokens: **access JWT de 15 min + refresh opaco rotativo de 30 días**, guardado como hash en `refresh_tokens`, con detección de reuso por familia y **ventana de gracia de 30 s** para refresh concurrentes. | Revocación real (cuentas admin), cierra RNF-SEG-04. |
+| D57 | **Lógica en base de datos** como defensa en profundidad: triggers de transición de estado, invariantes diferidas, `audit_logs` inmutable, vistas de stock y ventas, funciones de liberación. La reserva se queda en TypeScript. | Un bug en un servicio no puede violar las reglas 1 y 3; la reserva necesita mensajes 409 por ítem. |
+| D58 | `license_items.secretHash` = **HMAC-SHA256** con clave derivada de `LICENSE_ENC_KEY` (no SHA-256 plano). | Un SHA-256 plano permite confirmar claves por fuerza bruta a quien lea la DB. |
+| D59 | **Auth propia** (se mantienen D46/D53). Clerk se evaluó y se descartó. | Control total, sin dependencia externa para el login, sin datos personales fuera del país (Ley 29733), mayor valor de portafolio. |
+| D60 | Puertos locales: **API 3000**, **web 3001**. | Ambos usaban 3000; la API conserva la base de `docs/06`. |
+| D61 | **Soles y dólares, un plan con dos precios.** Los precios salen de `plans` y pasan a `plan_prices (planId, currency, priceCents)`. El cliente elige la moneda del pedido; todas las líneas se cobran en esa moneda. Monedas permitidas: `PEN` y `USD` (`CHECK`). Sin conversión ni tipo de cambio. Reemplaza en parte a D51 (`plans.currency` desaparece; `orders.currency` se mantiene). | Decisión del usuario: vender en ambas monedas con el mismo catálogo. |
+| D62 | El lote guarda el costo como se pagó: `costCurrency`, `unitCostCents` y **`fxRatePen`** (soles que costó realmente cada dólar/USDT de ese lote). El margen se calcula en la moneda de la venta convirtiendo el costo con el `fxRatePen` del lote, obligatorio en lotes en USD (Joseph confirmó que conoce la tasa de cada compra y que varía entre compras). USDT se registra como `USD` 1:1. | Joseph paga a los proveedores con USDT y parte de su ganancia viene de conseguir el dólar más barato: el margen real debe incluir el tipo de cambio que pagó. |
+| D63 | **Métodos de pago como datos**, no como enum: tabla `payment_methods` administrable (`code`, `name`, `kind` = `WALLET` \| `BANK_TRANSFER` \| `CRYPTO`, `currencies`, `instructions`, `active`, `sortOrder`). Así Joseph agrega cualquier billetera (Yape, Plin u otras) o cripto sin tocar código. Los métodos `CRYPTO` solo admiten `USD`, cobrado en USDT 1:1. Verificación manual para todos: captura + N.º de operación. | Joseph cobra por transferencia, cripto y "todas las billeteras que hay"; un enum obligaría a migrar cada vez que se sume una. |
+| D64 | `payments.operationNumber` es único **por método** `(paymentMethodId, operationNumber)`, normalizado (sin espacios, en minúsculas). | Códigos de billeteras o bancos distintos pueden coincidir por casualidad; el bloqueo de D21 no debe dar falsos positivos. |
+| D65 | Los datos para pagar (número de la billetera, cuenta bancaria, Pay ID o dirección de wallet y red) viven en `payment_methods.instructions` (jsonb). **Crear, editar o desactivar un método se audita** y notifica al operador. | Cambiar la cuenta destino es la forma más directa de desviar pagos. |
 
 ## B. Preguntas abiertas restantes
 Ninguna. B5.25 se resolvió como D55 (ver abajo); todas las preguntas de las secciones B1–B7 (ítems 1–38 de la versión original
@@ -78,6 +94,7 @@ de este documento) quedaron resueltas como decisiones **D14–D55**.
 ## C. Riesgos principales
 | Riesgo | Impacto | Mitigación |
 |---|---|---|
+| Cobro en criptoactivos (USDT, D63) | Implicancias tributarias (SUNAT) y de prevención de lavado de activos (UIF) sin aclarar | Revisar con un contador antes de activar métodos `CRYPTO` en producción |
 | Pérdida de `LICENSE_ENC_KEY` | Claves irrecuperables | Respaldo seguro de la llave; procedimiento documentado |
 | Fraude con comprobantes falsos | Pérdida directa | N.º de operación + hash únicos (D20, D21), límites a clientes nuevos (D22) |
 | Revisión lenta de pagos | Mala experiencia y stock retenido | SLA 24 h con alerta (D19), notificación doble al operador (D37) |

@@ -7,7 +7,7 @@ entrega la(s) licencia(s) reservada(s). Autor: Alfredo (desarrollo). Idioma del 
 ## Estructura del repositorio
 ```
 FreeCell/
-  backend/   API NestJS (scaffold del CLI, 2026-10-05 — lógica de Sprint 1 por reconstruir)
+  backend/   API NestJS — Sprint 1 (Fundaciones) reconstruido; ver docs/backend/
   frontend/  App Next.js (scaffold + pantalla S1/Catálogo con datos de ejemplo)
   docs/      Documentación de producto (fuente de verdad del alcance)
   docs/design/  Mockups visuales de referencia (no son código a reutilizar)
@@ -16,21 +16,20 @@ Todo lo que no sea `backend/` o `frontend/` vive en `docs/` (complementario). Re
 `git@github.com:AlfredoNavarroDev/FreeCell.git`.
 
 ## Estado
-- ⚠️ **2026-10-05 — reinicio total del backend.** `backend/` se borró y se regeneró vacío con el CLI oficial
-  (`nest new`). El código de Sprint 1 (modelo de datos, auth con roles, cifrado, reserva `SKIP LOCKED`, colas BullMQ,
-  12 pruebas en verde) se descartó a propósito; sigue en el historial de git (commit `dd8c197`) si hace falta
-  consultarlo, pero **no está en el working tree**. Por reconstruir con el mismo alcance — ver `backend/README.md`.
+- ✅ **Sprint 1 (Fundaciones) reconstruido el 2026-10-14**: esquema completo con lógica en Postgres, auth con
+  refresh rotativo, reserva de carrito, colas, Docker. Ver `docs/backend/`.
 - 🟡 `frontend/`: scaffold (`create-next-app`, TypeScript + Tailwind v4 + App Router) + **pantalla S1 (Catálogo)**
   construida con datos de ejemplo (sin conectar a la API todavía). S2–S11 van por sprint.
-- ⬜ **Sprints 2–4**: catálogo (resto), carrito, CRUD de catálogo, comprobantes (R2), panel admin, reclamos, soporte
-  (tickets), reseñas, NextAuth (+Google), correo/WhatsApp, despliegue en Fly.io. Ver `docs/08-plan-de-sprints.md`.
-  Nota: el alcance de "Sprint 1" también queda pendiente de reconstrucción (ver arriba).
+- ⬜ **Sprints 2–4**: catálogo (resto), CRUD de catálogo, comprobantes (R2), panel admin, reclamos, soporte
+  (tickets), reseñas, NextAuth (+Google), correo/WhatsApp, despliegue real en Fly.io. Ver `docs/08-plan-de-sprints.md`.
 - Referencias visuales en `docs/design/` (pantallas S1–S11).
 - Brainstorming de Sprint 2–4 **completado** (2026-10-05): decisiones **D14–D55** en `docs/09-decisiones-y-preguntas-abiertas.md`. Sin preguntas abiertas. Incluye login con Google (D53/D54) y reportes admin con KPIs definidos (D55: ventas día/semana, margen, stock valorizado, top planes).
+- Diseño de Fundaciones (backend) **completado** (2026-10-06): decisiones **D56–D65** en `docs/09-decisiones-y-preguntas-abiertas.md` (tokens y refresh, lógica en Postgres, monedas PEN/USD, métodos de pago configurables).
 
-> Los estados ✅ dentro de `docs/02`, `docs/03` y `docs/06` describen el **objetivo** ya definido en el brainstorming,
-> no necesariamente el código actual tras el reinicio del backend. Verifica contra `backend/src/` antes de asumir que
-> algo ya está implementado.
+> Los estados ✅ dentro de `docs/02`, `docs/03` y `docs/06` para RF-AUT-01..05, RF-COM-01, 02, 05, 06, RNF-SEG-03/04/08 y
+> RNF-OBS-01/02 ya están verificados contra `backend/src/`; el resto sigue describiendo el **objetivo** del
+> brainstorming de Sprint 2–4, no código actual. Verifica contra `backend/src/` antes de asumir que algo más ya
+> está implementado.
 
 ## Mapa de documentación
 | Archivo | Contenido |
@@ -47,19 +46,20 @@ Todo lo que no sea `backend/` o `frontend/` vive en `docs/` (complementario). Re
 | `docs/09-decisiones-y-preguntas-abiertas.md` | Decisiones tomadas, preguntas abiertas, riesgos |
 
 ## Comandos (`cd backend`)
-> Scaffold vacío del CLI (2026-10-05): hoy solo existen `npm install`, `npm run start:dev`, `npm test`, `npm run test:e2e`.
-> El resto de esta lista (`.env.example`, Docker Compose, migraciones, seed) es el objetivo de Sprint 1 por reconstruir.
 ```bash
-cp .env.example .env     # completa LICENSE_ENC_KEY (32 bytes base64), JWT_SECRET, ADMIN_*
+cp .env.example .env     # completa JWT_SECRET, JWT_REFRESH_PEPPER (≥32 c.), LICENSE_ENC_KEY (32 bytes base64), ADMIN_*
 docker compose up -d     # PostgreSQL 16 + Redis 7
 npm install
-npm run migration:run    # tablas
-npm run seed             # admin + producto demo
-npm run start:dev        # http://localhost:3000/health
+npm run migration:run    # InitialSchema + DatabaseLogic (triggers, vistas, funciones)
+npm run seed              # admin + catálogo demo + métodos de pago
+npm run start:dev         # API en http://localhost:3000/health (dev: APP_ROLE=all corre API + workers)
+npm run start:worker      # proceso worker aparte (processors de BullMQ, sin HTTP)
 npm run typecheck && npm test && npm run test:e2e
 npm run migration:generate -- src/database/migrations/Nombre   # tras cambiar entidades
+docker compose --profile app up -d --build   # imagen de producción local: migrate + api + worker
 ```
 Las pruebas e2e usan la base `licencias_test` y Redis `/1` (Docker la crea al primer arranque). No tocan datos de desarrollo.
+Detalle completo (variables de entorno, scripts, puertos) en `docs/backend/README.md`.
 
 ## Reglas del proyecto
 **Dominio (inviolables)**
@@ -67,7 +67,7 @@ Las pruebas e2e usan la base `licencias_test` y Redis `/1` (Docker la crea al pr
 2. Los jobs de BullMQ son **idempotentes**: releen el estado en PostgreSQL antes de actuar. PostgreSQL es la fuente de verdad, Redis no.
 3. Los pedidos `IN_REVIEW` **no** se liberan por expiración.
 4. Las claves se guardan cifradas (AES-256-GCM). **Nunca** en logs, errores ni listados. Solo `reveal`/admin las descifran, y se audita.
-5. Dinero en **céntimos enteros**; moneda en `plans.currency`/`orders.currency` (default `PEN`, D51). El precio se congela en `order_items.unitPriceCents`.
+5. Dinero en **céntimos enteros**; moneda `PEN`/`USD` en `plan_prices.currency`/`orders.currency`, sin default: la elige el cliente (D61, reemplaza en parte a D51). El precio se congela en `order_items.unitPriceCents`.
 6. Toda mutación crítica (carga de lotes, aprobar/rechazar pago, revelar clave, reposición, cambios de precio) escribe `audit_logs`.
 7. Autorización por **rol y por propiedad** del recurso (un cliente nunca ve pedidos ajenos).
 8. Máx. **2 reintentos** tras rechazo de pago; al 3.º el pedido se cancela (D18).
@@ -81,8 +81,15 @@ Las pruebas e2e usan la base `licencias_test` y Redis `/1` (Docker la crea al pr
 - Flujos con estado, stock o dinero requieren prueba **e2e contra Postgres/Redis reales** (incluida la concurrencia).
 - **No subir** `@nestjs/config`, `jwt`, `passport`, `bullmq`, `typeorm` a la v12: son solo ESM y rompen con CommonJS/Jest.
 - No inventar datos de negocio: usar placeholders `[..]` (productos, precios, números de pago, reseñas).
+- Lógica crítica también en Postgres (triggers, CHECK, funciones; D57): un cambio de reglas de estado exige migración nueva.
+- Tipos usados solo como tipo van con `import type` (o `type` inline en la misma línea si el módulo también exporta un
+  valor usado de verdad) — **excepto** un tipo usado como el tipo de un parámetro de constructor de una clase con DI
+  (`@Injectable()` y similares): ese debe quedar como import de valor normal, porque `emitDecoratorMetadata` necesita
+  la referencia real en el JS compilado para que Nest la resuelva (`import type` la borra y Nest ya no puede inyectarla).
+  `@typescript-eslint/consistent-type-imports` ya respeta este caso automáticamente cuando `emitDecoratorMetadata` está
+  activo en `tsconfig.json`.
 
-**Frontend** (`cd frontend`; `npm run dev` → http://localhost:3000)
+**Frontend** (`cd frontend`; `npm run dev -- --port 3001` → http://localhost:3001, D60)
 - Next.js 16 (App Router) + TypeScript + Tailwind v4. Componentes en `src/components/`, datos de ejemplo en `src/lib/`.
 - ⚠️ Next.js 16 tiene cambios de ruptura frente a versiones anteriores (ver `frontend/AGENTS.md` y
   `frontend/node_modules/next/dist/docs/`): `params`/`searchParams` son `Promise`, `middleware` se renombró a `proxy`.

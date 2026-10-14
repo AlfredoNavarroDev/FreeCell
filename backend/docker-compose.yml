@@ -1,0 +1,94 @@
+# Servicios de desarrollo: PostgreSQL 16 + Redis 7.
+# Perfil "app" (opcional): migrate/api/worker con la imagen de producción (Tarea 11).
+x-backend: &backend
+  build: .
+  image: freecell-backend:local
+  env_file: .env
+  environment:
+    NODE_ENV: production
+    DATABASE_URL: postgresql://freecell:freecell@postgres:5432/freecell
+    REDIS_URL: redis://redis:6379/0
+    DB_SSL: 'false'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: freecell
+      POSTGRES_PASSWORD: freecell
+      POSTGRES_DB: freecell
+    ports:
+      # En máquinas con un PostgreSQL nativo ocupando 5432, define DB_PORT=5433 (u otro libre) en .env.
+      - '${DB_PORT:-5432}:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Crea la base "licencias_test" de las pruebas e2e (solo al crear el volumen).
+      - ./docker/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U freecell -d freecell']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      # En máquinas con un Redis/Memurai nativo ocupando 6379, define REDIS_PORT=6380 (u otro libre) en .env.
+      - '${REDIS_PORT:-6379}:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ADVERTENCIA: "docker compose --profile app down" también detiene/elimina postgres y redis,
+  # porque no tienen "profiles:" y Compose los trata como siempre-habilitados (unión con el perfil "app").
+  # Para bajar solo estos tres: "docker compose --profile app down migrate api worker"
+  # o "docker compose stop migrate api worker && docker compose rm -f migrate api worker".
+  migrate:
+    <<: *backend
+    profiles: ['app']
+    command: ['node', 'dist/database/run-migrations.js']
+    healthcheck:
+      disable: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    <<: *backend
+    profiles: ['app']
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: production
+      APP_ROLE: api
+      DATABASE_URL: postgresql://freecell:freecell@postgres:5432/freecell
+      REDIS_URL: redis://redis:6379/0
+      DB_SSL: 'false'
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  worker:
+    <<: *backend
+    profiles: ['app']
+    command: ['node', 'dist/worker.js']
+    environment:
+      NODE_ENV: production
+      APP_ROLE: worker
+      DATABASE_URL: postgresql://freecell:freecell@postgres:5432/freecell
+      REDIS_URL: redis://redis:6379/0
+      DB_SSL: 'false'
+    healthcheck:
+      disable: true
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+volumes:
+  pgdata:

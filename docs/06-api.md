@@ -7,18 +7,24 @@ Códigos usados: 400 validación · 401 sin sesión · 403 rol insuficiente · 4
 **Leyenda de acceso:** 🌐 público · 👤 cliente autenticado (solo sus recursos) · 🛡️ ADMIN.
 **Estado:** ✅ implementado · ⬜ pendiente.
 
-> ⚠️ 2026-10-05: `backend/` se reinició desde cero (scaffold vacío vía NestJS CLI). La tabla "Implementados" de abajo
-> describe el código **descartado** (sigue en el historial de git, commit `dd8c197`) — por reconstruir.
+## Implementados (Sprint 1 — Fundaciones)
+Ver `docs/backend/auth.md`, `docs/backend/orders.md` y `docs/backend/README.md` para el detalle completo
+(cuerpos, errores exactos, rate limits), verificado contra `backend/src/`.
 
-## Implementados (Sprint 1) — por reconstruir
 | | Método y ruta | Acceso | Descripción |
 |---|---|---|---|
-| ✅ | `GET /health` | 🌐 | `{status:'ok'}` |
-| ✅ | `POST /auth/register` | 🌐 | Body `{email, password, name?}` → `{accessToken, user}`. 409 si el correo existe. |
-| ✅ | `POST /auth/login` | 🌐 | Body `{email, password}` → `{accessToken, user}`. 401 genérico. |
+| ✅ | `GET /health` | 🌐 | `{status:'ok'}` (liveness, sin throttling). |
+| ✅ | `GET /health/ready` | 🌐 | Verifica Postgres y Redis (`@nestjs/terminus`); 503 si alguno falla. |
+| ✅ | `GET /docs` | 🌐 | Swagger/OpenAPI, solo si `NODE_ENV !== 'production'`. |
+| ✅ | `POST /auth/register` | 🌐 | Body `{email, password, name?}` → `201 {accessToken, refreshToken, user}`. `role` en el body da 400 (whitelist); 409 si el correo existe. |
+| ✅ | `POST /auth/login` | 🌐 | Body `{email, password}` → `{accessToken, refreshToken, user}`. 401 genérico. |
+| ✅ | `POST /auth/refresh` | 🌐 | Body `{refreshToken}` → `{accessToken, refreshToken}`. Rotación con ventana de gracia de 30 s (D56); reuso fuera de la ventana revoca toda la familia (401). |
+| ✅ | `POST /auth/logout` | 👤 | Body `{refreshToken}` → 204. Revoca la familia del refresh token. |
 | ✅ | `GET /auth/me` | 👤 | Perfil sin datos sensibles. |
 | ⬜ | `POST /auth/google` | 🌐 | Body `{idToken}` (token de Google verificado por NextAuth) → find-or-create por correo, `emailVerifiedAt` automático, `role=CUSTOMER` si es nuevo → `{accessToken, user}` (D53, D54, RF-AUT-10). |
-| ✅ | `POST /orders` | 👤 | Body `{planId, toolUsername?}` → `{id, status, totalCents, expiresAt}`. 404 plan inactivo; **409 agotado**. ⚠️ Sprint 2 cambia el body a `{items:[{planId, qty}], toolUsername?}` para soportar carrito (D30); reserva todos los ítems en una transacción. |
+| ✅ | `POST /orders` | 👤 | Body `{currency, items:[{planId, qty}], toolUsername?}` → `201 {id, orderNumber, status, totalCents, currency, expiresAt, cancelReason, items}`. Reserva todos los ítems del carrito en una transacción (D30); 404 plan inactivo; 409 sin stock de un ítem (rechaza el carrito completo) o plan sin precio en la moneda elegida; 400 moneda inválida o falta `toolUsername` requerido. |
+| ✅ | `GET /orders/:id` | 👤 | Mismo shape que la creación. 404 si no es del usuario. |
+| ✅ | `POST /orders/:id/cancel` | 👤 | Solo desde `PENDING_PAYMENT`; libera la reserva. 409 si no está en ese estado; 200 idempotente si ya estaba `CANCELLED`. |
 
 ## Catálogo (Sprint 2)
 | | Ruta | Acceso | Notas |
@@ -34,7 +40,7 @@ Códigos usados: 400 validación · 401 sin sesión · 403 rol insuficiente · 4
 | ⬜ | `GET /orders/:id` | 👤 | Detalle + línea de seguimiento + estado del pago. 404 si no es suyo. |
 | ⬜ | `POST /orders/:id/cancel` | 👤 | Solo `PENDING_PAYMENT`; libera la reserva. |
 | ⬜ | `POST /orders/:id/payment/upload-url` | 👤 | Valida tipo/tamaño y devuelve URL firmada de R2 (`{uploadUrl, proofKey}`). |
-| ⬜ | `POST /orders/:id/payment` | 👤 | Body `{method, proofKey, operationNumber}` → pedido `IN_REVIEW`, pago `PENDING`. Solo desde `PENDING_PAYMENT` y con reserva vigente. 409 si `operationNumber` o hash del archivo ya existen (D21). |
+| ⬜ | `POST /orders/:id/payment` | 👤 | Body `{paymentMethodId, proofKey, operationNumber}` → pedido `IN_REVIEW`, pago `PENDING`. Solo desde `PENDING_PAYMENT` y con reserva vigente. El método debe estar activo y aceptar `orders.currency` (D63, trigger `trg_payment_method_currency`). 409 si `(paymentMethodId, operationNumber)` o el hash del archivo ya existen (D21, D64). |
 | ⬜ | `POST /orders/:id/license/reveal` | 👤 | Devuelve la clave en claro **y registra auditoría**. Solo `DELIVERED`. Con límite de uso. |
 | ⬜ | `POST /claims` | 👤 | Body `{orderId, reason}`. 409 si ya hay uno abierto, fuera de ventana (7 días, D25) o ya usó su reposición (D26). |
 | ⬜ | `GET /claims` | 👤 | Mis reclamos. |

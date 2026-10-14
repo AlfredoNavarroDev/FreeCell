@@ -11,13 +11,29 @@ Duración orientativa: 1 semana por sprint. Cada sprint termina con funcionalida
 - `npm run typecheck`, `npm test` y `npm run test:e2e` pasan.
 - Documentación actualizada (`docs/` y, si cambia el esquema, migración generada).
 
-## Sprint 1 — Fundaciones ⬜ (por reconstruir, reiniciado 2026-10-05)
-Modelo de datos y migración inicial · auth con roles · cifrado de claves · colas BullMQ · reserva con `SKIP LOCKED` ·
-liberación diferida idempotente + barrido · cola de notificaciones idempotente · seed · Docker Compose · 12 pruebas (5 unit + 7 e2e).
+## Sprint 1 — Fundaciones ✅ (reconstruido 2026-10-14)
+Entregado (detalle verificado contra el código en `docs/backend/`):
+- Esquema completo (19 tablas) en una sola migración inicial + lógica en Postgres (triggers, vistas, funciones de
+  liberación) en una segunda migración (D57).
+- Auth propia: JWT de 15 min + refresh opaco rotativo de 30 días con ventana de gracia de 30 s y detección de
+  reuso por familia (D56); guards globales (`JwtAuthGuard`/`RolesGuard`) y rate limiting en Redis.
+- Cifrado AES-256-GCM de claves + HMAC-SHA256 para duplicados (D58); auditoría inmutable (`audit_logs`).
+- Carrito: `POST /orders` reserva N ítems en una transacción con `SELECT ... FOR UPDATE SKIP LOCKED`, orden fijo
+  por `planId` (sin deadlocks entre carritos cruzados), rechazo completo si falta stock de un ítem (D30).
+- Monedas (D61): `plan_prices` por moneda, precio congelado en `order_items`; métodos de pago administrables
+  (D63–D65, entidad y trigger de moneda listos, servicio en Sprint 2).
+- Colas BullMQ: `orders` (`release` + `sweep-expired` cada 5 min) y `notifications` (idempotente por `notification_logs`),
+  ambas idempotentes; proceso API y proceso worker separables por `APP_ROLE`.
+- Observabilidad: `/health`, `/health/ready`, logs JSON con `pino` y `X-Request-Id`, Swagger en `/docs` fuera de
+  producción, helmet + CORS + rate limiting.
+- Seed idempotente (admin, catálogo demo, métodos de pago, settings), Docker multi-stage, `docker-compose.yml`
+  (perfil `app`), borrador de `fly.toml`.
+- Pruebas: unitarias (`CryptoService`, `sanitizeMeta`, `validateEnv`, `decideRefresh`, `AllExceptionsFilter`) + e2e
+  contra Postgres/Redis reales (`auth`, `orders`, `concurrency`, `release`, `db-logic`, `notifications`, `health`,
+  `schema`, `seed`), `npm run typecheck && npm test && npm run test:e2e` en verde.
 
-> El código que cumplía este sprint se descartó a propósito al reorganizar el repo (`backend/` regenerado vacío con
-> el CLI de NestJS). El alcance de arriba sigue siendo el objetivo; queda en el historial de git (commit `dd8c197`)
-> por si hace falta consultarlo como referencia al reconstruirlo.
+> El código original de este sprint (reiniciado el 2026-10-05) se descartó a propósito; el commit `dd8c197` queda
+> en el historial de git solo como referencia histórica, ya reemplazado por el código actual.
 
 > Alcance de Sprint 2–4 revisado tras el brainstorming de 2026-10-05 (`docs/09`, decisiones D14–D52). Creció frente al plan
 > original: carrito desde el MVP (D30), CRUD de catálogo adelantado (D38), sistema de tickets (D34), reseñas moderadas (D33)
@@ -25,19 +41,20 @@ liberación diferida idempotente + barrido · cola de notificaciones idempotente
 > de catálogo (D38 permite usar seed/SQL como respaldo).
 
 ## Sprint 2 — Catálogo, carrito y compra
-- [ ] Migraciones: `requiresToolUsername`, `orderNumber`, `cancelReason`, `currency` (plans/orders), `phone`/`emailVerifiedAt`,
-      `license_items.replacesId`, `payments.operationNumber`/`proofHash` únicos, índice único parcial de `orderItemId`,
-      tablas `settings`, `support_tickets`, `ticket_messages`, `reviews` (ver `docs/05`).
+> Ya entregado en Sprint 1 (quitado de esta lista): el esquema completo (incluye `requiresToolUsername`,
+> `orderNumber`, `cancelReason`, `currency`/`plan_prices`, `license_items.replacesId`, únicos de `payments`, índice
+> parcial de `orderItemId`, tablas `settings`/`support_tickets`/`ticket_messages`/`reviews`), el carrito en
+> `POST /orders` (reserva N ítems en una transacción, D30), y rate limiting + helmet.
 - [ ] Módulo `catalog`: listado, búsqueda, categorías, ficha con planes, `stockState` solo por estado (RF-CAT-01..07, D29).
-- [ ] Carrito: `POST /orders` acepta `items[]`; reserva N licencias en una sola transacción (RF-COM-01..02, D30).
 - [ ] Módulo `storage`: URLs firmadas de R2 (subida privada, validación de tipo/tamaño) (RNF-SEG-09).
-- [ ] Módulo `payments`: subir comprobante con `operationNumber` → pedido `IN_REVIEW`; bloqueo automático de duplicado
-      por `operationNumber`/hash (RF-COM-04, D21); cancelar pedido (RF-COM-08).
+- [ ] Módulo `payments`: subir comprobante con `paymentMethodId`/`operationNumber` → pedido `IN_REVIEW`; bloqueo
+      automático de duplicado por `(paymentMethodId, operationNumber)`/hash (RF-COM-04, D21, D63, D64); CRUD admin de
+      `payment_methods` auditado (D65); cancelar pedido ya implementado desde Sprint 1 (RF-COM-08).
 - [ ] Checkbox de declaración de licitud obligatorio al pagar (RF-COM-13, D43).
-- [ ] `GET /orders`, `GET /orders/:id`, reveal de clave **con auditoría** (RF-PED-01..04).
-- [ ] CRUD admin de catálogo: productos (incl. `requiresToolUsername`), planes, categorías (RF-ADM-40, D38).
+- [ ] `GET /orders`, reveal de clave **con auditoría** (RF-PED-01..04); `GET /orders/:id` y cancelar ya implementados.
+- [ ] CRUD admin de catálogo: productos (incl. `requiresToolUsername`), planes (con precios por moneda, D61),
+      categorías (RF-ADM-40, D38).
 - [ ] Verificación de correo obligatoria antes de la primera compra; límite de monto para cliente nuevo (RF-AUT-07, D22).
-- [ ] Rate limiting y helmet.
 - [ ] `POST /auth/google`: find-or-create por correo, `emailVerifiedAt` automático (D53, D54, RF-AUT-10).
 - [x] Scaffold `frontend/` (`create-next-app`, Tailwind v4, App Router) + **S1 (Catálogo)** con datos de ejemplo (2026-10-05).
 - [ ] Sesión NextAuth: credentials + **Google provider** (D46, D53).
