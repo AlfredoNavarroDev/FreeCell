@@ -24,7 +24,8 @@ flowchart LR
   W -- URL firmada --> R2
   A -- firma URLs --> R2
 ```
-**Estado hoy:** `api/` implementada (Sprint 1). `web/` sin crear. R2, correo y WhatsApp sin integrar.
+**Estado hoy:** `backend/` implementado (Sprint 1 — Fundaciones, ver `docs/backend/`). `frontend/` en scaffold.
+R2, correo y WhatsApp sin integrar.
 
 ## Stack
 | Capa | Tecnología | Nota |
@@ -43,23 +44,52 @@ flowchart LR
 > **Versiones fijadas:** `@nestjs/config@4`, `@nestjs/jwt@11`, `@nestjs/passport@11`, `@nestjs/bullmq@11`, `@nestjs/typeorm@11`.
 > Las v12 son solo ESM y rompen con Jest/CommonJS. Prisma se descartó en el entorno de desarrollo del Sprint 1 por descarga de motores bloqueada; **no es una decisión de producto**.
 
-## Estructura del código (`api/src`)
+## Estructura del código (`backend/src`, verificada contra el código)
 ```
-app.module.ts            Raíz; /health
-main.ts                  ValidationPipe global, CORS, shutdown hooks
-common/                  CryptoService (AES-GCM + hash)
-auth/                    register/login/me, JwtStrategy, guards, @Roles, @CurrentUser
+main.ts                  Bootstrap HTTP: helmet, CORS, ValidationPipe, pino, Swagger (no-prod), shutdown hooks
+worker.ts                Bootstrap sin HTTP: createApplicationContext(WorkerModule)
+app.module.ts             Raíz HTTP: CoreModule + Throttler + Health + Auth + Orders (+ Workers si APP_ROLE=all)
+worker.module.ts          Raíz del proceso worker: CoreModule + WorkersModule
+workers.module.ts         Agrupa los processors de BullMQ (orders + notifications)
+configure-app.ts          Config HTTP compartida por main.ts y las pruebas e2e
+swagger.ts                OpenAPI en /docs (fuera de producción)
+core/
+  config/                 EnvironmentVariables (class-validator), valida al arrancar
+  redis/                  Cliente ioredis compartido (REDIS_CLIENT)
+  core.module.ts           ConfigModule, pino, TypeOrmModule, BullModule, CryptoModule, AuditModule
+common/
+  crypto/                 CryptoService (AES-256-GCM + HMAC)
+  decorators/             @Public, @Roles, @CurrentUser
+  filters/                AllExceptionsFilter (formato de error único)
+  types/                  AuthenticatedUser
 database/
-  entities/              12 entidades TypeORM
-  enums.ts               Estados y roles
-  migrations/            Migración inicial
-  data-source*.ts        Config compartida app + CLI
-  seed.ts                Admin + producto demo
-orders/                  OrdersService (reserva, liberación, barrido), processor, controller
-notifications/           Cola con idempotencia (notification_logs)
-queues/                  Conexión Redis, constantes (TTL 30 min, barrido 5 min)
+  entities/               19 entidades TypeORM + 2 @ViewEntity (v_plan_stock, v_sales_lines)
+  views/                  Definición de las vistas
+  enums.ts, currency.ts    Enums de dominio y monedas permitidas (PEN/USD)
+  migrations/             InitialSchema (esquema) + DatabaseLogic (triggers/vistas/funciones)
+  data-source*.ts         Config compartida app + CLI + pruebas
+  run-migrations.ts        Entrypoint para `node dist/database/run-migrations.js` (Docker/Fly)
+  seed.ts                  Admin + catálogo demo + métodos de pago + settings
+auth/                     register/login/refresh/logout/me, JwtStrategy, guards, RefreshTokensService
+users/                    UsersService (normaliza correo, búsquedas)
+orders/                   OrdersService (reserva N ítems, cancelación), cola `orders`, processor, worker module
+notifications/            Cola `notifications` idempotente (notification_logs), LogChannel
+settings/                 SettingsService (lee `settings`, p. ej. TTL de reserva)
+audit/                    AuditService (escribe en la transacción del llamador) + sanitizeMeta
+health/                   /health, /health/ready (Postgres + Redis)
 ```
-Módulos pendientes: `catalog`, `inventory`, `payments`, `claims`, `admin`, `storage` (R2), `support` (tickets, D34), `reviews` (D33), `settings` (D39/B5.25), `reports` (diferido, D39).
+Módulos pendientes (Sprint 2+): `catalog`, `inventory`, `payments` (servicio/controlador — la entidad y el trigger
+de moneda ya existen), `claims`, `admin`, `storage` (R2), `support` (tickets, D34), `reviews` (D33),
+`reports` (diferido, D39/D55).
+
+### Dos procesos, una imagen (D56/Fundaciones §2)
+- **API** (`main.ts` → `AppModule`): HTTP, siempre corre. Importa `WorkersModule` (los processors de BullMQ)
+  solo si `APP_ROLE=all` — por defecto en desarrollo.
+- **Worker** (`worker.ts` → `WorkerModule`, `createApplicationContext`, sin HTTP): siempre importa
+  `WorkersModule`, pensado para `APP_ROLE=worker` en producción.
+- `APP_ROLE` (`api`\|`worker`\|`all`) se lee de la variable de entorno; si falta, `all` fuera de producción y `api`
+  en producción. Permite correr todo en un solo proceso en desarrollo y separar API/worker en producción (Docker
+  Compose perfil `app`, process groups `app`/`worker` de `fly.toml`) sin cambiar código de negocio.
 
 ## Máquinas de estado
 
@@ -135,7 +165,6 @@ sequenceDiagram
 4. **PostgreSQL manda:** Redis solo coordina tiempos; perderlo no corrompe el negocio.
 5. **Cifrado de claves** con AES-256-GCM; hash SHA-256 aparte para duplicados.
 6. **Notificaciones idempotentes:** `jobId` único + fila en `notification_logs` (se reclama antes de enviar y se libera si el envío falla).
-7. **Reserva de 1 licencia por pedido** en el MVP (el esquema admite más).
 
 ## Seguridad en capas
 Red (HTTPS, CORS) → autenticación (JWT) → autorización (rol + propiedad) → validación (DTO whitelist) → datos (cifrado, transacciones, restricciones únicas) → auditoría.

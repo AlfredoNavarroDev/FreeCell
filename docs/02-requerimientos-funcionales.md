@@ -1,7 +1,8 @@
 # 02 · Requerimientos funcionales
 
-> ⚠️ 2026-10-05: `backend/` se reinició desde cero (scaffold vacío vía NestJS CLI). Los ✅ de este documento son el
-> **objetivo** ya definido en el brainstorming, no el estado actual del código — verifica contra `backend/src/`.
+> ✅ Sprint 1 (Fundaciones) reconstruido — ver `docs/backend/`. Los ✅ de RF-AUT-01..05, RF-COM-01..02 y RF-NOT-01..02
+> ya están verificados contra `backend/src/`. El resto de los ✅ de este documento sigue siendo el **objetivo** del
+> brainstorming de Sprint 2–4, no código actual.
 
 **Leyenda de prioridad (MoSCoW):** **M** = debe (MVP) · **S** = debería · **C** = podría · **W** = fuera por ahora.
 **Estado:** ✅ implementado y probado · 🟡 parcial · ⬜ pendiente.
@@ -18,7 +19,7 @@ Los criterios marcados con **[?]** dependen de una pregunta abierta en `09-decis
 | RF-AUT-02 | El usuario inicia sesión y recibe un token con expiración. | M | ✅ |
 | RF-AUT-03 | El usuario autenticado puede consultar su perfil. | M | ✅ |
 | RF-AUT-04 | El rol ADMIN solo se asigna por seed/admin; nunca desde el registro público. | M | ✅ |
-| RF-AUT-05 | Rutas de admin protegidas por rol; rutas de cliente protegidas por propiedad (un cliente solo ve sus pedidos). | M | 🟡 guards listos, falta aplicarlos en los módulos nuevos |
+| RF-AUT-05 | Rutas de admin protegidas por rol; rutas de cliente protegidas por propiedad (un cliente solo ve sus pedidos). | M | ✅ (`JwtAuthGuard`/`RolesGuard` globales, D56; propiedad verificada en `OrdersService`) |
 | RF-AUT-06 | Recuperar contraseña por correo. | S | ⬜ |
 | RF-AUT-07 | Verificación de correo **obligatoria** antes de la primera compra para cuentas correo+contraseña; **automática** si el usuario entró con Google (D22, D54). | M | ⬜ |
 | RF-AUT-08 | Registrar teléfono/WhatsApp opcional en el perfil (para soporte y notificaciones). | S | ⬜ (campo `users.phone`) |
@@ -54,9 +55,9 @@ Los criterios marcados con **[?]** dependen de una pregunta abierta en `09-decis
 
 | ID | Requerimiento | Prio | Estado |
 |---|---|---|---|
-| RF-COM-01 | El cliente agrega uno o más planes a un carrito y crea un pedido; el sistema **reserva todas las licencias del pedido por 30 min** en una sola transacción, sin asignar nunca la misma a dos pedidos (D30). | M | 🟡 (reserva de 1 ítem probada; falta extender a N ítems) |
-| RF-COM-02 | Si algún ítem del carrito no tiene stock, la compra completa se rechaza con un mensaje claro (409), sin reservar el resto. | M | ✅ para 1 ítem, ⬜ extender a carrito |
-| RF-COM-03 | El checkout muestra resumen (con todos los ítems del carrito), cuenta regresiva de la reserva e instrucciones de pago (Yape/Plin o transferencia). | M | ⬜ |
+| RF-COM-01 | El cliente agrega uno o más planes a un carrito y crea un pedido; el sistema **reserva todas las licencias del pedido por 30 min** en una sola transacción, sin asignar nunca la misma a dos pedidos (D30). | M | ✅ (`POST /orders` con `items[]`, `FOR UPDATE SKIP LOCKED` por plan, probado con N ítems y concurrencia) |
+| RF-COM-02 | Si algún ítem del carrito no tiene stock, la compra completa se rechaza con un mensaje claro (409), sin reservar el resto. | M | ✅ (rollback de toda la transacción) |
+| RF-COM-03 | El checkout muestra resumen (con todos los ítems del carrito), cuenta regresiva de la reserva e instrucciones de pago (métodos de pago configurables: billeteras, transferencia y cripto en USDT para pedidos en USD, D63). | M | ⬜ (UI y catálogo de métodos activos, Sprint 2) |
 | RF-COM-04 | El cliente sube el comprobante (JPG/PNG/PDF, máx. [N] MB); el pedido pasa a `IN_REVIEW`. | M | ⬜ |
 | RF-COM-05 | La reserva vencida sin comprobante cancela el pedido y devuelve todas sus licencias al stock. | M | ✅ para 1 ítem, ⬜ extender a carrito |
 | RF-COM-06 | Una reserva con comprobante en revisión **no** se libera por expiración. | M | ✅ |

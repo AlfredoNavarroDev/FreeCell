@@ -4,7 +4,8 @@
 **Marca comercial: Free Cell** (dominio y correo corporativo aún placeholder, ver `docs/09` D44).
 Tienda web para vender **licencias (claves) de herramientas de servicio técnico de celulares** a técnicos y talleres.
 La operación es **manual**: el socio de negocio compra lotes de licencias a proveedores y los carga en el sistema.
-El cliente elige un plan, **paga por Yape/Plin o transferencia y sube su comprobante**; el operador lo revisa y,
+El cliente elige un plan, **paga por Yape/Plin o transferencia** (u otros métodos configurables, incluido USDT
+para pedidos en dólares) **y sube su comprobante**; el operador lo revisa y,
 al aprobarlo, el sistema entrega la licencia que se había **reservado** para ese pedido.
 
 Referencia de rubro: GsmServer (gsmserver.es) y tiendas de licencias de herramientas GSM (ver `docs/design/`).

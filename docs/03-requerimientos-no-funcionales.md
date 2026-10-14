@@ -1,7 +1,8 @@
 # 03 · Requerimientos no funcionales
 
-> ⚠️ 2026-10-05: `backend/` se reinició desde cero (scaffold vacío vía NestJS CLI). Los ✅ de este documento son el
-> **objetivo** ya definido, no el estado actual del código — verifica contra `backend/src/`.
+> ✅ Sprint 1 (Fundaciones) reconstruido — ver `docs/backend/`. RNF-SEG-03/04/08 y RNF-OBS-01/02 ya están
+> verificados contra `backend/src/`. El resto de los ✅ de este documento sigue siendo el **objetivo** de
+> Sprint 2–4.
 
 **Convención:** los valores numéricos marcados *(propuesto)* son un punto de partida razonable para el volumen inicial;
 deben validarse con el negocio. **Estado:** ✅ cumplido y probado · 🟡 parcial · ⬜ pendiente.
@@ -11,12 +12,12 @@ deben validarse con el negocio. **Estado:** ✅ cumplido y probado · 🟡 parci
 |---|---|---|
 | RNF-SEG-01 | Las claves de licencia se guardan cifradas con **AES-256-GCM**; la llave (`LICENSE_ENC_KEY`, 32 bytes) vive fuera de la base de datos. | ✅ |
 | RNF-SEG-02 | Las claves **nunca** aparecen en logs, errores, respuestas de listados ni en el correo (correo solo lleva enlace, D24). | 🟡 |
-| RNF-SEG-03 | Contraseñas con bcrypt (cost ≥ 10); límite de 72 caracteres. | ✅ |
-| RNF-SEG-04 | JWT firmado con secreto de entorno, expiración definida (hoy 7 días; evaluar 15 min + refresh). | 🟡 |
+| RNF-SEG-03 | Contraseñas con bcrypt (cost ≥ 10); límite de 72 caracteres. | ✅ (cost 12) |
+| RNF-SEG-04 | JWT 15 min + refresh rotativo (D56): access JWT firmado con `JWT_SECRET`, refresh opaco de 30 días con hash HMAC, rotación con ventana de gracia de 30 s y detección de reuso por familia. | ✅ |
 | RNF-SEG-05 | Validación estricta de entrada (whitelist de DTOs, rechazo de campos extra). | ✅ |
 | RNF-SEG-06 | Control de acceso por rol **y** por propiedad del recurso (IDOR): un cliente no puede leer pedidos, comprobantes ni claves ajenos. | 🟡 |
 | RNF-SEG-07 | *Rate limiting* en login, registro, revelado de claves y subida de comprobantes *(propuesto: 5 intentos/min por IP+correo en login)*. | ⬜ |
-| RNF-SEG-08 | Cabeceras de seguridad (helmet), CORS restringido a los orígenes del frontend, HTTPS obligatorio. | 🟡 (CORS ✅) |
+| RNF-SEG-08 | Cabeceras de seguridad (helmet), CORS restringido a los orígenes del frontend, HTTPS obligatorio. | ✅ (helmet + CORS desde `CORS_ORIGIN`; HTTPS lo fuerza Fly.io/`fly.toml` en producción) |
 | RNF-SEG-09 | Comprobantes en almacenamiento **privado** (Cloudflare R2) con URLs firmadas de corta duración; validar tipo MIME real y tamaño. | ⬜ |
 | RNF-SEG-10 | Revelado de claves y acciones críticas auditadas (quién, cuándo, IP). | ⬜ |
 | RNF-SEG-11 | Rotación de la llave de cifrado soportada: guardar `keyVersion` por licencia y aceptar varias llaves en descifrado. | ⬜ (diferido, D50) |
@@ -67,8 +68,8 @@ deben validarse con el negocio. **Estado:** ✅ cumplido y probado · 🟡 parci
 ## RNF-OBS · Observabilidad
 | ID | Requerimiento | Estado |
 |---|---|---|
-| RNF-OBS-01 | Endpoint `/health` (liveness) y `/health/ready` (Postgres + Redis). | 🟡 (liveness ✅) |
-| RNF-OBS-02 | Logs estructurados en JSON con *request id* y sin datos sensibles (pino). | ⬜ |
+| RNF-OBS-01 | Endpoint `/health` (liveness) y `/health/ready` (Postgres + Redis). | ✅ |
+| RNF-OBS-02 | Logs estructurados en JSON con *request id* y sin datos sensibles (pino). | ✅ (`nestjs-pino`; JSON en producción, `pino-pretty` en dev; `X-Request-Id` propagado/generado; redacta `authorization`, `cookie`, `password`, `refreshToken`, `accessToken`, `secret`) |
 | RNF-OBS-03 | Panel de colas (**Bull Board** en `/admin/queues`, solo ADMIN) y conservación de trabajos fallidos. | ⬜ (los fallidos ya se conservan) |
 | RNF-OBS-04 | Reporte de errores (Sentry o similar) en API y frontend. | ⬜ |
 | RNF-OBS-05 | Alertas: cola de fallidos > 0, stock bajo, pagos esperando más de [X] min. | ⬜ |
