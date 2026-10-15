@@ -24,15 +24,15 @@ describe('Catálogo', () => {
 
   describe('GET /catalog/categories', () => {
     it('lista las categorías existentes sin requerir sesión', async () => {
-      await ds.getRepository(Category).save([{ name: 'Desbloqueo' }, { name: 'Flasheo' }]);
+      await ds
+        .getRepository(Category)
+        .save([{ name: 'Desbloqueo' }, { name: 'Flasheo' }]);
 
       const res = await request(app.getHttpServer()).get('/catalog/categories');
 
       expect(res.status).toBe(200);
-      expect(res.body.map((c: { name: string }) => c.name).sort()).toEqual([
-        'Desbloqueo',
-        'Flasheo',
-      ]);
+      const body = res.body as { name: string }[];
+      expect(body.map((c) => c.name).sort()).toEqual(['Desbloqueo', 'Flasheo']);
     });
 
     it('responde una lista vacía si no hay categorías', async () => {
@@ -44,20 +44,35 @@ describe('Catálogo', () => {
 
   describe('GET /catalog/products', () => {
     it('lista solo productos activos, con priceFromCents y stockState agregado', async () => {
-      const inStock = await createCatalog(ds, { stock: 10, lowStockThreshold: 5, prices: { PEN: 5000 } });
-      await createCatalog(ds, { stock: 1, lowStockThreshold: 5, prices: { PEN: 3000 } }); // LOW
-      const inactive = await createCatalog(ds, { stock: 10, prices: { PEN: 1000 } });
-      await ds.getRepository(Product).update(inactive.product.id, { active: false });
+      const inStock = await createCatalog(ds, {
+        stock: 10,
+        lowStockThreshold: 5,
+        prices: { PEN: 5000 },
+      });
+      await createCatalog(ds, {
+        stock: 1,
+        lowStockThreshold: 5,
+        prices: { PEN: 3000 },
+      }); // LOW
+      const inactive = await createCatalog(ds, {
+        stock: 10,
+        prices: { PEN: 1000 },
+      });
+      await ds
+        .getRepository(Product)
+        .update(inactive.product.id, { active: false });
 
       const res = await request(app.getHttpServer()).get('/catalog/products');
 
       expect(res.status).toBe(200);
-      expect(res.body.total).toBe(2);
-      const names = res.body.items.map((p: { name: string }) => p.name);
+      const body = res.body as {
+        total: number;
+        items: { id: string; name: string }[];
+      };
+      expect(body.total).toBe(2);
+      const names = body.items.map((p) => p.name);
       expect(names).not.toContain(inactive.product.name);
-      const inStockItem = res.body.items.find(
-        (p: { id: string }) => p.id === inStock.product.id,
-      );
+      const inStockItem = body.items.find((p) => p.id === inStock.product.id);
       expect(inStockItem).toMatchObject({
         priceFromCents: 5000,
         currency: 'PEN',
@@ -103,16 +118,38 @@ describe('Catálogo', () => {
       const usdOnly = await createCatalog(ds, { prices: { USD: 10 } });
 
       const pen = await request(app.getHttpServer()).get('/catalog/products');
-      expect(pen.body.items.map((p: { id: string }) => p.id)).not.toContain(
-        usdOnly.product.id,
-      );
+      const penBody = pen.body as { items: { id: string }[] };
+      expect(penBody.items.map((p) => p.id)).not.toContain(usdOnly.product.id);
 
       const usd = await request(app.getHttpServer()).get(
         '/catalog/products?currency=USD',
       );
-      expect(usd.body.items.map((p: { id: string }) => p.id)).toContain(
-        usdOnly.product.id,
+      const usdBody = usd.body as { items: { id: string }[] };
+      expect(usdBody.items.map((p) => p.id)).toContain(usdOnly.product.id);
+    });
+
+    it('no anuncia stock de un plan que no está priced en la moneda pedida', async () => {
+      const mixed = await createCatalog(ds, {
+        stock: 0,
+        prices: { PEN: 1000 },
+      });
+      await createCatalog(ds, {
+        planName: 'otro plan usd',
+        stock: 10,
+        prices: { USD: 10 },
+      });
+      // mismo producto, un plan solo USD con stock, el otro solo PEN sin stock:
+      await ds.query(
+        `UPDATE plans SET "productId" = $1 WHERE id = (
+           SELECT "planId" FROM plan_prices WHERE currency = 'USD' AND "priceCents" = 10 LIMIT 1
+         )`,
+        [mixed.product.id],
       );
+
+      const res = await request(app.getHttpServer()).get('/catalog/products');
+      const body = res.body as { items: { id: string; stockState: string }[] };
+      const item = body.items.find((p) => p.id === mixed.product.id);
+      expect(item?.stockState).toBe('OUT_OF_STOCK');
     });
   });
 
@@ -145,14 +182,23 @@ describe('Catálogo', () => {
         faq: [{ question: '¿Cuánto dura?', answer: '30 días' }],
         requiresToolUsername: true,
       });
-      expect(res.body.plans).toHaveLength(1);
-      expect(res.body.plans[0]).toMatchObject({
+      const body = res.body as {
+        plans: {
+          id: string;
+          stockState: string;
+          prices: { currency: string; priceCents: number }[];
+        }[];
+      };
+      expect(body.plans).toHaveLength(1);
+      expect(body.plans[0]).toMatchObject({
         id: catalog.plan.id,
         stockState: 'IN_STOCK',
       });
-      expect(res.body.plans[0].prices.sort((a: { currency: string }, b: { currency: string }) =>
-        a.currency.localeCompare(b.currency),
-      )).toEqual([
+      expect(
+        body.plans[0].prices.sort((a, b) =>
+          a.currency.localeCompare(b.currency),
+        ),
+      ).toEqual([
         { currency: 'PEN', priceCents: 5000 },
         { currency: 'USD', priceCents: 1500 },
       ]);
@@ -165,7 +211,9 @@ describe('Catálogo', () => {
       expect(notFound.status).toBe(404);
 
       const inactive = await createCatalog(ds, { prices: { PEN: 1000 } });
-      await ds.getRepository(Product).update(inactive.product.id, { active: false });
+      await ds
+        .getRepository(Product)
+        .update(inactive.product.id, { active: false });
       const res = await request(app.getHttpServer()).get(
         `/catalog/products/${inactive.product.slug}`,
       );

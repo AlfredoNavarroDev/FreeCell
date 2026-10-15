@@ -65,6 +65,7 @@ export class CatalogService {
 
     const stockByProduct = await this.stockStatesByProduct(
       rows.map((row) => row.id),
+      dto.currency,
     );
 
     const items: ProductListItemDto[] = rows.map((row) => ({
@@ -85,10 +86,7 @@ export class CatalogService {
     );
   }
 
-  async getProductBySlug(
-    slug: string,
-    currency: Currency,
-  ): Promise<ProductDetailDto> {
+  async getProductBySlug(slug: string): Promise<ProductDetailDto> {
     const [product]: {
       id: string;
       name: string;
@@ -143,7 +141,10 @@ export class CatalogService {
         stockState: row.stockState,
       };
       if (row.currency && row.priceCents !== null) {
-        plan.prices.push({ currency: row.currency, priceCents: row.priceCents });
+        plan.prices.push({
+          currency: row.currency,
+          priceCents: row.priceCents,
+        });
       }
       plansById.set(row.id, plan);
     }
@@ -156,6 +157,7 @@ export class CatalogService {
 
   private async stockStatesByProduct(
     productIds: string[],
+    currency: Currency,
   ): Promise<Map<string, StockState[]>> {
     const map = new Map<string, StockState[]>();
     if (productIds.length === 0) return map;
@@ -165,8 +167,9 @@ export class CatalogService {
         `SELECT pl."productId", vs."stockState"
            FROM plans pl
            JOIN v_plan_stock vs ON vs."planId" = pl.id
+           JOIN plan_prices pp ON pp."planId" = pl.id AND pp.currency = $2
           WHERE pl.active = true AND pl."productId" = ANY($1::uuid[])`,
-        [productIds],
+        [productIds, currency],
       );
     for (const row of rows) {
       const list = map.get(row.productId) ?? [];

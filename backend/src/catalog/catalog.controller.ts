@@ -4,7 +4,6 @@ import { Public } from '../common/decorators/public.decorator';
 import type { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
 import { CatalogQueryDto } from './dto/catalog-query.dto';
 import type { CategoryResponseDto } from './dto/category-response.dto';
-import { ProductDetailQueryDto } from './dto/product-detail-query.dto';
 import type { ProductDetailDto } from './dto/product-detail.dto';
 import type { ProductListItemDto } from './dto/product-list-item.dto';
 import { CatalogService } from './catalog.service';
@@ -28,10 +27,7 @@ export class CatalogController {
   }
 
   @Get('products/:slug')
-  getProduct(
-    @Param('slug') slug: string,
-    @Query() query: ProductDetailQueryDto,
-  ): Promise<ProductDetailDto> {
-    return this.catalog.getProductBySlug(slug, query.currency);
+  getProduct(@Param('slug') slug: string): Promise<ProductDetailDto> {
+    return this.catalog.getProductBySlug(slug);
   }
 }
