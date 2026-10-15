@@ -25,6 +25,18 @@ export class Product {
   @Column({ type: 'text', nullable: true })
   description!: string | null;
 
+  @Column({ type: 'text', nullable: true })
+  whatIncluded!: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  compatibility!: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  activationGuide!: string | null;
+
+  @Column({ type: 'jsonb', nullable: true })
+  faq!: { question: string; answer: string }[] | null;
+
   @Column({ type: 'boolean', default: true })
   active!: boolean;
 

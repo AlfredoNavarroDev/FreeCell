@@ -41,7 +41,7 @@ erDiagram
 |---|---|---|
 | `users` | Cuentas | `email` único (minúsculas), `passwordHash` **nullable** (vacío en cuentas solo-Google), `googleId` **único, nullable** (D53), `name`, `role` (CUSTOMER/ADMIN), `phone`, `emailVerifiedAt` (auto si viene de Google, D54) |
 | `categories` | Agrupación del catálogo | `name` único |
-| `products` | Herramienta | `name`, `slug` único, `description`, `active`, `categoryId`, `requiresToolUsername` (bool, D14) |
+| `products` | Herramienta | `name`, `slug` único, `description`, `active`, `categoryId`, `requiresToolUsername` (bool, D14), `whatIncluded`/`compatibility`/`activationGuide` (text, nullable), `faq` (jsonb, nullable: `[{question, answer}]`) |
 | `plans` | Variante comprable | `productId`, `name`, `kind` (NEW/RENEWAL), `durationDays`, `lowStockThreshold` (def. 5), `active` — **sin precio propio**: los precios viven en `plan_prices` (D61, reemplaza en parte a D51) |
 | `plan_prices` | Precio de un plan en una moneda (D61) | `planId`, `currency` (`PEN`/`USD`), `priceCents` (`CHECK > 0`). Único `(planId, currency)`: un plan puede tener precio en PEN, en USD, en ambas o en ninguna (entonces no es comprable) |
 | `license_batches` | Compra a proveedor | `planId`, `supplier`, `unitCostCents`, `costCurrency` (default `'USD'`, D62), `fxRatePen numeric(10,4)` (obligatorio y `>0` si `costCurrency='USD'`; `NULL` si `'PEN'`), `notes`, `purchasedAt` |
