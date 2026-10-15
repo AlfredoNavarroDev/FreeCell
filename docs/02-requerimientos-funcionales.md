@@ -1,6 +1,6 @@
 # 02 · Requerimientos funcionales
 
-> ✅ Sprint 1 (Fundaciones) reconstruido — ver `docs/backend/`. Los ✅ de RF-AUT-01..05 y RF-COM-01, 02, 05, 06
+> ✅ Sprint 1 (Fundaciones) reconstruido — ver `docs/backend/`. Los ✅ de RF-AUT-01..05, RF-CAT-01..06, RF-COM-01, 02, 05, 06
 > ya están verificados contra `backend/src/`. El resto de los ✅ de este documento sigue siendo el **objetivo** del
 > brainstorming de Sprint 2–4, no código actual.
 
@@ -37,12 +37,12 @@ Los criterios marcados con **[?]** dependen de una pregunta abierta en `09-decis
 
 | ID | Requerimiento | Prio | Estado |
 |---|---|---|---|
-| RF-CAT-01 | Listar productos activos con categoría, estado de stock y precio "desde". | M | ⬜ |
-| RF-CAT-02 | Buscar por nombre y filtrar por categoría. | M | ⬜ |
-| RF-CAT-03 | Ficha de producto: descripción, qué incluye, compatibilidad, cómo activar, preguntas frecuentes. | M | ⬜ |
-| RF-CAT-04 | La ficha lista los planes (nueva/renovación × duración) con precio y disponibilidad. | M | ⬜ |
-| RF-CAT-05 | El estado de stock por plan se calcula en vivo: **En stock** (> umbral), **Pocas unidades** (1..umbral), **Agotado** (0). | M | ⬜ |
-| RF-CAT-06 | Mostrar **solo el estado** de stock (En stock / Pocas unidades / Agotado), nunca la cantidad exacta (D29). | M | ⬜ |
+| RF-CAT-01 | Listar productos activos con categoría, estado de stock y precio "desde". | M | ✅ |
+| RF-CAT-02 | Buscar por nombre y filtrar por categoría. | M | ✅ |
+| RF-CAT-03 | Ficha de producto: descripción, qué incluye, compatibilidad, cómo activar, preguntas frecuentes. | M | ✅ |
+| RF-CAT-04 | La ficha lista los planes (nueva/renovación × duración) con precio y disponibilidad. | M | ✅ |
+| RF-CAT-05 | El estado de stock por plan se calcula en vivo: **En stock** (> umbral), **Pocas unidades** (1..umbral), **Agotado** (0). | M | ✅ |
+| RF-CAT-06 | Mostrar **solo el estado** de stock (En stock / Pocas unidades / Agotado), nunca la cantidad exacta (D29). | M | ✅ |
 | RF-CAT-07 | Un plan agotado no permite comprar. | M | ✅ (la reserva responde 409) |
 | RF-CAT-08 | "Más vendidos" y "Recién llegados" en la portada. | S | ⬜ |
 | RF-CAT-09 | Productos relacionados en la ficha. | C | ⬜ |

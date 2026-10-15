@@ -90,6 +90,10 @@ de este documento) quedaron resueltas como decisiones **D14–D55**.
 | D53 | Login social: **solo Google** (NextAuth + Google provider). Sin Facebook ni otros por ahora. | Técnicos/talleres en Perú casi todos tienen cuenta Google; un solo proveedor reduce superficie de configuración y prueba. |
 | D54 | Login con Google marca `users.emailVerifiedAt` automáticamente (Google ya verificó el correo). Solo el registro con correo+contraseña pasa por el flujo de verificación propio (D22). | Evita pedir verificación redundante sin beneficio de seguridad real. |
 | D55 | Reemplaza D39 (diferido). Reportes del panel admin, Sprint 3: **ventas por día/semana**, **margen por producto**, **stock valorizado**, **top productos/planes vendidos** (por rango de fechas). | KPIs ya definidos con el usuario; reemplaza la deliberación pendiente de B5.25. |
+| D66 | El listado de catálogo (`GET /catalog/products`) usa `currency=PEN` por defecto si no se pasa `?currency`; solo se listan productos con al menos un plan activo con precio en esa moneda. | Coincide con la moneda principal del negocio; evita mostrar productos no comprables en la moneda pedida. |
+| D67 | El filtro `category` del catálogo recibe el **id** de la categoría (UUID), no su nombre. | `categories` no tiene slug propio; evita ambigüedad con nombres duplicados o acentos. |
+| D68 | La ficha de producto (RF-CAT-03) usa columnas propias (`whatIncluded`, `compatibility`, `activationGuide`, `faq`) en vez de un solo `description` libre. | Permite que el panel admin (CRUD de catálogo, Sprint 2) edite cada sección por separado y el frontend las muestre con su propio diseño. |
+| D69 | El `stockState` agregado a nivel producto en el listado es el **mejor** estado entre sus planes activos (si algún plan está "En stock", el producto se muestra "En stock" aunque otro esté agotado). | Evita ocultar o marcar como agotado un producto que sí se puede comprar por otro plan/duración. |
 
 ## C. Riesgos principales
 | Riesgo | Impacto | Mitigación |
