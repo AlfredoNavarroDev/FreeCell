@@ -1,7 +1,8 @@
 import { type NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
-import { Category } from '../src/database/entities';
+import { Category, Product } from '../src/database/entities';
+import { createCatalog } from './utils/factories';
 import { createTestApp, resetState } from './utils/test-app';
 
 describe('Catálogo', () => {
@@ -38,6 +39,80 @@ describe('Catálogo', () => {
       const res = await request(app.getHttpServer()).get('/catalog/categories');
       expect(res.status).toBe(200);
       expect(res.body).toEqual([]);
+    });
+  });
+
+  describe('GET /catalog/products', () => {
+    it('lista solo productos activos, con priceFromCents y stockState agregado', async () => {
+      const inStock = await createCatalog(ds, { stock: 10, lowStockThreshold: 5, prices: { PEN: 5000 } });
+      await createCatalog(ds, { stock: 1, lowStockThreshold: 5, prices: { PEN: 3000 } }); // LOW
+      const inactive = await createCatalog(ds, { stock: 10, prices: { PEN: 1000 } });
+      await ds.getRepository(Product).update(inactive.product.id, { active: false });
+
+      const res = await request(app.getHttpServer()).get('/catalog/products');
+
+      expect(res.status).toBe(200);
+      expect(res.body.total).toBe(2);
+      const names = res.body.items.map((p: { name: string }) => p.name);
+      expect(names).not.toContain(inactive.product.name);
+      const inStockItem = res.body.items.find(
+        (p: { id: string }) => p.id === inStock.product.id,
+      );
+      expect(inStockItem).toMatchObject({
+        priceFromCents: 5000,
+        currency: 'PEN',
+        stockState: 'IN_STOCK',
+      });
+    });
+
+    it('busca por nombre y filtra por categoría', async () => {
+      const target = await createCatalog(ds, { prices: { PEN: 1000 } });
+      await createCatalog(ds, { prices: { PEN: 1000 } });
+
+      const byName = await request(app.getHttpServer()).get(
+        `/catalog/products?query=${encodeURIComponent(target.product.name)}`,
+      );
+      expect(byName.body.total).toBe(1);
+      expect(byName.body.items[0].id).toBe(target.product.id);
+
+      const byCategory = await request(app.getHttpServer()).get(
+        `/catalog/products?category=${target.product.categoryId}`,
+      );
+      expect(byCategory.body.total).toBe(1);
+      expect(byCategory.body.items[0].id).toBe(target.product.id);
+    });
+
+    it('pagina con pageSize y respeta el máximo de 50', async () => {
+      for (let i = 0; i < 3; i++) {
+        await createCatalog(ds, { prices: { PEN: 1000 } });
+      }
+
+      const res = await request(app.getHttpServer()).get(
+        '/catalog/products?page=2&pageSize=2',
+      );
+      expect(res.body).toMatchObject({ total: 3, page: 2, pageSize: 2 });
+      expect(res.body.items).toHaveLength(1);
+
+      const tooBig = await request(app.getHttpServer()).get(
+        '/catalog/products?pageSize=51',
+      );
+      expect(tooBig.status).toBe(400);
+    });
+
+    it('no incluye un producto sin precio en la moneda pedida', async () => {
+      const usdOnly = await createCatalog(ds, { prices: { USD: 10 } });
+
+      const pen = await request(app.getHttpServer()).get('/catalog/products');
+      expect(pen.body.items.map((p: { id: string }) => p.id)).not.toContain(
+        usdOnly.product.id,
+      );
+
+      const usd = await request(app.getHttpServer()).get(
+        '/catalog/products?currency=USD',
+      );
+      expect(usd.body.items.map((p: { id: string }) => p.id)).toContain(
+        usdOnly.product.id,
+      );
     });
   });
 });
