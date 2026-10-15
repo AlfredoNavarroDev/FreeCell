@@ -115,4 +115,74 @@ describe('Catálogo', () => {
       );
     });
   });
+
+  describe('GET /catalog/products/:slug', () => {
+    it('devuelve la ficha con sus planes y precios', async () => {
+      const catalog = await createCatalog(ds, {
+        stock: 10,
+        lowStockThreshold: 5,
+        prices: { PEN: 5000, USD: 1500 },
+        requiresToolUsername: true,
+      });
+      await ds.getRepository(Product).update(catalog.product.id, {
+        whatIncluded: 'Clave + guía',
+        compatibility: 'Android 10+',
+        activationGuide: 'Abre la app y pega la clave',
+        faq: [{ question: '¿Cuánto dura?', answer: '30 días' }],
+      });
+
+      const res = await request(app.getHttpServer()).get(
+        `/catalog/products/${catalog.product.slug}`,
+      );
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        id: catalog.product.id,
+        slug: catalog.product.slug,
+        whatIncluded: 'Clave + guía',
+        compatibility: 'Android 10+',
+        activationGuide: 'Abre la app y pega la clave',
+        faq: [{ question: '¿Cuánto dura?', answer: '30 días' }],
+        requiresToolUsername: true,
+      });
+      expect(res.body.plans).toHaveLength(1);
+      expect(res.body.plans[0]).toMatchObject({
+        id: catalog.plan.id,
+        stockState: 'IN_STOCK',
+      });
+      expect(res.body.plans[0].prices.sort((a: { currency: string }, b: { currency: string }) =>
+        a.currency.localeCompare(b.currency),
+      )).toEqual([
+        { currency: 'PEN', priceCents: 5000 },
+        { currency: 'USD', priceCents: 1500 },
+      ]);
+    });
+
+    it('responde 404 si el slug no existe o el producto está inactivo', async () => {
+      const notFound = await request(app.getHttpServer()).get(
+        '/catalog/products/no-existe',
+      );
+      expect(notFound.status).toBe(404);
+
+      const inactive = await createCatalog(ds, { prices: { PEN: 1000 } });
+      await ds.getRepository(Product).update(inactive.product.id, { active: false });
+      const res = await request(app.getHttpServer()).get(
+        `/catalog/products/${inactive.product.slug}`,
+      );
+      expect(res.status).toBe(404);
+    });
+
+    it('omite planes sin precio en ninguna moneda', async () => {
+      const catalog = await createCatalog(ds, { prices: { PEN: 1000 } });
+      await ds.query(`DELETE FROM plan_prices WHERE "planId" = $1`, [
+        catalog.plan.id,
+      ]);
+
+      const res = await request(app.getHttpServer()).get(
+        `/catalog/products/${catalog.product.slug}`,
+      );
+      expect(res.status).toBe(200);
+      expect(res.body.plans).toEqual([]);
+    });
+  });
 });

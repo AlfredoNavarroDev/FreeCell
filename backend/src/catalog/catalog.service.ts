@@ -1,9 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import type { Currency } from '../database/currency';
 import type { StockState } from '../database/views/plan-stock.view';
 import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
 import { CatalogQueryDto } from './dto/catalog-query.dto';
 import { CategoryResponseDto } from './dto/category-response.dto';
+import {
+  PlanOfferDto,
+  PlanPriceDto,
+  ProductDetailDto,
+} from './dto/product-detail.dto';
 import { ProductListItemDto } from './dto/product-list-item.dto';
 import { aggregateStockState } from './stock-state.util';
 
@@ -77,6 +83,75 @@ export class CatalogService {
       dto.page,
       dto.pageSize,
     );
+  }
+
+  async getProductBySlug(
+    slug: string,
+    currency: Currency,
+  ): Promise<ProductDetailDto> {
+    const [product]: {
+      id: string;
+      name: string;
+      slug: string;
+      description: string | null;
+      whatIncluded: string | null;
+      compatibility: string | null;
+      activationGuide: string | null;
+      faq: { question: string; answer: string }[] | null;
+      categoryName: string | null;
+      requiresToolUsername: boolean;
+    }[] = await this.ds.query(
+      `SELECT pr.id, pr.name, pr.slug, pr.description, pr."whatIncluded",
+              pr.compatibility, pr."activationGuide", pr.faq,
+              c.name AS "categoryName", pr."requiresToolUsername"
+         FROM products pr
+         LEFT JOIN categories c ON c.id = pr."categoryId"
+        WHERE pr.slug = $1 AND pr.active = true`,
+      [slug],
+    );
+    if (!product) {
+      throw new NotFoundException('Producto no encontrado');
+    }
+
+    const rows: {
+      id: string;
+      name: string;
+      kind: string;
+      durationDays: number;
+      stockState: StockState;
+      currency: Currency | null;
+      priceCents: number | null;
+    }[] = await this.ds.query(
+      `SELECT pl.id, pl.name, pl.kind, pl."durationDays", vs."stockState",
+              pp.currency, pp."priceCents"
+         FROM plans pl
+         JOIN v_plan_stock vs ON vs."planId" = pl.id
+         LEFT JOIN plan_prices pp ON pp."planId" = pl.id
+        WHERE pl."productId" = $1 AND pl.active = true
+        ORDER BY pl."durationDays", pp.currency`,
+      [product.id],
+    );
+
+    const plansById = new Map<string, PlanOfferDto>();
+    for (const row of rows) {
+      const plan = plansById.get(row.id) ?? {
+        id: row.id,
+        name: row.name,
+        kind: row.kind as PlanOfferDto['kind'],
+        durationDays: row.durationDays,
+        prices: [] as PlanPriceDto[],
+        stockState: row.stockState,
+      };
+      if (row.currency && row.priceCents !== null) {
+        plan.prices.push({ currency: row.currency, priceCents: row.priceCents });
+      }
+      plansById.set(row.id, plan);
+    }
+
+    return {
+      ...product,
+      plans: [...plansById.values()].filter((plan) => plan.prices.length > 0),
+    };
   }
 
   private async stockStatesByProduct(
