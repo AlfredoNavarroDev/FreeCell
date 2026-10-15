@@ -1,12 +1,12 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Public } from '../common/decorators/public.decorator';
-import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
+import type { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
 import { CatalogQueryDto } from './dto/catalog-query.dto';
-import { CategoryResponseDto } from './dto/category-response.dto';
+import type { CategoryResponseDto } from './dto/category-response.dto';
 import { ProductDetailQueryDto } from './dto/product-detail-query.dto';
-import { ProductDetailDto } from './dto/product-detail.dto';
-import { ProductListItemDto } from './dto/product-list-item.dto';
+import type { ProductDetailDto } from './dto/product-detail.dto';
+import type { ProductListItemDto } from './dto/product-list-item.dto';
 import { CatalogService } from './catalog.service';
 
 @ApiTags('catalog')

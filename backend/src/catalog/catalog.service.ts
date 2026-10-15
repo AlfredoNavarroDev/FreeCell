@@ -3,14 +3,14 @@ import { DataSource } from 'typeorm';
 import type { Currency } from '../database/currency';
 import type { StockState } from '../database/views/plan-stock.view';
 import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
-import { CatalogQueryDto } from './dto/catalog-query.dto';
-import { CategoryResponseDto } from './dto/category-response.dto';
-import {
+import type { CatalogQueryDto } from './dto/catalog-query.dto';
+import type { CategoryResponseDto } from './dto/category-response.dto';
+import type {
   PlanOfferDto,
   PlanPriceDto,
   ProductDetailDto,
 } from './dto/product-detail.dto';
-import { ProductListItemDto } from './dto/product-list-item.dto';
+import type { ProductListItemDto } from './dto/product-list-item.dto';
 import { aggregateStockState } from './stock-state.util';
 
 @Injectable()
