@@ -57,6 +57,20 @@ export class EnvironmentVariables {
   @IsString()
   LICENSE_ENC_KEY!: string;
 
+  /** Credenciales S3-compatibles de Cloudflare R2 (D48/D49). El endpoint se deriva como
+   * `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`. */
+  @IsString()
+  R2_ACCOUNT_ID!: string;
+
+  @IsString()
+  R2_ACCESS_KEY_ID!: string;
+
+  @IsString()
+  R2_SECRET_ACCESS_KEY!: string;
+
+  @IsString()
+  R2_BUCKET!: string;
+
   /** Orígenes permitidos separados por comas. */
   @IsString()
   CORS_ORIGIN = 'http://localhost:3001';
