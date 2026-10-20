@@ -6,6 +6,10 @@ const base = {
   JWT_SECRET: 'x'.repeat(32),
   JWT_REFRESH_PEPPER: 'y'.repeat(32),
   LICENSE_ENC_KEY: Buffer.alloc(32, 1).toString('base64'),
+  R2_ACCOUNT_ID: 'r2-account',
+  R2_ACCESS_KEY_ID: 'r2-access-key',
+  R2_SECRET_ACCESS_KEY: 'r2-secret-key',
+  R2_BUCKET: 'r2-bucket',
 };
 
 describe('validateEnv', () => {
