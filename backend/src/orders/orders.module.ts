@@ -2,6 +2,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { SettingsModule } from '../settings/settings.module';
+import { StorageModule } from '../storage/storage.module';
 import { UsersModule } from '../users/users.module';
 import { OrderReleaseService } from './order-release.service';
 import { OrdersQueueService } from './orders-queue.service';
@@ -14,6 +15,7 @@ import { OrdersService } from './orders.service';
     BullModule.registerQueue({ name: QUEUE_ORDERS }),
     NotificationsModule,
     SettingsModule,
+    StorageModule,
     UsersModule,
   ],
   controllers: [OrdersController],

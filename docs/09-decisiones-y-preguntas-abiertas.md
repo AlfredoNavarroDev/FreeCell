@@ -95,6 +95,11 @@ de este documento) quedaron resueltas como decisiones **D14–D55**.
 | D68 | La ficha de producto (RF-CAT-03) usa columnas propias (`whatIncluded`, `compatibility`, `activationGuide`, `faq`) en vez de un solo `description` libre. | Permite que el panel admin (CRUD de catálogo, Sprint 2) edite cada sección por separado y el frontend las muestre con su propio diseño. |
 | D69 | El `stockState` agregado a nivel producto en el listado es el **mejor** estado entre sus planes activos (si algún plan está "En stock", el producto se muestra "En stock" aunque otro esté agotado). | Evita ocultar o marcar como agotado un producto que sí se puede comprar por otro plan/duración. |
 
+### Decisión del módulo storage (R2) — Sprint 2 (2026-10-20)
+| Id | Decisión | Razón |
+|---|---|---|
+| D70 | Comprobante de pago: máx. **5 MB**, tipos permitidos JPG/PNG/PDF; la URL firmada de subida a R2 vale **5 min** (RNF-SEG-09, RF-COM-04). | Cubre fotos y capturas de pantalla típicas sin inflar el costo de R2; una ventana corta limita el riesgo si la URL firmada se filtra. |
+
 ## C. Riesgos principales
 | Riesgo | Impacto | Mitigación |
 |---|---|---|

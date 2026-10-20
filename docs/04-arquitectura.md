@@ -25,7 +25,7 @@ flowchart LR
   A -- firma URLs --> R2
 ```
 **Estado hoy:** `backend/` implementado (Sprint 1 — Fundaciones, ver `docs/backend/`). `frontend/` en scaffold.
-R2, correo y WhatsApp sin integrar.
+R2 integrado (URLs firmadas de subida, módulo `storage`); correo y WhatsApp sin integrar.
 
 ## Stack
 | Capa | Tecnología | Nota |

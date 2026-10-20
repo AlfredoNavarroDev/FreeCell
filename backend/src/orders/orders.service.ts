@@ -16,6 +16,9 @@ import {
   SettingsService,
 } from '../settings/settings.service';
 import { UsersService } from '../users/users.service';
+import { CreateUploadUrlDto } from '../storage/dto/create-upload-url.dto';
+import { UploadUrlResponseDto } from '../storage/dto/upload-url-response.dto';
+import { StorageService } from '../storage/storage.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { OrderResponseDto } from './dto/order-response.dto';
 import { OrdersQueueService } from './orders-queue.service';
@@ -43,6 +46,7 @@ export class OrdersService {
     private readonly users: UsersService,
     private readonly queue: OrdersQueueService,
     private readonly notifications: NotificationsService,
+    private readonly storage: StorageService,
   ) {}
 
   /**
@@ -211,6 +215,25 @@ export class OrdersService {
       );
     }
     return OrderResponseDto.from(fresh, fresh.items ?? []);
+  }
+
+  /** Solo mientras el pedido sigue PENDING_PAYMENT; no es una mutación (no hay auditoría, RNF-SEG-09). */
+  async requestPaymentUploadUrl(
+    user: AuthenticatedUser,
+    orderId: string,
+    dto: CreateUploadUrlDto,
+  ): Promise<UploadUrlResponseDto> {
+    const order = await this.findOwned(user.id, orderId);
+    if (order.status !== OrderStatus.PENDING_PAYMENT) {
+      throw new ConflictException(
+        'Solo puedes subir el comprobante mientras el pedido está pendiente de pago',
+      );
+    }
+    const { uploadUrl, proofKey } = await this.storage.createProofUploadUrl(
+      order.id,
+      dto.contentType,
+    );
+    return UploadUrlResponseDto.from(uploadUrl, proofKey);
   }
 
   /** Un pedido ajeno responde 404, igual que uno inexistente (regla 7). */

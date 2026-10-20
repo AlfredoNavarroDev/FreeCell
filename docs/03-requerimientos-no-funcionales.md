@@ -18,7 +18,7 @@ deben validarse con el negocio. **Estado:** ✅ cumplido y probado · 🟡 parci
 | RNF-SEG-06 | Control de acceso por rol **y** por propiedad del recurso (IDOR): un cliente no puede leer pedidos, comprobantes ni claves ajenos. | 🟡 |
 | RNF-SEG-07 | *Rate limiting* en login, registro, revelado de claves y subida de comprobantes *(propuesto: 5 intentos/min por IP+correo en login)*. | ⬜ |
 | RNF-SEG-08 | Cabeceras de seguridad (helmet), CORS restringido a los orígenes del frontend, HTTPS obligatorio. | ✅ (helmet + CORS desde `CORS_ORIGIN`; HTTPS lo fuerza Fly.io/`fly.toml` en producción) |
-| RNF-SEG-09 | Comprobantes en almacenamiento **privado** (Cloudflare R2) con URLs firmadas de corta duración; validar tipo MIME real y tamaño. | ⬜ |
+| RNF-SEG-09 | Comprobantes en almacenamiento **privado** (Cloudflare R2) con URLs firmadas de corta duración; validar tipo MIME real y tamaño. | ✅ (`POST /orders/:id/payment/upload-url`: valida tipo/tamaño antes de firmar, URL de 5 min, D70) |
 | RNF-SEG-10 | Revelado de claves y acciones críticas auditadas (quién, cuándo, IP). | ⬜ |
 | RNF-SEG-11 | Rotación de la llave de cifrado soportada: guardar `keyVersion` por licencia y aceptar varias llaves en descifrado. | ⬜ (diferido, D50) |
 | RNF-SEG-12 | Secretos solo en variables de entorno; `.env` fuera del repositorio; llaves distintas por entorno. | ✅ |

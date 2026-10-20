@@ -10,6 +10,8 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../common/types/authenticated-user';
+import { CreateUploadUrlDto } from '../storage/dto/create-upload-url.dto';
+import { UploadUrlResponseDto } from '../storage/dto/upload-url-response.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { OrderResponseDto } from './dto/order-response.dto';
 import { OrdersService } from './orders.service';
@@ -43,5 +45,15 @@ export class OrdersController {
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<OrderResponseDto> {
     return this.orders.cancel(user, id);
+  }
+
+  @Post(':id/payment/upload-url')
+  @HttpCode(200)
+  requestPaymentUploadUrl(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: CreateUploadUrlDto,
+  ): Promise<UploadUrlResponseDto> {
+    return this.orders.requestPaymentUploadUrl(user, id, dto);
   }
 }
