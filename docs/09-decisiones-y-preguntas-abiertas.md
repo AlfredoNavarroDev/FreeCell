@@ -80,6 +80,11 @@ Copiadas de la sección 1 de `docs/superpowers/specs/2026-10-05-backend-foundati
 | D64 | `payments.operationNumber` es único **por método** `(paymentMethodId, operationNumber)`, normalizado (sin espacios, en minúsculas). | Códigos de billeteras o bancos distintos pueden coincidir por casualidad; el bloqueo de D21 no debe dar falsos positivos. |
 | D65 | Los datos para pagar (número de la billetera, cuenta bancaria, Pay ID o dirección de wallet y red) viven en `payment_methods.instructions` (jsonb). **Crear, editar o desactivar un método se audita** y notifica al operador. | Cambiar la cuenta destino es la forma más directa de desviar pagos. |
 
+### Decisión del módulo storage (R2) — Sprint 2 (2026-10-20)
+| Id | Decisión | Razón |
+|---|---|---|
+| D70 | Comprobante de pago: máx. **5 MB**, tipos permitidos JPG/PNG/PDF; la URL firmada de subida a R2 vale **5 min** (RNF-SEG-09, RF-COM-04). | Cubre fotos y capturas de pantalla típicas sin inflar el costo de R2; una ventana corta limita el riesgo si la URL firmada se filtra. |
+
 ## B. Preguntas abiertas restantes
 Ninguna. B5.25 se resolvió como D55 (ver abajo); todas las preguntas de las secciones B1–B7 (ítems 1–38 de la versión original
 de este documento) quedaron resueltas como decisiones **D14–D55**.
