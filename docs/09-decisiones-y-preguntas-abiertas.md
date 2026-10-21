@@ -100,6 +100,12 @@ de este documento) quedaron resueltas como decisiones **D14–D55**.
 |---|---|---|
 | D70 | Comprobante de pago: máx. **5 MB**, tipos permitidos JPG/PNG/PDF; la URL firmada de subida a R2 vale **5 min** (RNF-SEG-09, RF-COM-04). | Cubre fotos y capturas de pantalla típicas sin inflar el costo de R2; una ventana corta limita el riesgo si la URL firmada se filtra. |
 
+### Decisiones del módulo payments — Sprint 2 (2026-10-20)
+| Id | Decisión | Razón |
+|---|---|---|
+| D71 | `payments.proofHash` lo calcula y envía el **cliente** (SHA-256 en hex, antes de subir el archivo); el servidor no lo recalcula leyendo R2. | Evita que el endpoint de pago dependa de una llamada de red real a R2 (rompería las pruebas con credenciales ficticias de `storage`); el N.º de operación único (D64) y la revisión manual (D20) ya cubren la mayoría de los reusos. |
+| D72 | La declaración de titularidad/autorización (RF-COM-13) se guarda en `payments.legalDeclarationAcceptedAt`, por intento de pago, no en `orders`. | Cada reintento tras un rechazo (D18, máx. 2) debe reconfirmarla; guardarla en el pedido solo registraría la primera vez. |
+
 ## C. Riesgos principales
 | Riesgo | Impacto | Mitigación |
 |---|---|---|

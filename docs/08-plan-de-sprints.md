@@ -47,10 +47,10 @@ Entregado (detalle verificado contra el código en `docs/backend/`):
 > `POST /orders` (reserva N ítems en una transacción, D30), y rate limiting + helmet.
 - [x] Módulo `catalog`: listado, búsqueda, categorías, ficha con planes, `stockState` solo por estado (RF-CAT-01..07, D29).
 - [x] Módulo `storage`: URLs firmadas de R2 (subida privada, validación de tipo/tamaño) (RNF-SEG-09).
-- [ ] Módulo `payments`: subir comprobante con `paymentMethodId`/`operationNumber` → pedido `IN_REVIEW`; bloqueo
+- [x] Módulo `payments`: subir comprobante con `paymentMethodId`/`operationNumber` → pedido `IN_REVIEW`; bloqueo
       automático de duplicado por `(paymentMethodId, operationNumber)`/hash (RF-COM-04, D21, D63, D64); CRUD admin de
       `payment_methods` auditado (D65); cancelar pedido ya implementado desde Sprint 1 (RF-COM-08).
-- [ ] Checkbox de declaración de licitud obligatorio al pagar (RF-COM-13, D43).
+- [x] Checkbox de declaración de licitud obligatorio al pagar (RF-COM-13, D43) — backend ✅ (`acceptsLegalDeclaration`); falta el checkbox en la UI (Sprint 2 frontend).
 - [ ] `GET /orders`, reveal de clave **con auditoría** (RF-PED-01..04); `GET /orders/:id` y cancelar ya implementados.
 - [ ] CRUD admin de catálogo: productos (incl. `requiresToolUsername`), planes (con precios por moneda, D61),
       categorías (RF-ADM-40, D38).
