@@ -29,13 +29,13 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
       <form action={loginWithCredentials} className="flex flex-col gap-3">
         <label className="flex flex-col gap-1">
           <span>Correo</span>
-          <input name="email" type="email" required className="border px-3 py-2" />
+          <input name="email" type="email" required className="min-h-11 border px-3 py-2" />
         </label>
         <label className="flex flex-col gap-1">
           <span>Contraseña</span>
-          <input name="password" type="password" required className="border px-3 py-2" />
+          <input name="password" type="password" required className="min-h-11 border px-3 py-2" />
         </label>
-        <button type="submit" className="bg-ink text-white px-4 py-2">
+        <button type="submit" className="min-h-11 bg-ink text-white px-4 py-2">
           Entrar
         </button>
       </form>
