@@ -5,9 +5,10 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, In } from 'typeorm';
 import { AuditService } from '../audit/audit.service';
 import type { AuthenticatedUser } from '../common/types/authenticated-user';
+import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
 import { LicenseItem, Order, OrderItem, Payment } from '../database/entities';
 import { LicenseStatus, OrderStatus } from '../database/enums';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -20,6 +21,7 @@ import { CreateUploadUrlDto } from '../storage/dto/create-upload-url.dto';
 import { UploadUrlResponseDto } from '../storage/dto/upload-url-response.dto';
 import { StorageService } from '../storage/storage.service';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { ListOrdersQueryDto } from './dto/list-orders-query.dto';
 import { OrderResponseDto } from './dto/order-response.dto';
 import { SubmitPaymentDto } from './dto/submit-payment.dto';
 import { OrdersQueueService } from './orders-queue.service';
@@ -180,7 +182,32 @@ export class OrdersService {
     orderId: string,
   ): Promise<OrderResponseDto> {
     const order = await this.findOwned(userId, orderId);
-    return OrderResponseDto.from(order, order.items ?? []);
+    const payment = await this.latestPayment(order.id);
+    return OrderResponseDto.from(order, order.items ?? [], payment);
+  }
+
+  async listForUser(
+    userId: string,
+    dto: ListOrdersQueryDto,
+  ): Promise<PaginatedResponseDto<OrderResponseDto>> {
+    const [orders, total] = await this.ds.getRepository(Order).findAndCount({
+      where: { userId, ...(dto.status ? { status: dto.status } : {}) },
+      relations: { items: true },
+      order: { createdAt: 'DESC' },
+      skip: (dto.page - 1) * dto.pageSize,
+      take: dto.pageSize,
+    });
+    const paymentsByOrder = await this.latestPaymentsByOrder(
+      orders.map((order) => order.id),
+    );
+    const items = orders.map((order) =>
+      OrderResponseDto.from(
+        order,
+        order.items ?? [],
+        paymentsByOrder.get(order.id) ?? null,
+      ),
+    );
+    return PaginatedResponseDto.from(items, total, dto.page, dto.pageSize);
   }
 
   /** Solo PENDING_PAYMENT; repetirlo sobre un pedido ya cancelado responde 200 sin cambios. */
@@ -316,6 +343,29 @@ export class OrdersService {
       throw new NotFoundException('Pedido no encontrado');
     }
     return order;
+  }
+
+  private async latestPayment(orderId: string): Promise<Payment | null> {
+    return this.ds.getRepository(Payment).findOne({
+      where: { orderId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  /** Filas ya vienen ordenadas DESC global: la primera que aparece por orderId es la más reciente. */
+  private async latestPaymentsByOrder(
+    orderIds: string[],
+  ): Promise<Map<string, Payment>> {
+    const map = new Map<string, Payment>();
+    if (orderIds.length === 0) return map;
+    const rows = await this.ds.getRepository(Payment).find({
+      where: { orderId: In(orderIds) },
+      order: { createdAt: 'DESC' },
+    });
+    for (const row of rows) {
+      if (!map.has(row.orderId)) map.set(row.orderId, row);
+    }
+    return map;
   }
 
   /**

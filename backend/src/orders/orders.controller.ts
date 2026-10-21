@@ -6,13 +6,16 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
 import type { AuthenticatedUser } from '../common/types/authenticated-user';
 import { CreateUploadUrlDto } from '../storage/dto/create-upload-url.dto';
 import { UploadUrlResponseDto } from '../storage/dto/upload-url-response.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { ListOrdersQueryDto } from './dto/list-orders-query.dto';
 import { OrderResponseDto } from './dto/order-response.dto';
 import { SubmitPaymentDto } from './dto/submit-payment.dto';
 import { OrdersService } from './orders.service';
@@ -29,6 +32,14 @@ export class OrdersController {
     @Body() dto: CreateOrderDto,
   ): Promise<OrderResponseDto> {
     return this.orders.create(user, dto);
+  }
+
+  @Get()
+  list(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() dto: ListOrdersQueryDto,
+  ): Promise<PaginatedResponseDto<OrderResponseDto>> {
+    return this.orders.listForUser(user.id, dto);
   }
 
   @Get(':id')
