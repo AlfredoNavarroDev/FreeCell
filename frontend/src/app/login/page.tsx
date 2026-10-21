@@ -45,7 +45,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         </button>
       </form>
       <form action={loginWithGoogleAction}>
-        <button type="submit" className="border px-4 py-2 w-full">
+        <button type="submit" className="min-h-11 border px-4 py-2 w-full">
           Continuar con Google
         </button>
       </form>
