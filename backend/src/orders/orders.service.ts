@@ -8,7 +8,7 @@ import {
 import { DataSource } from 'typeorm';
 import { AuditService } from '../audit/audit.service';
 import type { AuthenticatedUser } from '../common/types/authenticated-user';
-import { LicenseItem, Order, OrderItem } from '../database/entities';
+import { LicenseItem, Order, OrderItem, Payment } from '../database/entities';
 import { LicenseStatus, OrderStatus } from '../database/enums';
 import { NotificationsService } from '../notifications/notifications.service';
 import {
@@ -21,6 +21,7 @@ import { UploadUrlResponseDto } from '../storage/dto/upload-url-response.dto';
 import { StorageService } from '../storage/storage.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { OrderResponseDto } from './dto/order-response.dto';
+import { SubmitPaymentDto } from './dto/submit-payment.dto';
 import { OrdersQueueService } from './orders-queue.service';
 import {
   DEFAULT_RESERVATION_TTL_MINUTES,
@@ -234,6 +235,75 @@ export class OrdersService {
       dto.contentType,
     );
     return UploadUrlResponseDto.from(uploadUrl, proofKey);
+  }
+
+  /**
+   * Registra el comprobante y pasa el pedido a IN_REVIEW (RF-COM-04/13, D21/D43/D64/D71/D72).
+   * El SELECT ... FOR UPDATE re-valida estado y vigencia dentro de la transacción: dos envíos
+   * simultáneos sobre el mismo pedido no pueden crear dos pagos (regla de concurrencia).
+   * Duplicados de (paymentMethodId, operationNumber)/proofHash y método inactivo o con moneda
+   * no válida ya los traduce AllExceptionsFilter a 409 (23505/23514/P0001): no los atrapes aquí.
+   */
+  async submitPayment(
+    user: AuthenticatedUser,
+    orderId: string,
+    dto: SubmitPaymentDto,
+  ): Promise<OrderResponseDto> {
+    const order = await this.findOwned(user.id, orderId);
+    if (order.status !== OrderStatus.PENDING_PAYMENT) {
+      throw new ConflictException(
+        'Solo puedes pagar un pedido pendiente de pago',
+      );
+    }
+    if (order.expiresAt.getTime() <= Date.now()) {
+      throw new ConflictException('La reserva de este pedido venció');
+    }
+    if (!dto.proofKey.startsWith(`proofs/${order.id}/`)) {
+      throw new BadRequestException(
+        'El comprobante no corresponde a este pedido',
+      );
+    }
+    const operationNumber = dto.operationNumber.trim().toLowerCase();
+
+    await this.ds.transaction(async (m) => {
+      const rows: { status: OrderStatus; expiresAt: Date }[] = await m.query(
+        `SELECT status, "expiresAt" FROM orders WHERE id = $1 FOR UPDATE`,
+        [order.id],
+      );
+      const current = rows[0];
+      if (!current || current.status !== OrderStatus.PENDING_PAYMENT) {
+        throw new ConflictException(
+          'Solo puedes pagar un pedido pendiente de pago',
+        );
+      }
+      if (current.expiresAt.getTime() <= Date.now()) {
+        throw new ConflictException('La reserva de este pedido venció');
+      }
+      await m.query(`UPDATE orders SET status = 'IN_REVIEW' WHERE id = $1`, [
+        order.id,
+      ]);
+      const payment = await m.save(
+        Payment,
+        m.create(Payment, {
+          orderId: order.id,
+          paymentMethodId: dto.paymentMethodId,
+          operationNumber,
+          proofKey: dto.proofKey,
+          proofHash: dto.proofHash,
+          legalDeclarationAcceptedAt: new Date(),
+        }),
+      );
+      await this.audit.log(m, {
+        actorId: user.id,
+        action: 'payment.submitted',
+        entity: 'payment',
+        entityId: payment.id,
+        meta: { orderId: order.id, paymentMethodId: dto.paymentMethodId },
+      });
+    });
+
+    const fresh = await this.findOwned(user.id, orderId);
+    return OrderResponseDto.from(fresh, fresh.items ?? []);
   }
 
   /** Un pedido ajeno responde 404, igual que uno inexistente (regla 7). */

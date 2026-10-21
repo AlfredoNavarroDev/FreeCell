@@ -51,6 +51,10 @@ export class Payment {
   @Column({ type: 'char', length: 64, unique: true })
   proofHash!: string;
 
+  /** RF-COM-13/D43/D72: declaración de titularidad/autorización, reconfirmada en cada intento. */
+  @Column({ type: 'timestamptz' })
+  legalDeclarationAcceptedAt!: Date;
+
   @Column({ type: 'enum', enum: PaymentStatus, default: PaymentStatus.PENDING })
   status!: PaymentStatus;
 
