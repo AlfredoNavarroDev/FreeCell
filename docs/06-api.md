@@ -36,13 +36,13 @@ Ver `docs/backend/auth.md`, `docs/backend/orders.md` y `docs/backend/README.md` 
 ## Pedidos y pagos del cliente (Sprint 2)
 | | Ruta | Acceso | Notas |
 |---|---|---|---|
-| ⬜ | `GET /orders?status=` | 👤 | Mis pedidos, paginado. |
-| ⬜ | `GET /orders/:id` | 👤 | Detalle + línea de seguimiento + estado del pago. 404 si no es suyo. |
+| ✅ | `GET /orders?status=` | 👤 | Mis pedidos, paginado (`page`/`pageSize`). |
+| ✅ | `GET /orders/:id` | 👤 | Detalle + `tracking` (creado/pago aprobado/entregado) + `paymentStatus`. 404 si no es suyo. |
 | ⬜ | `POST /orders/:id/cancel` | 👤 | Solo `PENDING_PAYMENT`; libera la reserva. |
 | ✅ | `POST /orders/:id/payment/upload-url` | 👤 | Valida tipo/tamaño y devuelve URL firmada de R2 (`{uploadUrl, proofKey}`). 400 tipo o tamaño inválido; 404 pedido ajeno; 409 si no está `PENDING_PAYMENT` (D70). |
 | ✅ | `GET /payment-methods?currency=` | — | Público. Métodos de pago activos, filtrados por moneda si se indica (RF-COM-03, D63). |
 | ✅ | `POST /orders/:id/payment` | 👤 | Body `{paymentMethodId, proofKey, proofHash, operationNumber, acceptsLegalDeclaration}` → pedido `IN_REVIEW`, pago `PENDING`. `proofHash` lo calcula el cliente (D71). Solo desde `PENDING_PAYMENT` y con reserva vigente (409 si no). El método debe estar activo y aceptar `orders.currency` (D63, trigger `trg_payment_method_currency`, 409). 409 si `(paymentMethodId, operationNumber)` o `proofHash` ya existen (D21, D64). 400 si `proofKey` no corresponde al pedido o no se acepta la declaración legal (RF-COM-13/D43/D72). 404 pedido ajeno. |
-| ⬜ | `POST /orders/:id/license/reveal` | 👤 | Devuelve la clave en claro **y registra auditoría**. Solo `DELIVERED`. Con límite de uso. |
+| ✅ | `POST /orders/:id/license/reveal` | 👤 | Devuelve la(s) clave(s) en claro de las licencias `SOLD` del pedido **y registra auditoría** (`license.revealed`, nunca la clave). Solo `DELIVERED` (409 si no). Límite: 20/min por IP (D73). |
 | ⬜ | `POST /claims` | 👤 | Body `{orderId, reason}`. 409 si ya hay uno abierto, fuera de ventana (7 días, D25) o ya usó su reposición (D26). |
 | ⬜ | `GET /claims` | 👤 | Mis reclamos. |
 | ⬜ | `POST /support-tickets` | 👤 | Body `{subject, body}` → crea ticket `OPEN` (D34). |
@@ -60,6 +60,15 @@ Ver `docs/backend/auth.md`, `docs/backend/orders.md` y `docs/backend/README.md` 
 | ✅ | `GET /admin/payment-methods` | Todos los métodos, incluidos inactivos (D65). |
 | ✅ | `POST /admin/payment-methods` | Crea un método; auditado (D65). `CRYPTO` solo admite `['USD']`. |
 | ✅ | `PATCH /admin/payment-methods/:id` | Edita cualquier campo, incluida la desactivación (`active: false`); auditado (D65). 404 si no existe. |
+| ✅ | `GET /admin/categories` | Lista todas las categorías. |
+| ✅ | `POST /admin/categories` | Crea una categoría; auditado. |
+| ✅ | `PATCH /admin/categories/:id` | Edita el nombre; auditado. 404 si no existe. |
+| ✅ | `DELETE /admin/categories/:id` | Borra la categoría (productos quedan sin categoría); auditado. 404 si no existe. |
+| ✅ | `GET /admin/products` | Lista todos los productos, incluidos inactivos. |
+| ✅ | `POST /admin/products` | Crea un producto (incl. `requiresToolUsername`); auditado. |
+| ✅ | `PATCH /admin/products/:id` | Edita cualquier campo, incluida la desactivación (`active: false`); auditado. 404 si no existe. |
+| ✅ | `POST /admin/plans` | Crea un plan con sus precios por moneda (D61); auditado. 400 sin precios. |
+| ✅ | `PATCH /admin/plans/:id` | Edita campos y/o hace upsert de precios por moneda (no borra monedas omitidas); auditado. 404 si no existe. |
 | ⬜ | `POST /admin/orders/:id/activate` | Marca `PENDING_ACTIVATION → DELIVERED` tras aplicar la licencia sobre la cuenta del cliente (D14). Auditoría. |
 | ⬜ | `GET /admin/inventory?filter=low\|out` | Por plan: disponibles, reservadas, vendidas, estado, umbral. |
 | ⬜ | `POST /admin/inventory/batches/preview` | Body `{planId, secrets[]}` o CSV → `{valid, duplicates, errors}` sin guardar. |
