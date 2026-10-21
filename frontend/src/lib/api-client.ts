@@ -61,3 +61,11 @@ export async function loginWithGoogle(idToken: string): Promise<BackendAuthResul
   }
   return { id: result.data.user.id, ...result.data };
 }
+
+export async function refreshTokens(refreshToken: string): Promise<BackendTokenPair | null> {
+  const result = await postJson<BackendTokenPair>("/auth/refresh", { refreshToken });
+  if (!result.ok) {
+    return null;
+  }
+  return result.data;
+}

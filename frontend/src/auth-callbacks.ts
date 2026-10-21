@@ -2,6 +2,7 @@ import type { Account, User } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import { loginWithGoogle } from "@/lib/api-client";
 import { decodeJwtExpiry } from "@/lib/jwt-exp";
+import { applyRefreshIfNeeded } from "@/lib/token-refresh";
 
 /**
  * Callback `jwt` de NextAuth, extraído a un módulo propio (sin importar `next-auth` en
@@ -44,5 +45,5 @@ export async function jwtCallback({
     return token;
   }
 
-  return token;
+  return applyRefreshIfNeeded(token);
 }
