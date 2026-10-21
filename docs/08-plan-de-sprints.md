@@ -54,7 +54,7 @@ Entregado (detalle verificado contra el código en `docs/backend/`):
 - [x] `GET /orders`, reveal de clave **con auditoría** (RF-PED-01..04); `GET /orders/:id` y cancelar ya implementados.
 - [x] CRUD admin de catálogo: productos (incl. `requiresToolUsername`), planes (con precios por moneda, D61),
       categorías (RF-ADM-40, D38).
-- [ ] Verificación de correo obligatoria antes de la primera compra; límite de monto para cliente nuevo (RF-AUT-07, D22).
+- [x] Verificación de correo obligatoria antes de la primera compra; límite de monto para cliente nuevo (RF-AUT-07, D22, D74).
 - [ ] `POST /auth/google`: find-or-create por correo, `emailVerifiedAt` automático (D53, D54, RF-AUT-10).
 - [x] Scaffold `frontend/` (`create-next-app`, Tailwind v4, App Router) + **S1 (Catálogo)** con datos de ejemplo (2026-10-05).
 - [ ] Sesión NextAuth: credentials + **Google provider** (D46, D53).
