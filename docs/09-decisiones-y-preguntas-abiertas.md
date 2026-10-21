@@ -116,6 +116,11 @@ de este documento) quedaron resueltas como decisiones **D14–D55**.
 |---|---|---|
 | D74 | El tope de D22 aplica mientras el cliente tenga **menos de `newCustomerGraceOrders` pedidos `DELIVERED`** (placeholder: 1), por moneda (`newCustomerMaxOrderCentsPen`/`...Usd`, placeholders S/ 500 / $ 150, D61: sin conversión). La condición "sin reclamo" de D22 queda pendiente hasta que exista el módulo `claims` (Sprint 3/4). | D22 depende de `claims` y de la aprobación de pagos, que no existen todavía; este criterio es el implementable hoy y se endurece cuando esos módulos lleguen. |
 
+### Decisión de login con Google — Sprint 2 (2026-10-21)
+| Id | Decisión | Razón |
+|---|---|---|
+| D75 | `POST /auth/google`: si el correo ya existe **sin** `googleId` (cuenta registrada con contraseña), se **vincula** la cuenta de Google a esa cuenta existente en vez de rechazar o duplicar; se audita `user.google_linked`. | D53/D54 no cubren este caso; vincular es seguro (ambos medios ya probaron que esa persona controla el correo) y evita frustrar a un cliente que ya tenía cuenta. |
+
 ## C. Riesgos principales
 | Riesgo | Impacto | Mitigación |
 |---|---|---|
