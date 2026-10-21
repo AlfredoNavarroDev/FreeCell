@@ -13,6 +13,7 @@ import {
 import { LoginDto } from './dto/login.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { RegisterDto } from './dto/register.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
 
 const PER_MINUTE = 60_000;
 
@@ -42,6 +43,22 @@ export class AuthController {
   @Post('refresh')
   refresh(@Body() dto: RefreshDto): Promise<TokenPairDto> {
     return this.auth.refresh(dto.refreshToken);
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 10, ttl: PER_MINUTE } })
+  @HttpCode(200)
+  @Post('verify-email')
+  verifyEmail(@Body() dto: VerifyEmailDto): Promise<void> {
+    return this.auth.verifyEmail(dto);
+  }
+
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 3, ttl: PER_MINUTE } })
+  @HttpCode(204)
+  @Post('resend-verification')
+  resendVerification(@CurrentUser() user: AuthenticatedUser): Promise<void> {
+    return this.auth.resendVerification(user.id);
   }
 
   @ApiBearerAuth()
