@@ -71,6 +71,10 @@ export class EnvironmentVariables {
   @IsString()
   R2_BUCKET!: string;
 
+  /** Audience esperado al verificar el ID token de Google (RF-AUT-10, D53). */
+  @IsString()
+  GOOGLE_CLIENT_ID!: string;
+
   /** Orígenes permitidos separados por comas. */
   @IsString()
   CORS_ORIGIN = 'http://localhost:3001';

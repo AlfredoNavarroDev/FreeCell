@@ -16,6 +16,7 @@ process.env.R2_ACCOUNT_ID = 'test-account';
 process.env.R2_ACCESS_KEY_ID = 'test-access-key-id';
 process.env.R2_SECRET_ACCESS_KEY = 'test-secret-access-key-0123456789';
 process.env.R2_BUCKET = 'freecell-test-proofs';
+process.env.GOOGLE_CLIENT_ID = 'test-google-client-id.apps.googleusercontent.com';
 process.env.CORS_ORIGIN = 'http://localhost:3001';
 process.env.THROTTLE_ENABLED = 'false';
 process.env.LOG_LEVEL = 'silent';

@@ -10,6 +10,7 @@ import {
   TokenPairDto,
   UserDto,
 } from './dto/auth-response.dto';
+import { GoogleLoginDto } from './dto/google-login.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -35,6 +36,14 @@ export class AuthController {
   @Post('login')
   login(@Body() dto: LoginDto): Promise<AuthResponseDto> {
     return this.auth.login(dto);
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 5, ttl: PER_MINUTE } })
+  @HttpCode(200)
+  @Post('google')
+  loginWithGoogle(@Body() dto: GoogleLoginDto): Promise<AuthResponseDto> {
+    return this.auth.loginWithGoogle(dto);
   }
 
   @Public()

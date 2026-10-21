@@ -7,6 +7,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { GoogleAuthService } from './google-auth.service';
 import { JwtStrategy } from './jwt.strategy';
 import { RefreshTokensService } from './refresh-tokens.service';
 
@@ -24,7 +25,7 @@ import { RefreshTokensService } from './refresh-tokens.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, RefreshTokensService, JwtStrategy],
+  providers: [AuthService, RefreshTokensService, JwtStrategy, GoogleAuthService],
   exports: [JwtModule],
 })
 export class AuthModule {}

@@ -10,6 +10,7 @@ const base = {
   R2_ACCESS_KEY_ID: 'r2-access-key',
   R2_SECRET_ACCESS_KEY: 'r2-secret-key',
   R2_BUCKET: 'r2-bucket',
+  GOOGLE_CLIENT_ID: 'test-client-id.apps.googleusercontent.com',
 };
 
 describe('validateEnv', () => {

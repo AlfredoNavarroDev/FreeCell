@@ -21,9 +21,11 @@ import {
   TokenPairDto,
   UserDto,
 } from './dto/auth-response.dto';
+import { GoogleLoginDto } from './dto/google-login.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
+import { GoogleAuthService } from './google-auth.service';
 import { RefreshTokensService } from './refresh-tokens.service';
 
 const BCRYPT_COST = 12;
@@ -45,6 +47,7 @@ export class AuthService {
     private readonly audit: AuditService,
     private readonly notifications: NotificationsService,
     private readonly config: ConfigService<EnvironmentVariables, true>,
+    private readonly googleAuth: GoogleAuthService,
   ) {}
 
   /** El rol siempre es CUSTOMER: ADMIN solo por seed (RF-AUT-04). */
@@ -72,6 +75,55 @@ export class AuthService {
     );
     await this.sendVerificationEmail(user, verificationToken);
     return response;
+  }
+
+  /**
+   * RF-AUT-10/D53/D54: find-or-create por correo con el perfil ya verificado por Google.
+   * Vincula por correo si la cuenta ya existe sin `googleId` (D75); nunca cambia el `role`
+   * de una cuenta existente.
+   */
+  async loginWithGoogle(dto: GoogleLoginDto): Promise<AuthResponseDto> {
+    const profile = await this.googleAuth.verifyIdToken(dto.idToken);
+    if (!profile.emailVerified) {
+      throw new UnauthorizedException(
+        'El correo de Google no está verificado',
+      );
+    }
+    const email = UsersService.normalizeEmail(profile.email);
+
+    return this.ds.transaction(async (m) => {
+      let user = await m.findOne(User, {
+        where: { googleId: profile.googleId },
+      });
+      if (!user) {
+        user = await m.findOne(User, { where: { email } });
+        if (user) {
+          await m.update(User, { id: user.id }, {
+            googleId: profile.googleId,
+            emailVerifiedAt: user.emailVerifiedAt ?? new Date(),
+          });
+          user = await m.findOneByOrFail(User, { id: user.id });
+          await this.audit.log(m, {
+            actorId: user.id,
+            action: 'user.google_linked',
+            entity: 'user',
+            entityId: user.id,
+          });
+        } else {
+          user = await m.save(
+            User,
+            m.create(User, {
+              email,
+              googleId: profile.googleId,
+              name: profile.name,
+              role: Role.CUSTOMER,
+              emailVerifiedAt: new Date(),
+            }),
+          );
+        }
+      }
+      return this.buildAuthResponse(m, user);
+    });
   }
 
   /** RF-AUT-07: confirma el correo con el token de un solo uso (hash, nunca en claro). */
