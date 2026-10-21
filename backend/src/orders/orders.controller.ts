@@ -9,6 +9,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
 import type { AuthenticatedUser } from '../common/types/authenticated-user';
@@ -17,6 +18,7 @@ import { UploadUrlResponseDto } from '../storage/dto/upload-url-response.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { ListOrdersQueryDto } from './dto/list-orders-query.dto';
 import { OrderResponseDto } from './dto/order-response.dto';
+import { RevealedLicenseDto } from './dto/revealed-license.dto';
 import { SubmitPaymentDto } from './dto/submit-payment.dto';
 import { OrdersService } from './orders.service';
 
@@ -77,5 +79,15 @@ export class OrdersController {
     @Body() dto: SubmitPaymentDto,
   ): Promise<OrderResponseDto> {
     return this.orders.submitPayment(user, id, dto);
+  }
+
+  @Post(':id/license/reveal')
+  @HttpCode(200)
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  revealLicenses(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<RevealedLicenseDto[]> {
+    return this.orders.revealLicenses(user, id);
   }
 }
