@@ -39,7 +39,7 @@ erDiagram
 
 | Tabla | Propósito | Columnas relevantes |
 |---|---|---|
-| `users` | Cuentas | `email` único (minúsculas), `passwordHash` **nullable** (vacío en cuentas solo-Google), `googleId` **único, nullable** (D53), `name`, `role` (CUSTOMER/ADMIN), `phone`, `emailVerifiedAt` (auto si viene de Google, D54) |
+| `users` | Cuentas | `email` único (minúsculas), `passwordHash` **nullable** (vacío en cuentas solo-Google), `googleId` **único, nullable** (D53), `name`, `role` (CUSTOMER/ADMIN), `phone`, `emailVerifiedAt` (auto si viene de Google, D54), `emailVerificationTokenHash` (SHA-256 hex, nullable, `select: false`), `emailVerificationExpiresAt` (nullable; token de un solo uso, RF-AUT-07/D74) |
 | `categories` | Agrupación del catálogo | `name` único |
 | `products` | Herramienta | `name`, `slug` único, `description`, `active`, `categoryId`, `requiresToolUsername` (bool, D14), `whatIncluded`/`compatibility`/`activationGuide` (text, nullable), `faq` (jsonb, nullable: `[{question, answer}]`) |
 | `plans` | Variante comprable | `productId`, `name`, `kind` (NEW/RENEWAL), `durationDays`, `lowStockThreshold` (def. 5), `active` — **sin precio propio**: los precios viven en `plan_prices` (D61, reemplaza en parte a D51) |

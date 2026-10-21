@@ -46,6 +46,13 @@ export class User {
   @Column({ type: 'timestamptz', nullable: true })
   emailVerifiedAt!: Date | null;
 
+  /** Hash SHA-256 (hex) del token de verificación vigente; null si ya se verificó o nunca se emitió. */
+  @Column({ type: 'varchar', length: 64, nullable: true, select: false })
+  emailVerificationTokenHash!: string | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  emailVerificationExpiresAt!: Date | null;
+
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt!: Date;
 

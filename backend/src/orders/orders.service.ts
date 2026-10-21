@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
@@ -14,6 +15,9 @@ import { LicenseItem, Order, OrderItem, Payment } from '../database/entities';
 import { LicenseStatus, OrderStatus } from '../database/enums';
 import { NotificationsService } from '../notifications/notifications.service';
 import {
+  SETTING_NEW_CUSTOMER_GRACE_ORDERS,
+  SETTING_NEW_CUSTOMER_MAX_ORDER_CENTS_PEN,
+  SETTING_NEW_CUSTOMER_MAX_ORDER_CENTS_USD,
   SETTING_RESERVATION_TTL_MINUTES,
   SettingsService,
 } from '../settings/settings.service';
@@ -64,10 +68,34 @@ export class OrdersService {
     user: AuthenticatedUser,
     dto: CreateOrderDto,
   ): Promise<OrderResponseDto> {
+    const owner = await this.users.findById(user.id);
+    if (!owner?.emailVerifiedAt) {
+      throw new ForbiddenException('Verifica tu correo antes de comprar');
+    }
+
     const ttlMinutes = await this.settings.getNumber(
       SETTING_RESERVATION_TTL_MINUTES,
       DEFAULT_RESERVATION_TTL_MINUTES,
     );
+    const graceOrders = await this.settings.getNumber(
+      SETTING_NEW_CUSTOMER_GRACE_ORDERS,
+      1,
+    );
+    const deliveredCount = await this.ds.getRepository(Order).count({
+      where: { userId: user.id, status: OrderStatus.DELIVERED },
+    });
+    const isNewCustomer = deliveredCount < graceOrders;
+    /** Se lee fuera de la transacción (igual que ttlMinutes/graceOrders): una consulta vía
+     * `this.settings` toma una conexión aparte del pool, y pedirla dentro de la transacción
+     * mientras otra ya está abierta agota el pool bajo carga concurrente (deadlock). */
+    const maxCents = isNewCustomer
+      ? await this.settings.getNumber(
+          dto.currency === 'USD'
+            ? SETTING_NEW_CUSTOMER_MAX_ORDER_CENTS_USD
+            : SETTING_NEW_CUSTOMER_MAX_ORDER_CENTS_PEN,
+          dto.currency === 'USD' ? 15_000 : 50_000,
+        )
+      : null;
     const items = [...dto.items].sort((a, b) =>
       a.planId.localeCompare(b.planId),
     );
@@ -128,6 +156,13 @@ export class OrdersService {
         (sum, item) => sum + planById.get(item.planId)!.priceCents! * item.qty,
         0,
       );
+
+      if (isNewCustomer && totalCents > maxCents!) {
+        throw new ConflictException(
+          'Tu pedido supera el límite para clientes nuevos; contacta soporte si necesitas comprar más',
+        );
+      }
+
       const order = await m.save(
         Order,
         m.create(Order, {

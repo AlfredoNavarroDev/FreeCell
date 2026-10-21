@@ -111,6 +111,11 @@ de este documento) quedaron resueltas como decisiones **D14–D55**.
 |---|---|---|
 | D73 | `POST /orders/:id/license/reveal` tiene límite de uso propio: 20 por minuto por IP (más estricto que el límite global de 100/min). | docs/06 ya pedía "con límite de uso" sin número; evita scraping en ráfaga de varios pedidos sin bloquear un uso normal de soporte. |
 
+### Decisión de verificación de correo / cliente nuevo — Sprint 2 (2026-10-21)
+| Id | Decisión | Razón |
+|---|---|---|
+| D74 | El tope de D22 aplica mientras el cliente tenga **menos de `newCustomerGraceOrders` pedidos `DELIVERED`** (placeholder: 1), por moneda (`newCustomerMaxOrderCentsPen`/`...Usd`, placeholders S/ 500 / $ 150, D61: sin conversión). La condición "sin reclamo" de D22 queda pendiente hasta que exista el módulo `claims` (Sprint 3/4). | D22 depende de `claims` y de la aprobación de pagos, que no existen todavía; este criterio es el implementable hoy y se endurece cuando esos módulos lleguen. |
+
 ## C. Riesgos principales
 | Riesgo | Impacto | Mitigación |
 |---|---|---|

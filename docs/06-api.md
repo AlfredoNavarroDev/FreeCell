@@ -21,8 +21,10 @@ Ver `docs/backend/auth.md`, `docs/backend/orders.md` y `docs/backend/README.md` 
 | ✅ | `POST /auth/refresh` | 🌐 | Body `{refreshToken}` → `{accessToken, refreshToken}`. Rotación con ventana de gracia de 30 s (D56); reuso fuera de la ventana revoca toda la familia (401). |
 | ✅ | `POST /auth/logout` | 👤 | Body `{refreshToken}` → 204. Revoca la familia del refresh token. |
 | ✅ | `GET /auth/me` | 👤 | Perfil sin datos sensibles. |
+| ✅ | `POST /auth/verify-email` | 🌐 | Body `{token}`. Marca `emailVerifiedAt`; 400 si el token es inválido o venció (RF-AUT-07). |
+| ✅ | `POST /auth/resend-verification` | 👤 | Reemite el token si el correo aún no está verificado; 409 si ya lo está (RF-AUT-07). |
 | ⬜ | `POST /auth/google` | 🌐 | Body `{idToken}` (token de Google verificado por NextAuth) → find-or-create por correo, `emailVerifiedAt` automático, `role=CUSTOMER` si es nuevo → `{accessToken, user}` (D53, D54, RF-AUT-10). |
-| ✅ | `POST /orders` | 👤 | Body `{currency, items:[{planId, qty}], toolUsername?}` → `201 {id, orderNumber, status, totalCents, currency, expiresAt, cancelReason, items}`. Reserva todos los ítems del carrito en una transacción (D30); 404 plan inactivo; 409 sin stock de un ítem (rechaza el carrito completo) o plan sin precio en la moneda elegida; 400 moneda inválida o falta `toolUsername` requerido. |
+| ✅ | `POST /orders` | 👤 | Body `{currency, items:[{planId, qty}], toolUsername?}` → `201 {id, orderNumber, status, totalCents, currency, expiresAt, cancelReason, items}`. Reserva todos los ítems del carrito en una transacción (D30); 404 plan inactivo; 409 sin stock de un ítem (rechaza el carrito completo), plan sin precio en la moneda elegida, o cliente nuevo que supera el tope de D74; 403 si el correo no está verificado (RF-AUT-07); 400 moneda inválida o falta `toolUsername` requerido. |
 | ✅ | `GET /orders/:id` | 👤 | Mismo shape que la creación. 404 si no es del usuario. |
 | ✅ | `POST /orders/:id/cancel` | 👤 | Solo desde `PENDING_PAYMENT`; libera la reserva. 409 si no está en ese estado; 200 idempotente si ya estaba `CANCELLED`. |
 

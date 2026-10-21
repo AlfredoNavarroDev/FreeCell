@@ -21,7 +21,7 @@ Los criterios marcados con **[?]** dependen de una pregunta abierta en `09-decis
 | RF-AUT-04 | El rol ADMIN solo se asigna por seed/admin; nunca desde el registro público. | M | ✅ |
 | RF-AUT-05 | Rutas de admin protegidas por rol; rutas de cliente protegidas por propiedad (un cliente solo ve sus pedidos). | M | ✅ (`JwtAuthGuard`/`RolesGuard` globales, D56; propiedad verificada en `OrdersService`) |
 | RF-AUT-06 | Recuperar contraseña por correo. | S | ⬜ |
-| RF-AUT-07 | Verificación de correo **obligatoria** antes de la primera compra para cuentas correo+contraseña; **automática** si el usuario entró con Google (D22, D54). | M | ⬜ |
+| RF-AUT-07 | Verificación de correo **obligatoria** antes de la primera compra para cuentas correo+contraseña; **automática** si el usuario entró con Google (D22, D54). | M | 🟡 (verificación + tope de cliente nuevo ✅, D74; falta `POST /auth/google` para la auto-verificación, Sprint 2) |
 | RF-AUT-08 | Registrar teléfono/WhatsApp opcional en el perfil (para soporte y notificaciones). | S | ⬜ (campo `users.phone`) |
 | RF-AUT-09 | Sesión del frontend gestionada por NextAuth (credentials provider contra la API) (D46). | M | ⬜ |
 | RF-AUT-10 | Login con **Google** vía NextAuth; primer ingreso crea el `user` (find-or-create por correo) con `role=CUSTOMER` (D53). | M | ⬜ |
