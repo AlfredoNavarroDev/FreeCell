@@ -57,8 +57,8 @@ Los criterios marcados con **[?]** dependen de una pregunta abierta en `09-decis
 |---|---|---|---|
 | RF-COM-01 | El cliente agrega uno o más planes a un carrito y crea un pedido; el sistema **reserva todas las licencias del pedido por 30 min** en una sola transacción, sin asignar nunca la misma a dos pedidos (D30). | M | ✅ (`POST /orders` con `items[]`, `FOR UPDATE SKIP LOCKED` por plan, probado con N ítems y concurrencia) |
 | RF-COM-02 | Si algún ítem del carrito no tiene stock, la compra completa se rechaza con un mensaje claro (409), sin reservar el resto. | M | ✅ (rollback de toda la transacción) |
-| RF-COM-03 | El checkout muestra resumen (con todos los ítems del carrito), cuenta regresiva de la reserva e instrucciones de pago (métodos de pago configurables: billeteras, transferencia y cripto en USDT para pedidos en USD, D63). | M | ⬜ (UI y catálogo de métodos activos, Sprint 2) |
-| RF-COM-04 | El cliente sube el comprobante (JPG/PNG/PDF, máx. 5 MB, D70); el pedido pasa a `IN_REVIEW`. | M | 🟡 (URL firmada de subida ✅; falta `POST /orders/:id/payment` que pasa el pedido a `IN_REVIEW`, módulo `payments` de Sprint 2) |
+| RF-COM-03 | El checkout muestra resumen (con todos los ítems del carrito), cuenta regresiva de la reserva e instrucciones de pago (métodos de pago configurables: billeteras, transferencia y cripto en USDT para pedidos en USD, D63). | M | 🟡 (`GET /payment-methods` ✅; falta la UI de checkout, Sprint 2 frontend) |
+| RF-COM-04 | El cliente sube el comprobante (JPG/PNG/PDF, máx. 5 MB, D70); el pedido pasa a `IN_REVIEW`. | M | ✅ (`POST /orders/:id/payment`, bloqueo automático de duplicados D21/D64) |
 | RF-COM-05 | La reserva vencida sin comprobante cancela el pedido y devuelve todas sus licencias al stock. | M | ✅ (`fn_release_order`, probado con carrito de N ítems: libera todas las licencias reservadas del pedido) |
 | RF-COM-06 | Una reserva con comprobante en revisión **no** se libera por expiración. | M | ✅ |
 | RF-COM-07 | Campo "usuario de la herramienta" obligatorio solo en productos con `requiresToolUsername = true` (D14); bloquea el paso a `IN_REVIEW` si falta. | M | 🟡 (bandera `products.requiresToolUsername` y validación al crear el pedido ✅; falta el flujo de revisión/aprobación a `IN_REVIEW`, Sprint 2) |
@@ -67,7 +67,7 @@ Los criterios marcados con **[?]** dependen de una pregunta abierta en `09-decis
 | RF-COM-10 | Carrito: varias licencias (de uno o más planes) en un mismo pedido, **dentro del MVP** (D30). | M | ⬜ |
 | RF-COM-11 | Pago con pasarela y confirmación automática. | W | — |
 | RF-COM-12 | Tras rechazar un pago, el pedido vuelve a `PENDING_PAYMENT` con plazo extra; máximo 2 reintentos, luego se cancela (D18). | M | ⬜ |
-| RF-COM-13 | Checkbox obligatorio al pagar: declaración de titularidad/autorización sobre el equipo (D43). | M | ⬜ |
+| RF-COM-13 | Checkbox obligatorio al pagar: declaración de titularidad/autorización sobre el equipo (D43). | M | 🟡 (`acceptsLegalDeclaration` obligatorio en `POST /orders/:id/payment`, D72 ✅; falta el checkbox en la UI, Sprint 2 frontend) |
 | RF-COM-14 | Pedido `IN_REVIEW` por más de 24 h genera alerta al operador (D19); no se cancela automáticamente. | M | ⬜ |
 
 **Criterios de aceptación clave**

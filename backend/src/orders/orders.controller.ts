@@ -14,6 +14,7 @@ import { CreateUploadUrlDto } from '../storage/dto/create-upload-url.dto';
 import { UploadUrlResponseDto } from '../storage/dto/upload-url-response.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { OrderResponseDto } from './dto/order-response.dto';
+import { SubmitPaymentDto } from './dto/submit-payment.dto';
 import { OrdersService } from './orders.service';
 
 @ApiTags('orders')
@@ -55,5 +56,15 @@ export class OrdersController {
     @Body() dto: CreateUploadUrlDto,
   ): Promise<UploadUrlResponseDto> {
     return this.orders.requestPaymentUploadUrl(user, id, dto);
+  }
+
+  @Post(':id/payment')
+  @HttpCode(200)
+  submitPayment(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: SubmitPaymentDto,
+  ): Promise<OrderResponseDto> {
+    return this.orders.submitPayment(user, id, dto);
   }
 }

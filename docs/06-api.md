@@ -40,7 +40,8 @@ Ver `docs/backend/auth.md`, `docs/backend/orders.md` y `docs/backend/README.md` 
 | ⬜ | `GET /orders/:id` | 👤 | Detalle + línea de seguimiento + estado del pago. 404 si no es suyo. |
 | ⬜ | `POST /orders/:id/cancel` | 👤 | Solo `PENDING_PAYMENT`; libera la reserva. |
 | ✅ | `POST /orders/:id/payment/upload-url` | 👤 | Valida tipo/tamaño y devuelve URL firmada de R2 (`{uploadUrl, proofKey}`). 400 tipo o tamaño inválido; 404 pedido ajeno; 409 si no está `PENDING_PAYMENT` (D70). |
-| ⬜ | `POST /orders/:id/payment` | 👤 | Body `{paymentMethodId, proofKey, operationNumber}` → pedido `IN_REVIEW`, pago `PENDING`. Solo desde `PENDING_PAYMENT` y con reserva vigente. El método debe estar activo y aceptar `orders.currency` (D63, trigger `trg_payment_method_currency`). 409 si `(paymentMethodId, operationNumber)` o el hash del archivo ya existen (D21, D64). |
+| ✅ | `GET /payment-methods?currency=` | — | Público. Métodos de pago activos, filtrados por moneda si se indica (RF-COM-03, D63). |
+| ✅ | `POST /orders/:id/payment` | 👤 | Body `{paymentMethodId, proofKey, proofHash, operationNumber, acceptsLegalDeclaration}` → pedido `IN_REVIEW`, pago `PENDING`. `proofHash` lo calcula el cliente (D71). Solo desde `PENDING_PAYMENT` y con reserva vigente (409 si no). El método debe estar activo y aceptar `orders.currency` (D63, trigger `trg_payment_method_currency`, 409). 409 si `(paymentMethodId, operationNumber)` o `proofHash` ya existen (D21, D64). 400 si `proofKey` no corresponde al pedido o no se acepta la declaración legal (RF-COM-13/D43/D72). 404 pedido ajeno. |
 | ⬜ | `POST /orders/:id/license/reveal` | 👤 | Devuelve la clave en claro **y registra auditoría**. Solo `DELIVERED`. Con límite de uso. |
 | ⬜ | `POST /claims` | 👤 | Body `{orderId, reason}`. 409 si ya hay uno abierto, fuera de ventana (7 días, D25) o ya usó su reposición (D26). |
 | ⬜ | `GET /claims` | 👤 | Mis reclamos. |
@@ -56,6 +57,9 @@ Ver `docs/backend/auth.md`, `docs/backend/orders.md` y `docs/backend/README.md` 
 | ⬜ | `GET /admin/payments?status=PENDING` | Cola ordenada por antigüedad, con URL firmada del comprobante. |
 | ⬜ | `POST /admin/payments/:id/approve` | Transacción: licencia → SOLD, pedido → DELIVERED, pago → APPROVED, auditoría, encola `license-delivered:{orderId}`. Idempotente. |
 | ⬜ | `POST /admin/payments/:id/reject` | Body `{reason}` (enum). Pedido vuelve a `PENDING_PAYMENT` (reintento 1–2) o `CANCELLED` al 3.er rechazo (D18). Encola `payment-rejected`. |
+| ✅ | `GET /admin/payment-methods` | Todos los métodos, incluidos inactivos (D65). |
+| ✅ | `POST /admin/payment-methods` | Crea un método; auditado (D65). `CRYPTO` solo admite `['USD']`. |
+| ✅ | `PATCH /admin/payment-methods/:id` | Edita cualquier campo, incluida la desactivación (`active: false`); auditado (D65). 404 si no existe. |
 | ⬜ | `POST /admin/orders/:id/activate` | Marca `PENDING_ACTIVATION → DELIVERED` tras aplicar la licencia sobre la cuenta del cliente (D14). Auditoría. |
 | ⬜ | `GET /admin/inventory?filter=low\|out` | Por plan: disponibles, reservadas, vendidas, estado, umbral. |
 | ⬜ | `POST /admin/inventory/batches/preview` | Body `{planId, secrets[]}` o CSV → `{valid, duplicates, errors}` sin guardar. |

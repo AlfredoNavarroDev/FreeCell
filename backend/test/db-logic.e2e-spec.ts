@@ -166,8 +166,8 @@ describe('Lógica en base de datos (D57)', () => {
       operation: string,
     ) =>
       ds.query(
-        `INSERT INTO payments ("orderId", "paymentMethodId", "operationNumber", "proofKey", "proofHash")
-         VALUES ($1, $2, $3, 'proofs/x.png', md5(random()::text) || md5(random()::text))`,
+        `INSERT INTO payments ("orderId", "paymentMethodId", "operationNumber", "proofKey", "proofHash", "legalDeclarationAcceptedAt")
+         VALUES ($1, $2, $3, 'proofs/x.png', md5(random()::text) || md5(random()::text), now())`,
         [orderId, methodId, operation],
       );
 
