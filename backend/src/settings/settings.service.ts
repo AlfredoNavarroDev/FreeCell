@@ -5,6 +5,13 @@ import { Setting } from '../database/entities';
 
 export const SETTING_RESERVATION_TTL_MINUTES = 'reservationTtlMinutes';
 
+/** D74: placeholder de negocio hasta que Joseph dé la cifra real. */
+export const SETTING_NEW_CUSTOMER_GRACE_ORDERS = 'newCustomerGraceOrders';
+export const SETTING_NEW_CUSTOMER_MAX_ORDER_CENTS_PEN =
+  'newCustomerMaxOrderCentsPen';
+export const SETTING_NEW_CUSTOMER_MAX_ORDER_CENTS_USD =
+  'newCustomerMaxOrderCentsUsd';
+
 @Injectable()
 export class SettingsService {
   constructor(

@@ -33,6 +33,7 @@ export async function createUser(
       email: `user-${randomUUID()}@test.pe`,
       passwordHash: TEST_PASSWORD_HASH,
       role: Role.CUSTOMER,
+      emailVerifiedAt: new Date(),
       ...overrides,
     }),
   );
