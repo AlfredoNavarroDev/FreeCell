@@ -53,3 +53,11 @@ export async function login(email: string, password: string): Promise<BackendAut
   }
   return { id: result.data.user.id, ...result.data };
 }
+
+export async function loginWithGoogle(idToken: string): Promise<BackendAuthResult | null> {
+  const result = await postJson<BackendAuthPayload>("/auth/google", { idToken });
+  if (!result.ok) {
+    return null;
+  }
+  return { id: result.data.user.id, ...result.data };
+}

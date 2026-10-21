@@ -18,6 +18,11 @@ async function loginWithCredentials(formData: FormData) {
   }
 }
 
+async function loginWithGoogleAction() {
+  "use server";
+  await signIn("google", { redirectTo: "/" });
+}
+
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const params = await searchParams;
   const hasError = params.error === "credenciales";
@@ -37,6 +42,11 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         </label>
         <button type="submit" className="min-h-11 bg-ink text-white px-4 py-2">
           Entrar
+        </button>
+      </form>
+      <form action={loginWithGoogleAction}>
+        <button type="submit" className="border px-4 py-2 w-full">
+          Continuar con Google
         </button>
       </form>
     </main>
