@@ -7,6 +7,7 @@ import { Redis } from 'ioredis';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
+import { CatalogAdminModule } from './catalog-admin/catalog-admin.module';
 import { CatalogModule } from './catalog/catalog.module';
 import { CoreModule } from './core/core.module';
 import type { EnvironmentVariables } from './core/config/env.validation';
@@ -49,6 +50,7 @@ function runWorkersInApi(): boolean {
     HealthModule,
     AuthModule,
     CatalogModule,
+    CatalogAdminModule,
     PaymentMethodsModule,
     OrdersModule,
     ...(runWorkersInApi() ? [WorkersModule] : []),
