@@ -80,10 +80,10 @@ Los criterios marcados con **[?]** dependen de una pregunta abierta en `09-decis
 
 | ID | Requerimiento | Prio | Estado |
 |---|---|---|---|
-| RF-PED-01 | Listar mis pedidos con estado (Esperando pago, Pago en revisión, Entregado, Cancelado) y filtros. | M | ⬜ |
-| RF-PED-02 | Ver el detalle de un pedido con línea de seguimiento (creado → pago aprobado → entregado). | M | ⬜ |
-| RF-PED-03 | Ver la clave de un pedido entregado: oculta por defecto, con **Mostrar** y **Copiar**. | M | ⬜ |
-| RF-PED-04 | **Cada vez que se revela la clave se registra en auditoría** (quién, cuándo). | M | ⬜ |
+| RF-PED-01 | Listar mis pedidos con estado (Esperando pago, Pago en revisión, Entregado, Cancelado) y filtros. | M | ✅ (`GET /orders?status=`, paginado) |
+| RF-PED-02 | Ver el detalle de un pedido con línea de seguimiento (creado → pago aprobado → entregado). | M | ✅ (`GET /orders/:id` con `tracking` y `paymentStatus`) |
+| RF-PED-03 | Ver la clave de un pedido entregado: oculta por defecto, con **Mostrar** y **Copiar**. | M | 🟡 (`POST /orders/:id/license/reveal` ✅; falta el componente "Mostrar/Copiar" en la UI, Sprint 2 frontend) |
+| RF-PED-04 | **Cada vez que se revela la clave se registra en auditoría** (quién, cuándo). | M | ✅ (`license.revealed`, D73) |
 | RF-PED-05 | Recibir aviso por correo al aprobarse el pago, **solo con enlace** a "Mis pedidos" (la clave nunca viaja completa por correo) (D24). | M | ⬜ |
 | RF-PED-06 | Mostrar la guía "cómo activar" del producto junto a la clave. | S | ⬜ |
 | RF-PED-07 | Descargar comprobante de compra / boleta. | W | — (sin boleta/factura SUNAT en el MVP, D40) |
@@ -144,7 +144,7 @@ Los criterios marcados con **[?]** dependen de una pregunta abierta en `09-decis
 ### Catálogo (gestión)
 | ID | Requerimiento | Prio | Estado |
 |---|---|---|---|
-| RF-ADM-40 | CRUD completo de categorías, productos (incl. `requiresToolUsername`) y planes (nombre, duración, tipo, precio, moneda, umbral), **desde Sprint 2** (D38, adelantado de Sprint 3). | M | ⬜ |
+| RF-ADM-40 | CRUD completo de categorías, productos (incl. `requiresToolUsername`) y planes (nombre, duración, tipo, precio, moneda, umbral), **desde Sprint 2** (D38, adelantado de Sprint 3). | M | 🟡 (API ✅ — `/admin/categories|products|plans`; falta la UI del panel admin, Sprint 2 frontend) |
 | RF-ADM-41 | Gestión de usuarios (ver, bloquear). | C | ⬜ |
 | RF-ADM-42 | Configuración (`settings`): TTL de reserva, horario de atención, datos de pago, SLA de revisión (24 h), monto máximo de primer pedido para clientes nuevos. | M | ⬜ |
 | RF-ADM-43 | Reportes por rango de fechas: **ventas por día/semana**, **margen por producto**, **stock valorizado**, **top productos/planes vendidos** (D55). | M | ⬜ |

@@ -106,6 +106,11 @@ de este documento) quedaron resueltas como decisiones **D14–D55**.
 | D71 | `payments.proofHash` lo calcula y envía el **cliente** (SHA-256 en hex, antes de subir el archivo); el servidor no lo recalcula leyendo R2. | Evita que el endpoint de pago dependa de una llamada de red real a R2 (rompería las pruebas con credenciales ficticias de `storage`); el N.º de operación único (D64) y la revisión manual (D20) ya cubren la mayoría de los reusos. |
 | D72 | La declaración de titularidad/autorización (RF-COM-13) se guarda en `payments.legalDeclarationAcceptedAt`, por intento de pago, no en `orders`. | Cada reintento tras un rechazo (D18, máx. 2) debe reconfirmarla; guardarla en el pedido solo registraría la primera vez. |
 
+### Decisión de pedidos/reveal — Sprint 2 (2026-10-20)
+| Id | Decisión | Razón |
+|---|---|---|
+| D73 | `POST /orders/:id/license/reveal` tiene límite de uso propio: 20 por minuto por IP (más estricto que el límite global de 100/min). | docs/06 ya pedía "con límite de uso" sin número; evita scraping en ráfaga de varios pedidos sin bloquear un uso normal de soporte. |
+
 ## C. Riesgos principales
 | Riesgo | Impacto | Mitigación |
 |---|---|---|
