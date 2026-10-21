@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import { login } from "@/lib/api-client";
 import { jwtCallback } from "@/auth-callbacks";
+import { handleSignOut } from "@/lib/auth-events";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
@@ -36,6 +37,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.error = token.error;
       }
       return session;
+    },
+  },
+  events: {
+    async signOut(message) {
+      const token = "token" in message ? message.token : undefined;
+      await handleSignOut(token ?? undefined);
     },
   },
 });

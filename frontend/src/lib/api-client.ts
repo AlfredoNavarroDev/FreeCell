@@ -69,3 +69,7 @@ export async function refreshTokens(refreshToken: string): Promise<BackendTokenP
   }
   return result.data;
 }
+
+export async function logout(accessToken: string, refreshToken: string): Promise<void> {
+  await postJson<undefined>("/auth/logout", { refreshToken }, accessToken);
+}
