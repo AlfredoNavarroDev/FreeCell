@@ -10,7 +10,7 @@ export default async function AccountPage() {
       <p>{session?.user.email}</p>
       <p>Rol: {session?.user.role}</p>
       <form action={logoutAction}>
-        <button type="submit" className="border px-4 py-2">
+        <button type="submit" className="min-h-11 border px-4 py-2">
           Cerrar sesión
         </button>
       </form>
