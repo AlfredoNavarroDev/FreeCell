@@ -57,7 +57,8 @@ Entregado (detalle verificado contra el código en `docs/backend/`):
 - [x] Verificación de correo obligatoria antes de la primera compra; límite de monto para cliente nuevo (RF-AUT-07, D22, D74).
 - [x] `POST /auth/google`: find-or-create por correo, `emailVerifiedAt` automático (D53, D54, D75, RF-AUT-10).
 - [x] Scaffold `frontend/` (`create-next-app`, Tailwind v4, App Router) + **S1 (Catálogo)** con datos de ejemplo (2026-10-05).
-- [ ] Sesión NextAuth: credentials + **Google provider** (D46, D53).
+- [x] Sesión NextAuth: credentials + **Google provider**, refresh proactivo, logout con revocación, rutas
+      `/admin` y `/cuenta` protegidas (D46, D53, D56).
 - [ ] Conectar S1 a la API real; construir S2, S3 (con carrito), S4, S9 (tickets cliente), S10 (catálogo admin).
 - Pruebas: reserva de carrito (N ítems, algunos agotados → rechazo completo); `IN_REVIEW` no se libera; IDOR (cliente B no ve
   pedido de A); comprobante con `operationNumber` repetido → 409; límites de archivo.

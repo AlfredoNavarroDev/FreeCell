@@ -70,7 +70,7 @@ Cola + detalle (patrón maestro-detalle) · Barra de stock · Tarjeta de acción
 ## Propuesta para el frontend (por confirmar)
 - Next.js App Router + TypeScript + Tailwind con los tokens de arriba como tema.
 - Rutas: `/` · `/p/[slug]` · `/checkout/[orderId]` · `/pedidos` · `/pedidos/[id]` · `/tickets` · `/tickets/[id]` · `/ingresar` · `/registro` · `/admin` · `/admin/pagos` · `/admin/inventario` · `/admin/reclamos` · `/admin/catalogo` · `/admin/soporte`.
-- Sesión: **NextAuth**, credentials provider contra la API NestJS (D46).
+- Sesión: **NextAuth** (✅ implementada), credentials + Google provider contra la API NestJS (D46, D53).
 - Datos: componentes de servidor para lectura; acciones de servidor/handlers para mutaciones; caché corta en catálogo.
 - Admin en la misma app bajo rutas protegidas por rol, en `/admin` (D47, sin despliegue aparte).
 - Carrito (D30): S2/S3 agregan selector de cantidad/añadir-más-planes antes del checkout; S3 muestra lista de ítems en vez de un plan único.

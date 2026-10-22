@@ -19,9 +19,11 @@ Todo lo que no sea `backend/` o `frontend/` vive en `docs/` (complementario). Re
 - ✅ **Sprint 1 (Fundaciones) reconstruido el 2026-10-14**: esquema completo con lógica en Postgres, auth con
   refresh rotativo, reserva de carrito, colas, Docker. Ver `docs/backend/`.
 - 🟡 `frontend/`: scaffold (`create-next-app`, TypeScript + Tailwind v4 + App Router) + **pantalla S1 (Catálogo)**
-  construida con datos de ejemplo (sin conectar a la API todavía). S2–S11 van por sprint.
+  construida con datos de ejemplo (sin conectar a la API todavía) + **sesión NextAuth** (credentials + Google,
+  refresh proactivo, logout con revocación, rutas `/admin` y `/cuenta` protegidas; RF-AUT-09/10, D46/D53/D56).
+  S2–S11 van por sprint.
 - ⬜ **Sprints 2–4**: catálogo (resto), CRUD de catálogo, comprobantes (R2), panel admin, reclamos, soporte
-  (tickets), reseñas, NextAuth (+Google), correo/WhatsApp, despliegue real en Fly.io. Ver `docs/08-plan-de-sprints.md`.
+  (tickets), reseñas, correo/WhatsApp, despliegue real en Fly.io. Ver `docs/08-plan-de-sprints.md`.
 - Referencias visuales en `docs/design/` (pantallas S1–S11).
 - Brainstorming de Sprint 2–4 **completado** (2026-10-05): decisiones **D14–D55** en `docs/09-decisiones-y-preguntas-abiertas.md`. Sin preguntas abiertas. Incluye login con Google (D53/D54) y reportes admin con KPIs definidos (D55: ventas día/semana, margen, stock valorizado, top planes).
 - Diseño de Fundaciones (backend) **completado** (2026-10-06): decisiones **D56–D65** en `docs/09-decisiones-y-preguntas-abiertas.md` (tokens y refresh, lógica en Postgres, monedas PEN/USD, métodos de pago configurables).
@@ -93,7 +95,7 @@ Detalle completo (variables de entorno, scripts, puertos) en `docs/backend/READM
 - Next.js 16 (App Router) + TypeScript + Tailwind v4. Componentes en `src/components/`, datos de ejemplo en `src/lib/`.
 - ⚠️ Next.js 16 tiene cambios de ruptura frente a versiones anteriores (ver `frontend/AGENTS.md` y
   `frontend/node_modules/next/dist/docs/`): `params`/`searchParams` son `Promise`, `middleware` se renombró a `proxy`.
-- Sesión con **NextAuth** (credentials + Google) — pendiente, Sprint 2 (D46, D53). Seguir tokens y pantallas de `docs/07-diseno-ui.md`.
+- Sesión con **NextAuth** (credentials + Google) — ✅ implementada (Sprint 2, D46/D53/D56; RF-AUT-09/10). Seguir tokens y pantallas de `docs/07-diseno-ui.md`.
 - Accesibilidad AA: elementos nativos (`button`, `a`, `label`), objetivos ≥ 44 px, el color nunca es el único indicador (ver `StockBadge`).
 - Panel admin (ruta `/admin`, misma app): aprobar un pago en ≤ 2 clics, avance automático al siguiente, sin recargas.
 - No inventar datos de negocio: seguir el patrón de `src/lib/mock-catalog.ts` (placeholders `[..]`) hasta conectar la API.
