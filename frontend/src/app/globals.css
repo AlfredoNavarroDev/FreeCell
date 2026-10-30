@@ -1,16 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #f6f7f9;
+  --bg: #f8fafc;
   --surface: #ffffff;
-  --ink: #101828;
-  --muted: #475467;
-  --line: #e4e7ec;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --line: #e2e8f0;
   --line-soft: #eaecf0;
   --line-strong: #d0d5dd;
-  --accent: #0a58e0;
-  --accent-soft-bg: #eaf1fe;
-  --accent-soft-ink: #0a3fa3;
+  --accent: #6d28d9;
+  --accent-hover: #7c3aed;
+  --accent-press: #5b21b6;
+  --accent-soft-bg: #f5f3ff;
+  --accent-soft-ink: #5b21b6;
   --success-ink: #067647;
   --success-bg: #dcfae6;
   --warning-ink: #93370d;
@@ -29,6 +31,8 @@
   --color-line-soft: var(--line-soft);
   --color-line-strong: var(--line-strong);
   --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-press: var(--accent-press);
   --color-accent-soft-bg: var(--accent-soft-bg);
   --color-accent-soft-ink: var(--accent-soft-ink);
   --color-success-ink: var(--success-ink);
