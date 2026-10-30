@@ -151,6 +151,57 @@ describe('Catálogo', () => {
       const item = body.items.find((p) => p.id === mixed.product.id);
       expect(item?.stockState).toBe('OUT_OF_STOCK');
     });
+
+    it('ordena por precio ascendente/descendente con sort=price_asc|price_desc', async () => {
+      const barato = await createCatalog(ds, { prices: { PEN: 1000 } });
+      const caro = await createCatalog(ds, { prices: { PEN: 9000 } });
+
+      const asc = await request(app.getHttpServer()).get(
+        '/catalog/products?sort=price_asc',
+      );
+      const ids = (asc.body as { items: { id: string }[] }).items.map(
+        (p) => p.id,
+      );
+      expect(ids.indexOf(barato.product.id)).toBeLessThan(
+        ids.indexOf(caro.product.id),
+      );
+
+      const desc = await request(app.getHttpServer()).get(
+        '/catalog/products?sort=price_desc',
+      );
+      const idsDesc = (desc.body as { items: { id: string }[] }).items.map(
+        (p) => p.id,
+      );
+      expect(idsDesc.indexOf(caro.product.id)).toBeLessThan(
+        idsDesc.indexOf(barato.product.id),
+      );
+    });
+
+    it('ordena por más recientes con sort=newest', async () => {
+      const viejo = await createCatalog(ds, { prices: { PEN: 1000 } });
+      const nuevo = await createCatalog(ds, { prices: { PEN: 1000 } });
+      await ds.query(
+        `UPDATE products SET "createdAt" = now() - interval '1 day' WHERE id = $1`,
+        [viejo.product.id],
+      );
+
+      const res = await request(app.getHttpServer()).get(
+        '/catalog/products?sort=newest',
+      );
+      const ids = (res.body as { items: { id: string }[] }).items.map(
+        (p) => p.id,
+      );
+      expect(ids.indexOf(nuevo.product.id)).toBeLessThan(
+        ids.indexOf(viejo.product.id),
+      );
+    });
+
+    it('responde 400 si sort no es un valor válido', async () => {
+      const res = await request(app.getHttpServer()).get(
+        '/catalog/products?sort=mas_vendidos',
+      );
+      expect(res.status).toBe(400);
+    });
   });
 
   describe('GET /catalog/products/:slug', () => {

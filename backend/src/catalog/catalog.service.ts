@@ -27,6 +27,13 @@ export class CatalogService {
     const offset = (dto.page - 1) * dto.pageSize;
     const params = [dto.currency, dto.query ?? null, dto.category ?? null];
 
+    const ORDER_BY: Record<string, string> = {
+      price_asc: 'MIN(pp."priceCents") ASC, pr.name',
+      price_desc: 'MIN(pp."priceCents") DESC, pr.name',
+      newest: 'pr."createdAt" DESC, pr.name',
+    };
+    const orderBy = ORDER_BY[dto.sort ?? ''] ?? 'pr.name';
+
     const rows: {
       id: string;
       name: string;
@@ -44,7 +51,7 @@ export class CatalogService {
           AND ($2::text IS NULL OR pr.name ILIKE '%' || $2 || '%')
           AND ($3::uuid IS NULL OR pr."categoryId" = $3)
         GROUP BY pr.id, pr.name, pr.slug, c.name
-        ORDER BY pr.name
+        ORDER BY ${orderBy}
         LIMIT $4 OFFSET $5`,
       [...params, dto.pageSize, offset],
     );

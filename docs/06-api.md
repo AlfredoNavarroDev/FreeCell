@@ -31,7 +31,7 @@ Ver `docs/backend/auth.md`, `docs/backend/orders.md` y `docs/backend/README.md` 
 ## Catálogo (Sprint 2)
 | | Ruta | Acceso | Notas |
 |---|---|---|---|
-| ✅ | `GET /catalog/products?query=&category=&currency=&page=&pageSize=` | 🌐 | Productos activos con `priceFromCents` (en la moneda pedida, PEN por defecto, D66), `categoryName` y `stockState` agregado (D69). `category` es el id de la categoría (D67). Paginado `{items, total, page, pageSize}`. |
+| ✅ | `GET /catalog/products?query=&category=&currency=&sort=&page=&pageSize=` | 🌐 | Productos activos con `priceFromCents` (en la moneda pedida, PEN por defecto, D66), `categoryName` y `stockState` agregado (D69). `category` es el id de la categoría (D67). `sort` opcional (`price_asc`\|`price_desc`\|`newest`); sin él, se ordena por nombre. Paginado `{items, total, page, pageSize}`. |
 | ✅ | `GET /catalog/products/:slug` | 🌐 | Ficha: `description`, `whatIncluded`, `compatibility`, `activationGuide`, `faq` (D68) y `plans: [{id, name, kind, durationDays, prices: [{currency, priceCents}], stockState}]`. Solo planes con al menos un precio. Nunca expone cantidad exacta (D29). 404 si el slug no existe o el producto está inactivo. |
 | ✅ | `GET /catalog/categories` | 🌐 | `[{id, name}]` ordenadas por nombre. |
 

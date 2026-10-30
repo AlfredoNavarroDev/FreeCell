@@ -19,4 +19,11 @@ export class CatalogQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsIn(CURRENCIES, { message: 'currency debe ser PEN o USD' })
   currency: Currency = 'PEN';
+
+  @ApiPropertyOptional({ enum: ['price_asc', 'price_desc', 'newest'] })
+  @IsOptional()
+  @IsIn(['price_asc', 'price_desc', 'newest'], {
+    message: 'sort no es un valor válido',
+  })
+  sort?: 'price_asc' | 'price_desc' | 'newest';
 }
