@@ -38,7 +38,10 @@ describe('StorageService', () => {
 
   it('usa la extensión correcta para cada tipo permitido', async () => {
     const jpg = await service.createProofUploadUrl('order-1', 'image/jpeg');
-    const pdf = await service.createProofUploadUrl('order-1', 'application/pdf');
+    const pdf = await service.createProofUploadUrl(
+      'order-1',
+      'application/pdf',
+    );
     expect(jpg.proofKey).toMatch(/\.jpg$/);
     expect(pdf.proofKey).toMatch(/\.pdf$/);
   });
@@ -53,5 +56,11 @@ describe('StorageService', () => {
       'application/pdf',
     );
     expect(first.proofKey).not.toBe(second.proofKey);
+  });
+
+  it('firma una URL de lectura del comprobante para el admin', async () => {
+    const url = await service.createProofDownloadUrl('proofs/order-1/x.png');
+    expect(url).toContain('freecell-proofs');
+    expect(url).toContain('X-Amz-Signature');
   });
 });

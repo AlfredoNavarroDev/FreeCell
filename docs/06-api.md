@@ -56,9 +56,9 @@ Ver `docs/backend/auth.md`, `docs/backend/orders.md` y `docs/backend/README.md` 
 | | Ruta | Notas |
 |---|---|---|
 | ⬜ | `GET /admin/summary` | Contadores: pagos pendientes (+ espera máxima), reclamos abiertos, planes con stock bajo/agotados; ventas, entregas y margen del día. |
-| ⬜ | `GET /admin/payments?status=PENDING` | Cola ordenada por antigüedad, con URL firmada del comprobante. |
-| ⬜ | `POST /admin/payments/:id/approve` | Transacción: licencia → SOLD, pedido → DELIVERED, pago → APPROVED, auditoría, encola `license-delivered:{orderId}`. Idempotente. |
-| ⬜ | `POST /admin/payments/:id/reject` | Body `{reason}` (enum). Pedido vuelve a `PENDING_PAYMENT` (reintento 1–2) o `CANCELLED` al 3.er rechazo (D18). Encola `payment-rejected`. |
+| ✅ | `GET /admin/payments?status=PENDING` | Cola ordenada por antigüedad (`createdAt` asc), con URL firmada de lectura del comprobante, monto, moneda, reserva restante e ítems. |
+| ✅ | `POST /admin/payments/:id/approve` | Transacción (`fn_approve_payment`): licencia → SOLD, pedido → DELIVERED, pago → APPROVED, auditoría, encola `license-delivered:{orderId}`. Idempotente. 404 si no existe; 409 si el pago ya fue revisado. |
+| ✅ | `POST /admin/payments/:id/reject` | Body `{reason}` (enum `AMOUNT_MISMATCH`\|`ILLEGIBLE_PROOF`\|`OPERATION_NOT_FOUND`, RF-ADM-13). Transacción (`fn_reject_payment`): pedido vuelve a `PENDING_PAYMENT` con plazo extra (reintento 1–2) o `CANCELLED` al 3.er rechazo (D18), libera la licencia reservada si cancela. Encola `payment-rejected`. 404 si no existe; 409 si el pago ya fue revisado. |
 | ✅ | `GET /admin/payment-methods` | Todos los métodos, incluidos inactivos (D65). |
 | ✅ | `POST /admin/payment-methods` | Crea un método; auditado (D65). `CRYPTO` solo admite `['USD']`. |
 | ✅ | `PATCH /admin/payment-methods/:id` | Edita cualquier campo, incluida la desactivación (`active: false`); auditado (D65). 404 si no existe. |

@@ -22,4 +22,17 @@ export class OrdersQueueService {
       },
     );
   }
+
+  /**
+   * Tras un rechazo (D18), el pedido vuelve a PENDING_PAYMENT con una nueva fecha de vencimiento:
+   * el job original (si no se disparó aún) apunta al vencimiento viejo, así que hay que reemplazarlo.
+   * `add` con un jobId ya existente no actualiza el delay, por eso se borra primero.
+   */
+  async rescheduleRelease(orderId: string, delayMs: number): Promise<void> {
+    const existing = await this.queue.getJob(releaseJobId(orderId));
+    if (existing) {
+      await existing.remove();
+    }
+    await this.scheduleRelease(orderId, delayMs);
+  }
 }

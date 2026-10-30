@@ -115,7 +115,11 @@ Defensa en profundidad además de la lógica en NestJS: triggers, vistas y funci
   según la fórmula de arriba).
 - **Funciones**: `fn_release_order(orderId, reason, requireExpired)` (libera un pedido `PENDING_PAYMENT`, único
   camino para el job de liberación, el barrido y la cancelación del cliente) y `fn_release_expired()` (recorre los
-  pedidos vencidos con `SKIP LOCKED` y llama a la anterior sobre cada uno).
+  pedidos vencidos con `SKIP LOCKED` y llama a la anterior sobre cada uno). `fn_approve_payment(paymentId, adminId)`
+  (licencia → `SOLD`, pedido → `DELIVERED`, pago → `APPROVED`; idempotente si ya estaba `APPROVED`) y
+  `fn_reject_payment(paymentId, adminId, reason, extraMinutes)` (pago → `REJECTED`; al 3.er rechazo del pedido
+  libera la licencia y cancela, si no vuelve a `PENDING_PAYMENT` con plazo extra, D18), migración
+  `AdminPaymentFunctions`.
 
 Un cambio a estas reglas de estado exige una migración nueva (nunca editar una ya aplicada).
 

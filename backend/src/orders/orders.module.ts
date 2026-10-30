@@ -4,6 +4,8 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { SettingsModule } from '../settings/settings.module';
 import { StorageModule } from '../storage/storage.module';
 import { UsersModule } from '../users/users.module';
+import { AdminPaymentsController } from './admin-payments.controller';
+import { AdminPaymentsService } from './admin-payments.service';
 import { OrderReleaseService } from './order-release.service';
 import { OrdersQueueService } from './orders-queue.service';
 import { QUEUE_ORDERS } from './orders.constants';
@@ -18,8 +20,13 @@ import { OrdersService } from './orders.service';
     StorageModule,
     UsersModule,
   ],
-  controllers: [OrdersController],
-  providers: [OrdersService, OrdersQueueService, OrderReleaseService],
+  controllers: [OrdersController, AdminPaymentsController],
+  providers: [
+    OrdersService,
+    OrdersQueueService,
+    OrderReleaseService,
+    AdminPaymentsService,
+  ],
   exports: [BullModule, OrderReleaseService],
 })
 export class OrdersModule {}

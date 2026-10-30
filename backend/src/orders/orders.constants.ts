@@ -11,3 +11,7 @@ export const DEFAULT_RESERVATION_TTL_MINUTES = 30;
 export const releaseJobId = (orderId: string): string => `release-${orderId}`;
 export const orderCreatedKey = (orderId: string): string =>
   `order-created-${orderId}`;
+export const licenseDeliveredKey = (orderId: string): string =>
+  `license-delivered-${orderId}`;
+export const paymentRejectedKey = (paymentId: string): string =>
+  `payment-rejected-${paymentId}`;

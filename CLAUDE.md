@@ -46,6 +46,7 @@ Todo lo que no sea `backend/` o `frontend/` vive en `docs/` (complementario). Re
 | `docs/07-diseno-ui.md` | Tokens, componentes, pantallas S1–S8 |
 | `docs/08-plan-de-sprints.md` | Sprints, definición de hecho, pruebas |
 | `docs/09-decisiones-y-preguntas-abiertas.md` | Decisiones tomadas, preguntas abiertas, riesgos |
+| `docs/10-orden-de-ejecucion.md` | Orden de prioridad recomendado para lo que falta (no reemplaza `docs/08`) |
 
 ## Comandos (`cd backend`)
 ```bash
