@@ -44,7 +44,7 @@ Los criterios marcados con **[?]** dependen de una pregunta abierta en `09-decis
 | RF-CAT-05 | El estado de stock por plan se calcula en vivo: **En stock** (> umbral), **Pocas unidades** (1..umbral), **Agotado** (0). | M | ✅ |
 | RF-CAT-06 | Mostrar **solo el estado** de stock (En stock / Pocas unidades / Agotado), nunca la cantidad exacta (D29). | M | ✅ |
 | RF-CAT-07 | Un plan agotado no permite comprar. | M | ✅ (la reserva responde 409) |
-| RF-CAT-08 | "Más vendidos" y "Recién llegados" en la portada. | S | ⬜ |
+| RF-CAT-08 | "Más vendidos" y "Recién llegados" en la portada. | S | 🟡 ("Recién llegados" vía `?sort=newest` ✅; "Más vendidos" falta — necesita datos de ventas agregados) |
 | RF-CAT-09 | Productos relacionados en la ficha. | C | ⬜ |
 | RF-CAT-10 | Reseñas de compradores con pedido `DELIVERED` de ese producto, moderadas por admin antes de publicarse (D33). | S | ⬜ |
 | RF-CAT-11 | Catálogo muestra el nombre de la herramienta solo en texto, sin logo oficial de terceros (D42). | M | ⬜ |

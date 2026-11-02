@@ -13,7 +13,7 @@ operación secundaria (inventario, reclamos, soporte) y en observabilidad/admin 
 | # | Qué | Por qué va ahí |
 |---|---|---|
 | 1 | ✅ Backend: `POST/GET /admin/payments` (approve/reject) — 2026-10-29 | Sin esto ningún pedido sale de `IN_REVIEW`. Pieza más chica con más impacto: desbloquea probar todo el resto end-to-end. |
-| 2 | Frontend: conectar catálogo a API real (reemplazar `src/lib/mock-catalog.ts`) | Base para página de producto y carrito; hoy S1 no habla con el backend. |
+| 2 | ✅ Frontend: conectar catálogo a API real (reemplazar `src/lib/mock-catalog.ts`) — 2026-11-02 | Base para página de producto y carrito; hoy S1 no habla con el backend. |
 | 3 | Frontend: página producto (`/p/[slug]`) + carrito + checkout (S2/S3) | El flujo de compra en sí. Backend (`/orders`, `/orders/:id/payment*`) ya está completo para esto. |
 | 4 | Frontend: panel admin de pagos (S6) | Junto con el paso 1, cierra el loop compra→aprobación→entrega de forma visible y probable. |
 | 5 | Backend + frontend: inventario (`/admin/inventory*`, S7) | Sin carga de lotes real, el stock depende solo del seed; necesario para operar más de una vez. |
@@ -37,4 +37,5 @@ operación secundaria (inventario, reclamos, soporte) y en observabilidad/admin 
 ## Estado (2026-10-29)
 
 Paso 1 completo (`/admin/payments`: list/approve/reject, migración `AdminPaymentFunctions`, 15 pruebas e2e).
-Próximo: **paso 2** (conectar catálogo del frontend a la API real).
+Paso 2 completo (catálogo del frontend conectado a la API real — 2026-11-02).
+Próximo: **paso 3** (página producto / carrito / checkout).

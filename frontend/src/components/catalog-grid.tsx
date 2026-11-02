@@ -43,7 +43,7 @@ export function CatalogGrid({
         <Link
           href={buildCategoryHref(undefined, current)}
           aria-current={!selectedCategory ? "true" : undefined}
-          className={`rounded-full border px-4 py-2 text-sm font-medium ${
+          className={`inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-medium ${
             !selectedCategory ? "border-accent bg-accent-soft-bg text-accent-soft-ink" : "border-line-strong text-muted"
           }`}
         >
@@ -56,7 +56,7 @@ export function CatalogGrid({
               key={cat.id}
               href={buildCategoryHref(cat.id, current)}
               aria-current={active ? "true" : undefined}
-              className={`rounded-full border px-4 py-2 text-sm font-medium ${
+              className={`inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-medium ${
                 active ? "border-accent bg-accent-soft-bg text-accent-soft-ink" : "border-line-strong text-muted"
               }`}
             >
@@ -70,7 +70,9 @@ export function CatalogGrid({
         <p className="mt-8 text-sm text-muted">Sin resultados para este filtro por ahora.</p>
       ) : (
         <>
-          <p className="mt-6 text-sm text-muted">{total} herramientas disponibles</p>
+          <p className="mt-6 text-sm text-muted">
+            {total === 1 ? "1 herramienta disponible" : `${total} herramientas disponibles`}
+          </p>
           <div className="mt-2 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {products.map((product) => (
               <ProductCard key={product.id} product={product} />

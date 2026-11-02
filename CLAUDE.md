@@ -19,7 +19,7 @@ Todo lo que no sea `backend/` o `frontend/` vive en `docs/` (complementario). Re
 - ✅ **Sprint 1 (Fundaciones) reconstruido el 2026-10-14**: esquema completo con lógica en Postgres, auth con
   refresh rotativo, reserva de carrito, colas, Docker. Ver `docs/backend/`.
 - 🟡 `frontend/`: scaffold (`create-next-app`, TypeScript + Tailwind v4 + App Router) + **pantalla S1 (Catálogo)**
-  construida con datos de ejemplo (sin conectar a la API todavía) + **sesión NextAuth** (credentials + Google,
+  conectada a la API real (Sprint 2) + **sesión NextAuth** (credentials + Google,
   refresh proactivo, logout con revocación, rutas `/admin` y `/cuenta` protegidas; RF-AUT-09/10, D46/D53/D56).
   S2–S11 van por sprint.
 - ⬜ **Sprints 2–4**: catálogo (resto), CRUD de catálogo, comprobantes (R2), panel admin, reclamos, soporte
@@ -99,7 +99,9 @@ Detalle completo (variables de entorno, scripts, puertos) en `docs/backend/READM
 - Sesión con **NextAuth** (credentials + Google) — ✅ implementada (Sprint 2, D46/D53/D56; RF-AUT-09/10). Seguir tokens y pantallas de `docs/07-diseno-ui.md`.
 - Accesibilidad AA: elementos nativos (`button`, `a`, `label`), objetivos ≥ 44 px, el color nunca es el único indicador (ver `StockBadge`).
 - Panel admin (ruta `/admin`, misma app): aprobar un pago en ≤ 2 clics, avance automático al siguiente, sin recargas.
-- No inventar datos de negocio: seguir el patrón de `src/lib/mock-catalog.ts` (placeholders `[..]`) hasta conectar la API.
+- No inventar datos de negocio: usar placeholders `[..]` solo donde la API todavía no provee el dato real.
+- Catálogo (S1) conectado a `GET /catalog/products`, `/catalog/categories`, `/payment-methods` reales — ✅
+  implementado (Sprint 2). No hay más `mock-catalog.ts`.
 
 **Despliegue**
 - API + workers + Redis en **Fly.io**; web en Vercel; Postgres en Neon; archivos en Cloudflare R2 (reemplaza Render/Upstash, D48/D49).

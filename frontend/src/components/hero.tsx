@@ -35,7 +35,7 @@ export function Hero({
           </ul>
           {paymentMethods.length > 0 ? (
             <>
-              <p className="mt-5 text-xs font-medium uppercase tracking-wide text-muted">Pagás con</p>
+              <p className="mt-5 text-xs font-medium uppercase tracking-wide text-muted">Pagas con</p>
               <ul className="mt-2 flex flex-wrap gap-2">
                 {paymentMethods.map((method) => (
                   <li

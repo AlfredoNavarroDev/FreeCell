@@ -19,7 +19,7 @@ en la tarjeta, entrega estimada junto al precio, garantías cerca de la decisió
 | `ink` | `#101828` | Texto principal, botón oscuro, encabezados |
 | `muted` | `#475467` | Texto secundario |
 | `line` | `#E4E7EC` / `#EAECF0` / `#D0D5DD` | Bordes y separadores |
-| `accent` | `#0A58E0` (variable editable) | Botón primario, enlaces, selección |
+| `accent` | `#6D28D9` / hover `#7C3AED` / press `#5B21B6` (variable editable) | Botón primario, enlaces, selección |
 | `accent-soft` | `#EAF1FE` (texto `#0A3FA3`) | Fondos de énfasis, franja superior |
 | `success` | texto `#067647` / fondo `#DCFAE6` | En stock, entregado, aprobar |
 | `warning` | texto `#93370D` / fondo `#FEF0C7` | Pocas unidades, esperando pago, reserva |

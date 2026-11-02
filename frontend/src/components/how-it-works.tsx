@@ -1,8 +1,8 @@
 const STEPS = [
-  { n: 1, title: "Elegí la herramienta", body: "Buscá o filtrá por categoría y elegí el plan que necesitás." },
-  { n: 2, title: "Pagá con el método que prefieras", body: "Yape, Plin o transferencia — vos elegís." },
-  { n: 3, title: "Subí tu comprobante", body: "Capturá o fotografiá el pago y súbelo al pedido." },
-  { n: 4, title: "Recibí tu clave", body: 'Validamos el pago y tu clave queda lista en "Mis pedidos".' },
+  { n: 1, title: "Elige la herramienta", body: "Busca o filtra por categoría y elige el plan que necesitas." },
+  { n: 2, title: "Paga con el método que prefieras", body: "Yape, Plin o transferencia — tú eliges." },
+  { n: 3, title: "Sube tu comprobante", body: "Captura o fotografía el pago y súbelo al pedido." },
+  { n: 4, title: "Recibe tu clave", body: 'Validamos el pago y tu clave queda lista en "Mis pedidos".' },
 ];
 
 export function HowItWorks() {
