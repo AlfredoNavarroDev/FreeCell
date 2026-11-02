@@ -1,57 +1,82 @@
-"use client";
-
-import { useMemo, useState } from "react";
-import { CATEGORIES, MOCK_CATALOG } from "@/lib/mock-catalog";
+import Link from "next/link";
+import type { CatalogCategory, CatalogProductListItem, CatalogSort } from "@/lib/catalog-client";
 import { ProductCard } from "./product-card";
+import { SortSelect } from "./sort-select";
 
-export function CatalogGrid() {
-  const [category, setCategory] = useState<string>("Todas");
+function buildCategoryHref(
+  categoryId: string | undefined,
+  current: { query?: string; sort?: CatalogSort },
+): string {
+  const params = new URLSearchParams();
+  if (current.query) params.set("query", current.query);
+  if (current.sort) params.set("sort", current.sort);
+  if (categoryId) params.set("category", categoryId);
+  const qs = params.toString();
+  return qs ? `/?${qs}` : "/";
+}
 
-  const filtered = useMemo(
-    () =>
-      category === "Todas"
-        ? MOCK_CATALOG
-        : MOCK_CATALOG.filter((p) => p.category === category),
-    [category]
-  );
+export function CatalogGrid({
+  products,
+  categories,
+  total,
+  selectedCategory,
+  selectedSort,
+  selectedQuery,
+}: {
+  products: CatalogProductListItem[];
+  categories: CatalogCategory[];
+  total: number;
+  selectedCategory?: string;
+  selectedSort?: CatalogSort;
+  selectedQuery?: string;
+}) {
+  const current = { query: selectedQuery, sort: selectedSort };
 
   return (
     <section className="mx-auto max-w-[1200px] px-6 py-10">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <h2 className="font-display text-2xl font-bold text-ink">Catálogo</h2>
+        <SortSelect value={selectedSort} />
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Filtrar por categoría">
-        {CATEGORIES.map((cat) => {
-          const active = cat === category;
+        <Link
+          href={buildCategoryHref(undefined, current)}
+          aria-pressed={!selectedCategory}
+          className={`rounded-full border px-4 py-2 text-sm font-medium ${
+            !selectedCategory ? "border-accent bg-accent-soft-bg text-accent-soft-ink" : "border-line-strong text-muted"
+          }`}
+        >
+          Todas
+        </Link>
+        {categories.map((cat) => {
+          const active = cat.id === selectedCategory;
           return (
-            <button
-              key={cat}
-              type="button"
+            <Link
+              key={cat.id}
+              href={buildCategoryHref(cat.id, current)}
               aria-pressed={active}
-              onClick={() => setCategory(cat)}
               className={`rounded-full border px-4 py-2 text-sm font-medium ${
-                active
-                  ? "border-accent bg-accent-soft-bg text-accent-soft-ink"
-                  : "border-line-strong text-muted"
+                active ? "border-accent bg-accent-soft-bg text-accent-soft-ink" : "border-line-strong text-muted"
               }`}
             >
-              {cat}
-            </button>
+              {cat.name}
+            </Link>
           );
         })}
       </div>
 
-      {filtered.length === 0 ? (
-        <p className="mt-8 text-sm text-muted">
-          Sin resultados para esta categoría por ahora.
-        </p>
+      {products.length === 0 ? (
+        <p className="mt-8 text-sm text-muted">Sin resultados para este filtro por ahora.</p>
       ) : (
-        <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        <>
+          <p className="mt-6 text-sm text-muted">{total} herramientas disponibles</p>
+          <div className="mt-2 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </>
       )}
     </section>
   );
