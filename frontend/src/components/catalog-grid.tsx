@@ -42,7 +42,7 @@ export function CatalogGrid({
       <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Filtrar por categoría">
         <Link
           href={buildCategoryHref(undefined, current)}
-          aria-pressed={!selectedCategory}
+          aria-current={!selectedCategory ? "true" : undefined}
           className={`rounded-full border px-4 py-2 text-sm font-medium ${
             !selectedCategory ? "border-accent bg-accent-soft-bg text-accent-soft-ink" : "border-line-strong text-muted"
           }`}
@@ -55,7 +55,7 @@ export function CatalogGrid({
             <Link
               key={cat.id}
               href={buildCategoryHref(cat.id, current)}
-              aria-pressed={active}
+              aria-current={active ? "true" : undefined}
               className={`rounded-full border px-4 py-2 text-sm font-medium ${
                 active ? "border-accent bg-accent-soft-bg text-accent-soft-ink" : "border-line-strong text-muted"
               }`}

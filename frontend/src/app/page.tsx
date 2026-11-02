@@ -61,6 +61,12 @@ export default async function CatalogPage({
           <section className="mx-auto max-w-[1200px] px-6 py-24 text-center">
             <h1 className="font-display text-2xl font-bold text-ink">No pudimos cargar la tienda</h1>
             <p className="mt-2 text-muted">Intenta de nuevo en un momento.</p>
+            <a
+              href="/"
+              className="mt-4 inline-flex h-11 items-center rounded-[10px] bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover"
+            >
+              Reintentar
+            </a>
           </section>
         </main>
         <SiteFooter />
