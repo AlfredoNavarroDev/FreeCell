@@ -32,7 +32,7 @@ export function SortSelect({ value }: { value?: CatalogSort }) {
       <select
         value={value ?? ""}
         onChange={handleChange}
-        className="h-10 rounded-[10px] border border-line bg-surface px-3 text-sm text-ink"
+        className="h-11 rounded-[10px] border border-line bg-surface px-3 text-sm text-ink"
       >
         {SORT_OPTIONS.map((option) => (
           <option key={option.value} value={option.value}>
