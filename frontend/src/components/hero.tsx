@@ -20,7 +20,7 @@ export function Hero({
             Licencias para tus herramientas de servicio técnico
           </h1>
           <p className="mt-4 max-w-xl text-lg text-muted">
-            Compra, paga por Yape/Plin o transferencia y recibe tu licencia en minutos.
+            Compra, paga por Yape/Plin o transferencia y recibe tu licencia en tu cuenta.
           </p>
           <HeroSearch defaultQuery={query} category={category} sort={sort} />
         </div>
