@@ -7,3 +7,5 @@ dist
 .DS_Store
 .playwright-mcp/
 .worktrees/
+stitch_free_cell/
+stitch_free_cell_store_catalog.zip
