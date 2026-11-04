@@ -19,6 +19,7 @@ export function CheckoutSummary() {
   async function handleContinue() {
     setError(null);
     setNeedsVerification(false);
+    setResendSent(false);
     if (cart.requiresToolUsername && toolUsername.trim().length === 0) {
       setError("Ingresa tu usuario de la herramienta para continuar");
       return;
@@ -97,7 +98,7 @@ export function CheckoutSummary() {
             <button
               type="button"
               onClick={handleResend}
-              className="mt-2 font-medium underline disabled:opacity-50"
+              className="mt-2 flex h-11 items-center font-medium underline disabled:opacity-50"
               disabled={resendSent}
             >
               {resendSent ? "Enlace reenviado, revisa tu correo" : "Reenviar enlace de verificación"}
