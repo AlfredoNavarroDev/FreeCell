@@ -75,7 +75,9 @@ export function CatalogGrid({
           </p>
           <div className="mt-2 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <Link key={product.id} href={`/p/${product.slug}`} className="block">
+                <ProductCard product={product} />
+              </Link>
             ))}
           </div>
         </>
