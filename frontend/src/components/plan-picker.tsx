@@ -12,6 +12,10 @@ function planPriceCents(plan: PlanOffer): number {
   return plan.prices.find((p) => p.currency === "PEN")?.priceCents ?? 0;
 }
 
+function hasPenPrice(plan: PlanOffer): boolean {
+  return plan.prices.some((p) => p.currency === "PEN");
+}
+
 export function PlanPicker({ product }: { product: CatalogProductDetail }) {
   const router = useRouter();
   const cart = useCart();
@@ -26,7 +30,8 @@ export function PlanPicker({ product }: { product: CatalogProductDetail }) {
   const [message, setMessage] = useState<string | null>(null);
 
   const plan = product.plans.find((p) => p.kind === kind) ?? product.plans[0];
-  const outOfStock = !plan || plan.stockState === "OUT_OF_STOCK";
+  const noPenPrice = plan && !hasPenPrice(plan);
+  const outOfStock = !plan || plan.stockState === "OUT_OF_STOCK" || noPenPrice;
 
   function addCurrentPlan(): CartAddResult | null {
     if (!plan) return null;
@@ -96,7 +101,11 @@ export function PlanPicker({ product }: { product: CatalogProductDetail }) {
         />
       </label>
 
-      {message ? <p className="mt-2 text-sm text-danger-ink">{message}</p> : null}
+      {noPenPrice ? (
+        <p className="mt-2 text-sm text-muted">Este plan no está disponible en soles por ahora.</p>
+      ) : message ? (
+        <p className="mt-2 text-sm text-danger-ink">{message}</p>
+      ) : null}
 
       <div className="mt-4 flex flex-col gap-2">
         <button
