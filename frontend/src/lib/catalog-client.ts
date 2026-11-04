@@ -33,6 +33,34 @@ export interface PaymentMethod {
   active: boolean;
 }
 
+export interface PlanPrice {
+  currency: Currency;
+  priceCents: number;
+}
+
+export interface PlanOffer {
+  id: string;
+  name: string;
+  kind: "NEW" | "RENEWAL";
+  durationDays: number;
+  prices: PlanPrice[];
+  stockState: StockState;
+}
+
+export interface CatalogProductDetail {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  whatIncluded: string | null;
+  compatibility: string | null;
+  activationGuide: string | null;
+  faq: { question: string; answer: string }[] | null;
+  categoryName: string | null;
+  requiresToolUsername: boolean;
+  plans: PlanOffer[];
+}
+
 const API_URL = process.env.API_URL ?? "http://localhost:3000";
 
 async function getJson<T>(path: string): Promise<T> {
@@ -66,4 +94,17 @@ export async function fetchCatalogCategories(): Promise<CatalogCategory[]> {
 
 export async function fetchPaymentMethods(): Promise<PaymentMethod[]> {
   return getJson<PaymentMethod[]>("/payment-methods?currency=PEN");
+}
+
+export async function fetchProductDetail(slug: string): Promise<CatalogProductDetail | null> {
+  const res = await fetch(`${API_URL}/catalog/products/${slug}`, {
+    next: { revalidate: 60 },
+  });
+  if (res.status === 404) {
+    return null;
+  }
+  if (!res.ok) {
+    throw new Error(`Error ${res.status} al consultar /catalog/products/${slug}`);
+  }
+  return (await res.json()) as CatalogProductDetail;
 }
