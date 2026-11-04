@@ -61,6 +61,34 @@ describe("addToCart", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reason).toBe("MAX_PLANS");
   });
+
+  it("trata qty de 0 en plan existente como no-op exitoso (fix finding 2)", () => {
+    // Test case: qty=0 on existing item NOT at limit should be success with unchanged items
+    const existing: CartItem[] = [{ ...makeItem(), qty: 2 }];
+    const result = addToCart(existing, makeItem(), 0);
+    expect(result.ok).toBe(true);
+    expect(result.items).toBe(existing); // No change
+  });
+
+  it("clampea qty negativo en plan existente al rango válido (fix finding 1)", () => {
+    // Test case: negative qty should clamp to min of 1
+    const existing: CartItem[] = [{ ...makeItem(), qty: 3 }];
+    const result = addToCart(existing, makeItem(), -2);
+    expect(result.ok).toBe(true);
+    // 3 + (-2) = 1, which is within valid range [1, CART_MAX_QTY_PER_PLAN]
+    expect(result.items[0].qty).toBe(1);
+  });
+
+  it("no confunde qty=0 con MAX_QTY cuando el plan no está en el límite", () => {
+    // Regression test: ensure qty=0 doesn't falsely trigger MAX_QTY reason
+    const existing: CartItem[] = [{ ...makeItem(), qty: 2 }];
+    const result = addToCart(existing, makeItem(), 0);
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      // Should not have a MAX_QTY reason when qty=0
+      expect(result.reason).not.toBe("MAX_QTY");
+    }
+  });
 });
 
 describe("updateQty", () => {

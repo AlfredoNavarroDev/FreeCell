@@ -28,7 +28,15 @@ export function addToCart(
   const existing = items.find((item) => item.planId === entry.planId);
 
   if (existing) {
-    const nextQty = Math.min(existing.qty + qty, CART_MAX_QTY_PER_PLAN);
+    // Clamp qty to valid range; qty must stay in [1, CART_MAX_QTY_PER_PLAN]
+    const nextQty = Math.max(1, Math.min(existing.qty + qty, CART_MAX_QTY_PER_PLAN));
+
+    // If qty is 0, nextQty equals existing.qty and we're doing a no-op, so succeed without change
+    if (qty === 0) {
+      return { ok: true, items };
+    }
+
+    // If nextQty didn't change from existing.qty, we've hit the upper limit
     if (nextQty === existing.qty) {
       return { ok: false, items, reason: "MAX_QTY" };
     }
