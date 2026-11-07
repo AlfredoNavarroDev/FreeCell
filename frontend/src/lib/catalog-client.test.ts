@@ -3,6 +3,7 @@ import {
   fetchCatalogCategories,
   fetchCatalogProducts,
   fetchPaymentMethods,
+  fetchProductDetail,
 } from "./catalog-client";
 
 describe("fetchCatalogProducts", () => {
@@ -109,5 +110,59 @@ describe("fetchPaymentMethods", () => {
 
     expect(result).toEqual(payload);
     expect((fetchMock.mock.calls[0][0] as string)).toContain("currency=PEN");
+  });
+});
+
+describe("fetchProductDetail", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("devuelve la ficha del producto parseada", async () => {
+    const payload = {
+      id: "p1",
+      name: "UnlockTool",
+      slug: "unlocktool",
+      description: "Desbloquea el equipo",
+      whatIncluded: "1 licencia",
+      compatibility: "Android",
+      activationGuide: "Paso 1...",
+      faq: [{ question: "¿Cuánto dura?", answer: "30 días" }],
+      categoryName: "Desbloqueo",
+      requiresToolUsername: false,
+      plans: [
+        {
+          id: "plan-1",
+          name: "Plan mensual",
+          kind: "NEW",
+          durationDays: 30,
+          prices: [{ currency: "PEN", priceCents: 8900 }],
+          stockState: "IN_STOCK",
+        },
+      ],
+    };
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(payload), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await fetchProductDetail("unlocktool");
+
+    expect(result).toEqual(payload);
+    expect((fetchMock.mock.calls[0][0] as string)).toContain("/catalog/products/unlocktool");
+  });
+
+  it("devuelve null si el producto no existe (404)", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 404 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await fetchProductDetail("no-existe");
+
+    expect(result).toBeNull();
+  });
+
+  it("lanza un error si el backend responde con otro status de error", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 500 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(fetchProductDetail("unlocktool")).rejects.toThrow();
   });
 });

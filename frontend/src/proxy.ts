@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 
 const ADMIN_PREFIX = "/admin";
-const PROTECTED_PREFIXES = ["/cuenta", ADMIN_PREFIX];
+const PROTECTED_PREFIXES = ["/cuenta", "/checkout", ADMIN_PREFIX];
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
@@ -26,5 +26,5 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/admin/:path*", "/cuenta/:path*"],
+  matcher: ["/admin/:path*", "/cuenta/:path*", "/checkout/:path*"],
 };

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CartBadge } from "./cart-badge";
 
 export function SiteHeader() {
   return (
@@ -18,6 +19,7 @@ export function SiteHeader() {
           <Link href="/tickets">Soporte</Link>
         </nav>
         <div className="flex items-center gap-3">
+          <CartBadge />
           <Link
             href="/ingresar"
             className="flex h-11 items-center rounded-[10px] border border-line-strong px-4 text-sm font-medium text-ink"
