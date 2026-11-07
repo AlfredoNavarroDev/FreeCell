@@ -115,10 +115,10 @@ Los criterios marcados con **[?]** dependen de una pregunta abierta en `09-decis
 ### Pagos
 | ID | Requerimiento | Prio | Estado |
 |---|---|---|---|
-| RF-ADM-10 | Cola de pagos pendientes ordenada por antigüedad, con cliente, producto, monto, método y tiempo de espera. | M | 🟡 (`GET /admin/payments` ✅; falta la UI de la cola, Sprint 3 frontend) |
-| RF-ADM-11 | Ver el comprobante junto al monto esperado, el método, la reserva restante y el stock disponible, sin cambiar de pantalla. | M | 🟡 (API devuelve URL firmada del comprobante, monto, método y reserva restante ✅; falta el stock disponible y la UI, Sprint 3 frontend) |
-| RF-ADM-12 | **Aprobar y entregar:** en una transacción, la licencia reservada pasa a `SOLD`, el pedido a `DELIVERED`, el pago a `APPROVED`; se encola el correo con clave y se registra auditoría. Tras aprobar, la UI pasa al siguiente pago. | M | 🟡 (`POST /admin/payments/:id/approve` ✅, transacción vía `fn_approve_payment`, idempotente, audita y encola `license-delivered`; falta el envío real del correo y la UI con avance automático, Sprint 3 frontend) |
-| RF-ADM-13 | **Rechazar** con motivo predefinido (monto incorrecto, comprobante ilegible, operación no encontrada); el motivo se muestra al cliente. | M | 🟡 (`POST /admin/payments/:id/reject` ✅ con los 3 motivos predefinidos, texto guardado en `payments.rejectionReason`; falta la UI, Sprint 3 frontend) |
+| RF-ADM-10 | Cola de pagos pendientes ordenada por antigüedad, con cliente, producto, monto, método y tiempo de espera. | M | ✅ (2026-11-07) |
+| RF-ADM-11 | Ver el comprobante junto al monto esperado, el método, la reserva restante y el stock disponible, sin cambiar de pantalla. | M | ✅ (2026-11-07) |
+| RF-ADM-12 | **Aprobar y entregar:** en una transacción, la licencia reservada pasa a `SOLD`, el pedido a `DELIVERED`, el pago a `APPROVED`; se encola el correo con clave y se registra auditoría. Tras aprobar, la UI pasa al siguiente pago. | M | ✅ (2026-11-07; el envío real del correo de la cola sigue pendiente, es trabajo aparte) |
+| RF-ADM-13 | **Rechazar** con motivo predefinido (monto incorrecto, comprobante ilegible, operación no encontrada); el motivo se muestra al cliente. | M | ✅ (2026-11-07) |
 | RF-ADM-14 | Tras rechazar, el pedido vuelve a `PENDING_PAYMENT` (máx. 2 reintentos) y luego se cancela automáticamente (D18, ver RF-COM-12). | M | ✅ (`fn_reject_payment`, probado con e2e: 1.º/2.º reintento y cancelación al 3.er rechazo) |
 | RF-ADM-15 | Detectar comprobantes repetidos (mismo N.º de operación o hash de imagen) y **bloquear automáticamente** (D21). | M | ⬜ |
 
