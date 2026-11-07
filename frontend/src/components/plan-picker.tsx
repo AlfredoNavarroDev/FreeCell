@@ -29,7 +29,11 @@ export function PlanPicker({ product }: { product: CatalogProductDetail }) {
   const [qty, setQty] = useState(1);
   const [message, setMessage] = useState<string | null>(null);
 
-  const plan = product.plans.find((p) => p.kind === kind) ?? product.plans[0];
+  const plansOfKind = product.plans.filter((p) => p.kind === kind);
+  const plan =
+    plansOfKind.find((p) => p.stockState !== "OUT_OF_STOCK" && hasPenPrice(p)) ??
+    plansOfKind[0] ??
+    product.plans[0];
   const noPenPrice = plan && !hasPenPrice(plan);
   const outOfStock = !plan || plan.stockState === "OUT_OF_STOCK" || noPenPrice;
 
