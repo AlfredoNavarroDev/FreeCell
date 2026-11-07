@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { expireOrderNow, markEmailVerified } from "./db";
+import { expireOrderNow, markEmailVerified, releaseOrderLicenses } from "./db";
 
 const API_URL = process.env.API_URL ?? "http://localhost:3000";
 
@@ -56,10 +56,10 @@ test("flujo feliz: producto -> carrito -> checkout -> pago -> entrega", async ({
 
   const orderId = page.url().match(/\/checkout\/([^/]+)\/entrega/)?.[1];
   expect(orderId).toBeTruthy();
-  const session = await (await page.request.get("/api/auth/session")).json();
-  await page.request.post(`${API_URL}/orders/${orderId}/cancel`, {
-    headers: { Authorization: `Bearer ${session.accessToken}` },
-  });
+  // El pedido ya está IN_REVIEW (pago enviado): `/orders/:id/cancel` solo libera pedidos
+  // PENDING_PAYMENT (regla de dominio #3), así que no sirve acá. Libera la licencia fija del
+  // seed directo en la base para no agotar el stock (solo 5) entre corridas repetidas.
+  await releaseOrderLicenses(orderId!);
 });
 
 test("reserva vencida bloquea la subida del comprobante", async ({ page }) => {
