@@ -47,6 +47,7 @@ Todo lo que no sea `backend/` o `frontend/` vive en `docs/` (complementario). Re
 | `docs/08-plan-de-sprints.md` | Sprints, definición de hecho, pruebas |
 | `docs/09-decisiones-y-preguntas-abiertas.md` | Decisiones tomadas, preguntas abiertas, riesgos |
 | `docs/10-orden-de-ejecucion.md` | Orden de prioridad recomendado para lo que falta (no reemplaza `docs/08`) |
+| `docs/11-bugs-pendientes.md` | Bugs técnicos reales encontrados en desarrollo, sin resolver, para atacar al final |
 
 ## Comandos (`cd backend`)
 ```bash
