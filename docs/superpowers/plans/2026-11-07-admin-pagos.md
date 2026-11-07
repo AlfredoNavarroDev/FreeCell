@@ -953,6 +953,13 @@ export function AdminPaymentDetail({
 
 - [ ] **Step 2: Implementar `admin-payments-queue.tsx`**
 
+> **Nota (corregido durante la verificación manual, previa al Task 5):** el `return` temprano para
+> `payments.length === 0` dejaba afuera el bloque que muestra `message`/`error` — probado en vivo: tras
+> rechazar o aprobar el único pago pendiente, la cola queda vacía y el banner de éxito/error nunca se
+> pintaba (el Task 5 espera verlo con `page.getByText(/aprobado|rechazado/)`). El bloque abajo ya tiene la
+> corrección: `message`/`error` se renderizan primero, y el estado vacío vs. la cola+detalle son ramas
+> mutuamente excluyentes del mismo `return`, sin cambiar ninguna otra lógica.
+
 Crear `frontend/src/components/admin-payments-queue.tsx`:
 
 ```tsx
@@ -1037,70 +1044,70 @@ export function AdminPaymentsQueue({ initialPayments }: { initialPayments: Admin
     setMessage(`Pedido #${result.data.orderNumber} rechazado.`);
   }
 
-  if (payments.length === 0) {
-    return (
-      <div className="rounded-2xl border border-line-soft bg-surface p-14 text-center">
-        <p className="font-display text-xl font-bold text-ink">Estás al día</p>
-        <p className="mt-1 text-muted">No hay pagos pendientes. Cuando un cliente suba un comprobante, aparecerá aquí.</p>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-muted">{payments.length} pendientes</p>
       {message ? (
         <div className="rounded-[10px] bg-success-bg px-4 py-3 font-medium text-success-ink">{message}</div>
       ) : null}
       {error ? (
         <div className="rounded-[10px] bg-danger-bg px-4 py-3 font-medium text-danger-ink">{error}</div>
       ) : null}
-      <div className="flex flex-wrap items-start gap-5">
-        <section aria-label="Cola de pagos" className="flex w-full max-w-[360px] flex-col gap-2">
-          {payments.map((p) => {
-            const active = p.paymentId === selectedId;
-            return (
-              <button
-                key={p.paymentId}
-                type="button"
-                aria-pressed={active}
-                onClick={() => selectPayment(p.paymentId)}
-                className={`flex flex-col gap-1 rounded-xl border-2 px-4 py-3 text-left ${
-                  active ? "border-accent bg-accent-soft-bg" : "border-line-soft bg-surface"
-                }`}
-              >
-                <span className="flex w-full justify-between gap-2 font-semibold text-ink">
-                  <span>{p.customerName ?? p.customerEmail}</span>
-                  <span>{formatPriceCents(p.totalCents, p.currency)}</span>
-                </span>
-                <span className="text-sm text-muted">
-                  {p.items.map((item) => `${item.productName} · ${item.planName}`).join(", ")}
-                </span>
-                <span className="text-sm text-muted">
-                  {p.paymentMethodName} · hace {minutesAgo(p.createdAt)} min
-                </span>
-              </button>
-            );
-          })}
-        </section>
-        {selected ? (
-          <AdminPaymentDetail
-            key={selected.paymentId}
-            payment={selected}
-            rejecting={rejecting}
-            reason={reason}
-            submitting={submitting}
-            onApprove={handleApprove}
-            onStartReject={() => setRejecting(true)}
-            onCancelReject={() => {
-              setRejecting(false);
-              setReason(null);
-            }}
-            onPickReason={setReason}
-            onConfirmReject={handleConfirmReject}
-          />
-        ) : null}
-      </div>
+      {payments.length === 0 ? (
+        <div className="rounded-2xl border border-line-soft bg-surface p-14 text-center">
+          <p className="font-display text-xl font-bold text-ink">Estás al día</p>
+          <p className="mt-1 text-muted">No hay pagos pendientes. Cuando un cliente suba un comprobante, aparecerá aquí.</p>
+        </div>
+      ) : (
+        <>
+          <p className="text-muted">{payments.length} pendientes</p>
+          <div className="flex flex-wrap items-start gap-5">
+            <section aria-label="Cola de pagos" className="flex w-full max-w-[360px] flex-col gap-2">
+              {payments.map((p) => {
+                const active = p.paymentId === selectedId;
+                return (
+                  <button
+                    key={p.paymentId}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => selectPayment(p.paymentId)}
+                    className={`flex flex-col gap-1 rounded-xl border-2 px-4 py-3 text-left ${
+                      active ? "border-accent bg-accent-soft-bg" : "border-line-soft bg-surface"
+                    }`}
+                  >
+                    <span className="flex w-full justify-between gap-2 font-semibold text-ink">
+                      <span>{p.customerName ?? p.customerEmail}</span>
+                      <span>{formatPriceCents(p.totalCents, p.currency)}</span>
+                    </span>
+                    <span className="text-sm text-muted">
+                      {p.items.map((item) => `${item.productName} · ${item.planName}`).join(", ")}
+                    </span>
+                    <span className="text-sm text-muted">
+                      {p.paymentMethodName} · hace {minutesAgo(p.createdAt)} min
+                    </span>
+                  </button>
+                );
+              })}
+            </section>
+            {selected ? (
+              <AdminPaymentDetail
+                key={selected.paymentId}
+                payment={selected}
+                rejecting={rejecting}
+                reason={reason}
+                submitting={submitting}
+                onApprove={handleApprove}
+                onStartReject={() => setRejecting(true)}
+                onCancelReject={() => {
+                  setRejecting(false);
+                  setReason(null);
+                }}
+                onPickReason={setReason}
+                onConfirmReject={handleConfirmReject}
+              />
+            ) : null}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -1164,19 +1171,43 @@ git commit -m "Frontend: pantalla de Pagos del panel admin (cola, detalle, aprob
 
 En `frontend/e2e/db.ts`, agregar al final del archivo:
 
+> **Nota (corregido durante la verificación manual de Tasks 1-4, previa a este Task 5):** el trigger
+> `trg_license_status_guard` (`fn_license_status_guard`, migración de Fundaciones) solo permite
+> `SOLD -> VOID`, nunca `SOLD -> AVAILABLE` — probado contra Postgres real. Reescribir el status de una
+> licencia `SOLD` directo a `AVAILABLE` lanza `Transición de licencia no permitida: SOLD -> AVAILABLE`.
+> La limpieza correcta es: `VOID` la licencia vendida (retiro permanente, consistente con la regla de
+> dominio "una licencia nunca se asigna a dos pedidos") e `INSERT` una licencia nueva `AVAILABLE` para el
+> mismo plan/lote, igual que hace `createCatalog` en `backend/test/utils/factories.ts` (`secretEncrypted:
+> 'test:test:test'`, `secretHash` aleatorio) — así el pool de 5 licencias del seed queda igual de grande
+> para la siguiente corrida del e2e, solo para sostenibilidad del entorno de dev/test local (no toca el
+> trigger ni las reglas de dominio).
+
 ```ts
+import { randomBytes } from "node:crypto";
+
 // Aprobar vende la licencia (SOLD) y entrega el pedido (DELIVERED) — correcto y sin vuelta atrás vía
-// API (no existe un endpoint de "deshacer entrega"). Para que el e2e de aprobación sea repetible sin
-// agotar las 5 licencias fijas del seed, se libera acá directo en la base, solo para sostenibilidad del
-// entorno de dev/test local (cuentas de prueba descartables, no datos de producción).
+// API (no existe un endpoint de "deshacer entrega"). Una licencia SOLD nunca vuelve a AVAILABLE (lo
+// bloquea trg_license_status_guard) así que, solo para sostenibilidad del entorno de dev/test local
+// (cuentas de prueba descartables, no datos de producción), se la retira (VOID) y se repone una licencia
+// nueva AVAILABLE del mismo plan/lote para que el e2e de aprobación sea repetible sin agotar las 5
+// licencias fijas del seed.
 export async function releaseDeliveredOrderLicense(orderId: string): Promise<void> {
   await withClient(async (client) => {
-    await client.query(
-      `UPDATE license_items li SET status = 'AVAILABLE', "orderItemId" = NULL, "reservedUntil" = NULL, "soldAt" = NULL
-         FROM order_items oi
-        WHERE oi."orderId" = $1 AND li."orderItemId" = oi.id AND li.status = 'SOLD'`,
+    const { rows } = await client.query<{ id: string; planId: string; batchId: string }>(
+      `SELECT li.id, li."planId", li."batchId"
+         FROM license_items li
+         JOIN order_items oi ON li."orderItemId" = oi.id
+        WHERE oi."orderId" = $1 AND li.status = 'SOLD'`,
       [orderId],
     );
+    for (const row of rows) {
+      await client.query(
+        `INSERT INTO license_items ("planId", "batchId", "secretEncrypted", "secretHash", status)
+         VALUES ($1, $2, 'test:test:test', $3, 'AVAILABLE')`,
+        [row.planId, row.batchId, randomBytes(32).toString("hex")],
+      );
+      await client.query(`UPDATE license_items SET status = 'VOID' WHERE id = $1`, [row.id]);
+    }
     await client.query(
       `UPDATE orders SET status = 'CANCELLED', "cancelReason" = 'E2E_TEST_CLEANUP' WHERE id = $1`,
       [orderId],
