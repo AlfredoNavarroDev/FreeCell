@@ -79,70 +79,70 @@ export function AdminPaymentsQueue({ initialPayments }: { initialPayments: Admin
     setMessage(`Pedido #${result.data.orderNumber} rechazado.`);
   }
 
-  if (payments.length === 0) {
-    return (
-      <div className="rounded-2xl border border-line-soft bg-surface p-14 text-center">
-        <p className="font-display text-xl font-bold text-ink">Estás al día</p>
-        <p className="mt-1 text-muted">No hay pagos pendientes. Cuando un cliente suba un comprobante, aparecerá aquí.</p>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-muted">{payments.length} pendientes</p>
       {message ? (
         <div className="rounded-[10px] bg-success-bg px-4 py-3 font-medium text-success-ink">{message}</div>
       ) : null}
       {error ? (
         <div className="rounded-[10px] bg-danger-bg px-4 py-3 font-medium text-danger-ink">{error}</div>
       ) : null}
-      <div className="flex flex-wrap items-start gap-5">
-        <section aria-label="Cola de pagos" className="flex w-full max-w-[360px] flex-col gap-2">
-          {payments.map((p) => {
-            const active = p.paymentId === selectedId;
-            return (
-              <button
-                key={p.paymentId}
-                type="button"
-                aria-pressed={active}
-                onClick={() => selectPayment(p.paymentId)}
-                className={`flex flex-col gap-1 rounded-xl border-2 px-4 py-3 text-left ${
-                  active ? "border-accent bg-accent-soft-bg" : "border-line-soft bg-surface"
-                }`}
-              >
-                <span className="flex w-full justify-between gap-2 font-semibold text-ink">
-                  <span>{p.customerName ?? p.customerEmail}</span>
-                  <span>{formatPriceCents(p.totalCents, p.currency)}</span>
-                </span>
-                <span className="text-sm text-muted">
-                  {p.items.map((item) => `${item.productName} · ${item.planName}`).join(", ")}
-                </span>
-                <span className="text-sm text-muted">
-                  {p.paymentMethodName} · hace {minutesAgo(p.createdAt)} min
-                </span>
-              </button>
-            );
-          })}
-        </section>
-        {selected ? (
-          <AdminPaymentDetail
-            key={selected.paymentId}
-            payment={selected}
-            rejecting={rejecting}
-            reason={reason}
-            submitting={submitting}
-            onApprove={handleApprove}
-            onStartReject={() => setRejecting(true)}
-            onCancelReject={() => {
-              setRejecting(false);
-              setReason(null);
-            }}
-            onPickReason={setReason}
-            onConfirmReject={handleConfirmReject}
-          />
-        ) : null}
-      </div>
+      {payments.length === 0 ? (
+        <div className="rounded-2xl border border-line-soft bg-surface p-14 text-center">
+          <p className="font-display text-xl font-bold text-ink">Estás al día</p>
+          <p className="mt-1 text-muted">No hay pagos pendientes. Cuando un cliente suba un comprobante, aparecerá aquí.</p>
+        </div>
+      ) : (
+        <>
+          <p className="text-muted">{payments.length} pendientes</p>
+          <div className="flex flex-wrap items-start gap-5">
+            <section aria-label="Cola de pagos" className="flex w-full max-w-[360px] flex-col gap-2">
+              {payments.map((p) => {
+                const active = p.paymentId === selectedId;
+                return (
+                  <button
+                    key={p.paymentId}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => selectPayment(p.paymentId)}
+                    className={`flex flex-col gap-1 rounded-xl border-2 px-4 py-3 text-left ${
+                      active ? "border-accent bg-accent-soft-bg" : "border-line-soft bg-surface"
+                    }`}
+                  >
+                    <span className="flex w-full justify-between gap-2 font-semibold text-ink">
+                      <span>{p.customerName ?? p.customerEmail}</span>
+                      <span>{formatPriceCents(p.totalCents, p.currency)}</span>
+                    </span>
+                    <span className="text-sm text-muted">
+                      {p.items.map((item) => `${item.productName} · ${item.planName}`).join(", ")}
+                    </span>
+                    <span className="text-sm text-muted">
+                      {p.paymentMethodName} · hace {minutesAgo(p.createdAt)} min
+                    </span>
+                  </button>
+                );
+              })}
+            </section>
+            {selected ? (
+              <AdminPaymentDetail
+                key={selected.paymentId}
+                payment={selected}
+                rejecting={rejecting}
+                reason={reason}
+                submitting={submitting}
+                onApprove={handleApprove}
+                onStartReject={() => setRejecting(true)}
+                onCancelReject={() => {
+                  setRejecting(false);
+                  setReason(null);
+                }}
+                onPickReason={setReason}
+                onConfirmReject={handleConfirmReject}
+              />
+            ) : null}
+          </div>
+        </>
+      )}
     </div>
   );
 }
