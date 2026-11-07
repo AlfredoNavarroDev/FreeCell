@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { OrderItemsSummary } from "@/components/order-items-summary";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { getOrder } from "@/lib/orders-client";
@@ -8,6 +9,11 @@ export default async function DeliveryPage({ params }: PageProps<"/checkout/[ord
   const result = await getOrder(orderId);
 
   if (!result.ok) {
+    notFound();
+  }
+  // Solo tiene sentido confirmar un pago que ya se envió: si el pedido sigue
+  // PENDING_PAYMENT, nunca se completó esta pantalla (URL visitada directamente).
+  if (result.data.status === "PENDING_PAYMENT") {
     notFound();
   }
 
@@ -23,6 +29,9 @@ export default async function DeliveryPage({ params }: PageProps<"/checkout/[ord
             Pedido #{order.orderNumber} en revisión. Te avisamos en cuanto aprobemos tu pago (hasta 24 horas,
             normalmente antes).
           </p>
+          <div className="w-full">
+            <OrderItemsSummary orderId={order.id} />
+          </div>
           <a
             href="/"
             className="mt-2 flex h-11 items-center rounded-[10px] bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover"

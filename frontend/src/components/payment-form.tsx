@@ -3,15 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Countdown } from "@/components/countdown";
+import { OrderItemsSummary } from "@/components/order-items-summary";
 import type { PaymentMethod } from "@/lib/catalog-client";
 import { computeProofHash } from "@/lib/proof-hash";
 import { requestPaymentUploadUrl, submitPayment } from "@/lib/orders-client";
 
-const ALLOWED_TYPES: Record<string, true> = {
-  "image/jpeg": true,
-  "image/png": true,
-  "application/pdf": true,
-};
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "application/pdf"] as const;
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 
 export function PaymentForm({
@@ -38,7 +35,7 @@ export function PaymentForm({
       setFile(null);
       return;
     }
-    if (!ALLOWED_TYPES[selected.type]) {
+    if (!ALLOWED_TYPES.includes(selected.type as (typeof ALLOWED_TYPES)[number])) {
       setError("El comprobante debe ser JPG, PNG o PDF");
       return;
     }
@@ -50,6 +47,10 @@ export function PaymentForm({
   }
 
   async function handleSubmit() {
+    if (!paymentMethodId) {
+      setError("No hay métodos de pago disponibles por ahora");
+      return;
+    }
     if (!file) {
       setError("Sube el comprobante de pago");
       return;
@@ -108,6 +109,7 @@ export function PaymentForm({
   return (
     <div className="flex flex-col gap-6">
       <Countdown expiresAt={expiresAt} onExpire={() => setExpired(true)} />
+      <OrderItemsSummary orderId={orderId} />
 
       {expired ? (
         <div className="rounded-[10px] bg-danger-bg p-4 text-sm text-danger-ink">
@@ -153,7 +155,7 @@ export function PaymentForm({
             />
           </label>
 
-          <label className="flex items-start gap-2 text-sm text-ink">
+          <label className="flex min-h-11 items-start gap-3 py-2 text-sm text-ink">
             <input
               type="checkbox"
               checked={acceptsLegalDeclaration}
@@ -168,7 +170,7 @@ export function PaymentForm({
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={submitting}
+            disabled={submitting || paymentMethods.length === 0}
             className="flex h-11 items-center justify-center rounded-[10px] bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
           >
             {submitting ? "Enviando…" : "Confirmar pago"}

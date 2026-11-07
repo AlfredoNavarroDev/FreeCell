@@ -16,7 +16,7 @@ export type CartAddResult =
   | { ok: true; items: CartItem[] }
   | { ok: false; items: CartItem[]; reason: "MAX_QTY" | "MAX_PLANS" };
 
-function clampQty(qty: number): number {
+export function clampQty(qty: number): number {
   return Math.min(Math.max(qty, 1), CART_MAX_QTY_PER_PLAN);
 }
 
@@ -28,13 +28,12 @@ export function addToCart(
   const existing = items.find((item) => item.planId === entry.planId);
 
   if (existing) {
-    // Clamp qty to valid range; qty must stay in [1, CART_MAX_QTY_PER_PLAN]
-    const nextQty = Math.max(1, Math.min(existing.qty + qty, CART_MAX_QTY_PER_PLAN));
-
     // If qty is 0, nextQty equals existing.qty and we're doing a no-op, so succeed without change
     if (qty === 0) {
       return { ok: true, items };
     }
+
+    const nextQty = clampQty(existing.qty + qty);
 
     // If nextQty didn't change from existing.qty, we've hit the upper limit
     if (nextQty === existing.qty) {

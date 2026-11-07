@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import type { CatalogProductDetail, PlanOffer } from "@/lib/catalog-client";
-import { CART_MAX_QTY_PER_PLAN, type CartAddResult } from "@/lib/cart-logic";
+import { CART_MAX_QTY_PER_PLAN, clampQty, type CartAddResult } from "@/lib/cart-logic";
 import { useCart } from "@/lib/cart-context";
 import { formatPriceCents } from "@/lib/format";
 import { StockBadge } from "./stock-badge";
@@ -99,7 +99,7 @@ export function PlanPicker({ product }: { product: CatalogProductDetail }) {
           min={1}
           max={CART_MAX_QTY_PER_PLAN}
           value={qty}
-          onChange={(e) => setQty(Number(e.target.value) || 1)}
+          onChange={(e) => setQty(clampQty(Number(e.target.value) || 1))}
           disabled={outOfStock}
           className="h-11 w-20 rounded-[10px] border border-line-strong px-3"
         />
