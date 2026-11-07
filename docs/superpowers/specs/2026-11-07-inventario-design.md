@@ -68,7 +68,8 @@ cubre RF-ADM-26 (alerta automática de stock bajo, job `low-stock-check`) — ya
   - Totales arriba (suma de disponibles/reservadas/vendidas de todos los planes)
   - Filtros Todos/Stock bajo/Agotados (client-side sobre los items ya traídos, igual que el mockup)
   - Fila por plan: nombre, barra + "N disponibles", badge (En stock/Stock bajo/Agotado)
-    - Click en la fila → expande: lista de licencias AVAILABLE (fecha de carga) + "Anular" por cada una
+    - Click en la fila → GET /admin/inventory/plans/:planId/licenses (status=AVAILABLE) → expande: lista de
+      licencias (id + fecha de carga, nunca la clave) + "Anular" por cada una
       - "Anular" → pide motivo (texto libre, no vacío) → POST .../licenses/:id/void
           éxito → refetch GET /admin/inventory (misma licencia ya no aparece)
           409 (ya no está AVAILABLE) → banner + refetch (otro admin la usó/anuló primero)
@@ -89,12 +90,12 @@ cubre RF-ADM-26 (alerta automática de stock bajo, job `low-stock-check`) — ya
 | `backend/src/settings/settings.service.ts` | Agrega `setNumber(key, value, actorId, manager?)` — escritura genérica, auditada, reusable para futuras settings |
 | `backend/src/inventory/inventory.module.ts` | Módulo nuevo (mismo patrón que `catalog-admin/`) |
 | `backend/src/inventory/dto/*.ts` | `InventoryItemDto` (fila por plan), `BatchPreviewDto`/`BatchPreviewResultDto`, `CreateBatchDto`, `VoidLicenseDto` |
-| `backend/src/inventory/inventory.service.ts` | `list(filter?)`, `preview(dto)`, `createBatch(dto, admin)`, `voidLicense(id, dto, admin)`, `getUsdRate()`/`setUsdRate(rate, admin)` |
-| `backend/src/inventory/inventory.controller.ts` | `GET /admin/inventory`, `POST /admin/inventory/batches/preview`, `POST /admin/inventory/batches`, `POST /admin/inventory/licenses/:id/void`, `GET /admin/inventory/usd-rate`, `PUT /admin/inventory/usd-rate` — guard ADMIN (mismo patrón que `admin-payments.controller.ts`) |
+| `backend/src/inventory/inventory.service.ts` | `list(filter?)`, `listAvailableLicenses(planId)`, `preview(dto)`, `createBatch(dto, admin)`, `voidLicense(id, dto, admin)`, `setUsdRate(rate, admin)` |
+| `backend/src/inventory/inventory.controller.ts` | `GET /admin/inventory`, `GET /admin/inventory/plans/:planId/licenses`, `POST /admin/inventory/batches/preview`, `POST /admin/inventory/batches`, `POST /admin/inventory/licenses/:id/void`, `PUT /admin/inventory/usd-rate` — guard ADMIN (mismo patrón que `admin-payments.controller.ts`). La tasa vigente se expone en el `GET /admin/inventory` (campo `usdPenRate`), no hace falta un `GET` propio. |
 | `backend/test/inventory.e2e-spec.ts` | e2e contra Postgres real |
 | `frontend/src/app/admin/inventario/page.tsx` | Reemplaza el placeholder: Server Component, fetch inicial, pasa a `<InventoryScreen>` |
 | `frontend/src/components/inventory-screen.tsx` | Client: totales, filtros, filas expandibles, panel de carga, refetch tras cada acción |
-| `frontend/src/lib/inventory-client.ts` | Server Actions: `fetchInventory(filter?)`, `previewBatch(...)`, `createBatch(...)`, `voidLicense(id, reason)`, `updateUsdRate(rate)` — mismo patrón que `admin-payments-client.ts` |
+| `frontend/src/lib/inventory-client.ts` | Server Actions: `fetchInventory(filter?)`, `fetchAvailableLicenses(planId)`, `previewBatch(...)`, `createBatch(...)`, `voidLicense(id, reason)`, `updateUsdRate(rate)` — mismo patrón que `admin-payments-client.ts` |
 | `frontend/src/lib/inventory-client.test.ts` | Vitest, mismo patrón que `admin-payments-client.test.ts` |
 | `frontend/e2e/inventory.spec.ts` | Playwright: cargar lote con un duplicado, ver el resumen, anular una licencia |
 
@@ -137,6 +138,7 @@ Tocado, no nuevo: `backend/src/settings/settings.service.ts` (agrega escritura);
 
 - `docs/02-requerimientos-funcionales.md`: RF-ADM-20 a RF-ADM-24 ⬜ → ✅ con fecha de cierre.
 - `docs/06-api.md`: marcar `GET /admin/inventory`, `POST .../batches/preview`, `POST .../batches` ✅; agregar
-  las filas de `POST .../licenses/:id/void` y `GET`/`PUT .../usd-rate` (no estaban en la tabla original).
+  las filas de `GET .../plans/:planId/licenses`, `POST .../licenses/:id/void` y `PUT .../usd-rate` (no estaban
+  en la tabla original).
 - `docs/10-orden-de-ejecucion.md`: marcar paso 5 ✅ con fecha de cierre; siguiente paso pasa a ser el 6
   ("Mis pedidos" + reveal de clave, S4).
