@@ -35,6 +35,7 @@ interface AdminPaymentRow {
   orderNumber: number;
   status: PaymentStatus;
   paymentMethodId: string;
+  paymentMethodName: string;
   operationNumber: string;
   proofKey: string;
   totalCents: number;
@@ -42,6 +43,8 @@ interface AdminPaymentRow {
   expiresAt: Date;
   toolUsername: string | null;
   createdAt: Date;
+  customerName: string | null;
+  customerEmail: string;
 }
 
 @Injectable()
@@ -63,10 +66,14 @@ export class AdminPaymentsService {
     const offset = (dto.page - 1) * dto.pageSize;
     const rows: AdminPaymentRow[] = await this.ds.query(
       `SELECT p.id AS "paymentId", p."orderId", o."orderNumber", p.status,
-              p."paymentMethodId", p."operationNumber", p."proofKey",
-              o."totalCents", o.currency, o."expiresAt", o."toolUsername", p."createdAt"
+              p."paymentMethodId", pm.name AS "paymentMethodName",
+              p."operationNumber", p."proofKey",
+              o."totalCents", o.currency, o."expiresAt", o."toolUsername", p."createdAt",
+              u.name AS "customerName", u.email AS "customerEmail"
          FROM payments p
          JOIN orders o ON o.id = p."orderId"
+         JOIN users u ON u.id = o."userId"
+         JOIN payment_methods pm ON pm.id = p."paymentMethodId"
         WHERE ($1::text IS NULL OR p.status::text = $1)
         ORDER BY p."createdAt" ASC
         LIMIT $2 OFFSET $3`,
@@ -78,17 +85,49 @@ export class AdminPaymentsService {
     );
 
     const orderIds = rows.map((row) => row.orderId);
-    const items: { orderId: string; planId: string; unitPriceCents: number }[] =
-      orderIds.length
+    const items: {
+      orderId: string;
+      planId: string;
+      unitPriceCents: number;
+      productName: string;
+      planName: string;
+    }[] = orderIds.length
+      ? await this.ds.query(
+          `SELECT oi."orderId", oi."planId", oi."unitPriceCents",
+                  pl.name AS "planName", pr.name AS "productName"
+             FROM order_items oi
+             JOIN plans pl ON pl.id = oi."planId"
+             JOIN products pr ON pr.id = pl."productId"
+            WHERE oi."orderId" = ANY($1::uuid[])`,
+          [orderIds],
+        )
+      : [];
+
+    const planIds = [...new Set(items.map((item) => item.planId))];
+    const stockRows: { planId: string; availableStock: string }[] =
+      planIds.length
         ? await this.ds.query(
-            `SELECT "orderId", "planId", "unitPriceCents" FROM order_items WHERE "orderId" = ANY($1::uuid[])`,
-            [orderIds],
+            `SELECT "planId", count(*) AS "availableStock"
+               FROM license_items
+              WHERE status = 'AVAILABLE' AND "planId" = ANY($1::uuid[])
+              GROUP BY "planId"`,
+            [planIds],
           )
         : [];
+    const stockByPlan = new Map(
+      stockRows.map((row) => [row.planId, Number(row.availableStock)]),
+    );
+
     const itemsByOrder = new Map<string, AdminPaymentItemDto[]>();
     for (const item of items) {
       const list = itemsByOrder.get(item.orderId) ?? [];
-      list.push({ planId: item.planId, unitPriceCents: item.unitPriceCents });
+      list.push({
+        planId: item.planId,
+        unitPriceCents: item.unitPriceCents,
+        productName: item.productName,
+        planName: item.planName,
+        availableStock: stockByPlan.get(item.planId) ?? 0,
+      });
       itemsByOrder.set(item.orderId, list);
     }
 

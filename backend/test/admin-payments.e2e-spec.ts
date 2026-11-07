@@ -156,6 +156,67 @@ describe('/admin/payments', () => {
       expect(body.items[0].currency).toBe('PEN');
       expect(body.total).toBe(2);
     });
+
+    it('incluye nombre/correo del cliente, nombre del método, de producto/plan y stock disponible por ítem', async () => {
+      const admin = await createUser(ds, { role: Role.ADMIN });
+      const customer = await createUser(ds, { name: 'Cliente Demo' });
+      const method = await createPaymentMethod(ds, {
+        name: 'Yape',
+        currencies: ['PEN'],
+      });
+      const catalog = await createCatalog(ds, {
+        stock: 3,
+        prices: { PEN: 1000 },
+      });
+
+      const { orderId } = await insertOrder(ds, {
+        userId: customer.id,
+        currency: 'PEN',
+        lines: [
+          {
+            planId: catalog.plan.id,
+            unitPriceCents: 1000,
+            licenseId: catalog.licenseIds[0],
+          },
+        ],
+        status: OrderStatus.IN_REVIEW,
+      });
+      await insertPayment(ds, { orderId, paymentMethodId: method.id });
+
+      const res = await request(app.getHttpServer())
+        .get('/admin/payments?status=PENDING')
+        .set('Authorization', `Bearer ${tokenFor(admin)}`);
+
+      expect(res.status).toBe(200);
+      const body = res.body as {
+        items: {
+          orderId: string;
+          customerName: string | null;
+          customerEmail: string;
+          paymentMethodName: string;
+          items: {
+            planId: string;
+            unitPriceCents: number;
+            productName: string;
+            planName: string;
+            availableStock: number;
+          }[];
+        }[];
+      };
+      const row = body.items.find((i) => i.orderId === orderId)!;
+      expect(row.customerName).toBe('Cliente Demo');
+      expect(row.customerEmail).toBe(customer.email);
+      expect(row.paymentMethodName).toBe('Yape');
+      expect(row.items).toEqual([
+        {
+          planId: catalog.plan.id,
+          unitPriceCents: 1000,
+          productName: catalog.product.name,
+          planName: catalog.plan.name,
+          availableStock: 2,
+        },
+      ]);
+    });
   });
 
   describe('POST /admin/payments/:id/approve', () => {
