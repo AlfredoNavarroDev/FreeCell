@@ -14,7 +14,7 @@ operación secundaria (inventario, reclamos, soporte) y en observabilidad/admin 
 |---|---|---|
 | 1 | ✅ Backend: `POST/GET /admin/payments` (approve/reject) — 2026-10-29 | Sin esto ningún pedido sale de `IN_REVIEW`. Pieza más chica con más impacto: desbloquea probar todo el resto end-to-end. |
 | 2 | ✅ Frontend: conectar catálogo a API real (reemplazar `src/lib/mock-catalog.ts`) — 2026-11-02 | Base para página de producto y carrito; hoy S1 no habla con el backend. |
-| 3 | Frontend: página producto (`/p/[slug]`) + carrito + checkout (S2/S3) | El flujo de compra en sí. Backend (`/orders`, `/orders/:id/payment*`) ya está completo para esto. |
+| 3 | ✅ Frontend: página producto (`/p/[slug]`) + carrito + checkout (S2/S3) — 2026-11-03 | El flujo de compra en sí. Backend (`/orders`, `/orders/:id/payment*`) ya está completo para esto. |
 | 4 | Frontend: panel admin de pagos (S6) | Junto con el paso 1, cierra el loop compra→aprobación→entrega de forma visible y probable. |
 | 5 | Backend + frontend: inventario (`/admin/inventory*`, S7) | Sin carga de lotes real, el stock depende solo del seed; necesario para operar más de una vez. |
 | 6 | Frontend: "Mis pedidos" + reveal de clave (S4) | Cierra la experiencia del cliente; endpoints ya listos (`GET /orders`, `POST /orders/:id/license/reveal`). |
@@ -34,8 +34,9 @@ operación secundaria (inventario, reclamos, soporte) y en observabilidad/admin 
 - El detalle de **qué** incluye cada paso (DTOs, endpoints, pantallas) vive en `docs/02`, `docs/06`, `docs/07` y
   `docs/08`; este archivo solo fija el **orden**.
 
-## Estado (2026-10-29)
+## Estado (2026-11-03)
 
 Paso 1 completo (`/admin/payments`: list/approve/reject, migración `AdminPaymentFunctions`, 15 pruebas e2e).
 Paso 2 completo (catálogo del frontend conectado a la API real — 2026-11-02).
-Próximo: **paso 3** (página producto / carrito / checkout).
+Paso 3 completo (página producto, carrito y checkout de 3 pasos — 2026-11-03).
+Próximo: **paso 4** (panel admin de pagos, S6).
