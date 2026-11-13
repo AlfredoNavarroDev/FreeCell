@@ -50,7 +50,7 @@ test("admin carga un lote con una clave duplicada y luego anula una licencia", a
   await main.getByRole("button", { name: /\[Producto demo\] · \[Plan demo\]/ }).click();
   await expect(main.getByText(/Cargada el/).first()).toBeVisible();
 
-  await main.getByRole("button", { name: "Anular" }).first().click();
+  await main.getByRole("button", { name: "Anular" }).last().click();
   await main.getByPlaceholder("Motivo de la anulación").fill("Clave de prueba E2E, se descarta");
   await main.getByRole("button", { name: "Confirmar" }).click();
 
