@@ -87,7 +87,7 @@ export function InventoryScreen({ initial }: { initial: InventoryView }) {
   }
 
   async function handleSaveRate() {
-    const rate = Number(rateInput);
+    const rate = Number(rateInput.replace(",", "."));
     if (!Number.isFinite(rate) || rate <= 0) {
       setError("La tasa debe ser un número mayor a 0");
       return;
