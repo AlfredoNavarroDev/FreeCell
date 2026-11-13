@@ -125,11 +125,11 @@ Los criterios marcados con **[?]** dependen de una pregunta abierta en `09-decis
 ### Inventario
 | ID | Requerimiento | Prio | Estado |
 |---|---|---|---|
-| RF-ADM-20 | Ver stock por plan: disponibles, reservadas, vendidas, estado y barra. Filtrar por Todos / Stock bajo / Agotados. | M | ⬜ |
-| RF-ADM-21 | Cargar licencias a un plan pegando una por línea o importando CSV, con costo por unidad y proveedor. | M | ⬜ |
-| RF-ADM-22 | Antes de confirmar, mostrar resumen **válidas / duplicadas (se omiten) / con error**. Los duplicados se detectan por hash. | M | ⬜ |
-| RF-ADM-23 | Cada carga crea un **lote** y deja auditoría. | M | ⬜ |
-| RF-ADM-24 | Anular (`VOID`) una licencia disponible con motivo. | S | ⬜ |
+| RF-ADM-20 | Ver stock por plan: disponibles, reservadas, vendidas, estado y barra. Filtrar por Todos / Stock bajo / Agotados. | M | ✅ (2026-11-11; sin barra, decidido fuera de alcance) |
+| RF-ADM-21 | Cargar licencias a un plan pegando una por línea, con costo por unidad (PEN o USD, tasa congelada en el lote) y proveedor opcional. | M | ✅ (2026-11-11; sin CSV, decidido fuera de alcance) |
+| RF-ADM-22 | Antes de confirmar, mostrar resumen **válidas / duplicadas (se omiten) / con error**. Los duplicados se detectan por hash. | M | ✅ (2026-11-11) |
+| RF-ADM-23 | Cada carga crea un **lote** y deja auditoría. | M | ✅ (2026-11-11) |
+| RF-ADM-24 | Anular (`VOID`) una licencia disponible con motivo. | S | ✅ (2026-11-11) |
 | RF-ADM-25 | Umbral de stock bajo configurable por plan. | S | ✅ (campo `lowStockThreshold`) |
 | RF-ADM-26 | Alerta cuando un plan cae bajo el umbral (trabajo `low-stock-check`). | S | ⬜ |
 

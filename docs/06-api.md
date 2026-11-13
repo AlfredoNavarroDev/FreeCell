@@ -72,10 +72,12 @@ Ver `docs/backend/auth.md`, `docs/backend/orders.md` y `docs/backend/README.md` 
 | ✅ | `POST /admin/plans` | Crea un plan con sus precios por moneda (D61); auditado. 400 sin precios. |
 | ✅ | `PATCH /admin/plans/:id` | Edita campos y/o hace upsert de precios por moneda (no borra monedas omitidas); auditado. 404 si no existe. |
 | ⬜ | `POST /admin/orders/:id/activate` | Marca `PENDING_ACTIVATION → DELIVERED` tras aplicar la licencia sobre la cuenta del cliente (D14). Auditoría. |
-| ⬜ | `GET /admin/inventory?filter=low\|out` | Por plan: disponibles, reservadas, vendidas, estado, umbral. |
-| ⬜ | `POST /admin/inventory/batches/preview` | Body `{planId, secrets[]}` o CSV → `{valid, duplicates, errors}` sin guardar. |
-| ⬜ | `POST /admin/inventory/batches` | Body `{planId, supplier?, unitCostCents, secrets[], notes?}`. Crea lote + licencias cifradas. Auditoría. |
-| ⬜ | `PATCH /admin/licenses/:id/void` | Body `{reason}`. Solo `AVAILABLE`. |
+| ✅ | `GET /admin/inventory` | Por plan: nombre de producto/plan, disponibles, reservadas, vendidas, umbral y estado (`v_plan_stock`); incluye la tasa USD→PEN vigente (`usdPenRate`, `null` si no se configuró). Sin paginación. |
+| ✅ | `GET /admin/inventory/plans/:planId/licenses` | Licencias `AVAILABLE` de un plan: `id` y fecha de carga, nunca la clave. 404 si el plan no existe. |
+| ✅ | `POST /admin/inventory/batches/preview` | Body `{planId, secrets[]}` → `{validCount, duplicateCount, errorCount}` sin guardar nada. Duplicados son globales (`secretHash` único). |
+| ✅ | `POST /admin/inventory/batches` | Body `{planId, costCurrency, unitCostCents, supplier?, secrets[]}`. Revalida desde cero (no confía en el preview), crea lote + licencias cifradas, congela `fxRatePen` si es USD (400 si no hay tasa configurada), audita. 400 si 0 líneas válidas. |
+| ✅ | `POST /admin/inventory/licenses/:id/void` | Body `{reason}`. Anula una licencia (`AVAILABLE -> VOID`); 409 si ya no está `AVAILABLE` (`trg_license_status_guard`); 404 si no existe; audita el motivo. |
+| ✅ | `PUT /admin/inventory/usd-rate` | Body `{rate}` (> 0). Actualiza `settings.usdPenRate`, auditado; la rige el siguiente lote en USD. |
 | ⬜ | `GET /admin/claims?status=OPEN` | Cola con motivo, pedido y stock para reponer. |
 | ⬜ | `POST /admin/claims/:id/replace` | Transacción: original → VOID, nueva (SKIP LOCKED) → SOLD, reclamo → RESOLVED, notificación. 409 sin stock. |
 | ⬜ | `POST /admin/claims/:id/reject` | Body `{reason}`. |
