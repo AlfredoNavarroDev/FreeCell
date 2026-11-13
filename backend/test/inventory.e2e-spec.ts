@@ -3,8 +3,10 @@ import { type NestExpressApplication } from '@nestjs/platform-express';
 import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
+import { CryptoService } from '../src/common/crypto/crypto.service';
 import { Role } from '../src/database/enums';
-import { type User } from '../src/database/entities';
+import { LicenseItem, type User } from '../src/database/entities';
+import { LicenseStatus } from '../src/database/enums';
 import { createCatalog, createUser } from './utils/factories';
 import { createTestApp, resetState } from './utils/test-app';
 
@@ -105,6 +107,178 @@ describe('/admin/inventory', () => {
         .get(`/admin/inventory/plans/${randomUUID()}/licenses`)
         .set('Authorization', `Bearer ${tokenFor(admin)}`);
       expect(res.status).toBe(404);
+    });
+  });
+
+  describe('POST /admin/inventory/batches/preview', () => {
+    it('cuenta válidas/duplicadas/con error sin persistir nada', async () => {
+      const admin = await createUser(ds, { role: Role.ADMIN });
+      const catalog = await createCatalog(ds, { stock: 0 });
+      const crypto = app.get(CryptoService);
+      await ds.getRepository(LicenseItem).save({
+        planId: catalog.plan.id,
+        batchId: catalog.batch.id,
+        secretEncrypted: crypto.encrypt('YA-EXISTE'),
+        secretHash: crypto.hash('YA-EXISTE'),
+        status: LicenseStatus.AVAILABLE,
+      });
+
+      const res = await request(app.getHttpServer())
+        .post('/admin/inventory/batches/preview')
+        .set('Authorization', `Bearer ${tokenFor(admin)}`)
+        .send({
+          planId: catalog.plan.id,
+          secrets: ['YA-EXISTE', 'YA-EXISTE', 'NUEVA-1', ''],
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ validCount: 1, duplicateCount: 2, errorCount: 1 });
+
+      const countAfter: { count: string }[] = await ds.query(
+        `SELECT count(*) FROM license_items WHERE "planId" = $1`,
+        [catalog.plan.id],
+      );
+      expect(Number(countAfter[0].count)).toBe(1);
+    });
+
+    it('responde 404 si el plan no existe', async () => {
+      const admin = await createUser(ds, { role: Role.ADMIN });
+      const res = await request(app.getHttpServer())
+        .post('/admin/inventory/batches/preview')
+        .set('Authorization', `Bearer ${tokenFor(admin)}`)
+        .send({ planId: randomUUID(), secrets: ['X'] });
+      expect(res.status).toBe(404);
+    });
+  });
+
+  describe('POST /admin/inventory/batches', () => {
+    it('carga un lote en PEN: inserta solo las válidas, fxRatePen nulo, y audita', async () => {
+      const admin = await createUser(ds, { role: Role.ADMIN });
+      const catalog = await createCatalog(ds, { stock: 0 });
+
+      const res = await request(app.getHttpServer())
+        .post('/admin/inventory/batches')
+        .set('Authorization', `Bearer ${tokenFor(admin)}`)
+        .send({
+          planId: catalog.plan.id,
+          costCurrency: 'PEN',
+          unitCostCents: 500,
+          supplier: 'Proveedor Test',
+          secrets: ['PEN-1', 'PEN-1', ''],
+        });
+
+      expect(res.status).toBe(200);
+      const body = res.body as {
+        batchId: string;
+        loadedCount: number;
+        duplicateCount: number;
+        errorCount: number;
+      };
+      expect(body).toEqual({
+        batchId: body.batchId,
+        loadedCount: 1,
+        duplicateCount: 1,
+        errorCount: 1,
+      });
+
+      const batchRow: { fxRatePen: string | null; costCurrency: string }[] =
+        await ds.query(
+          `SELECT "fxRatePen", "costCurrency" FROM license_batches WHERE id = $1`,
+          [body.batchId],
+        );
+      expect(batchRow[0]).toEqual({ fxRatePen: null, costCurrency: 'PEN' });
+
+      const licenseCount: { count: string }[] = await ds.query(
+        `SELECT count(*) FROM license_items WHERE "batchId" = $1`,
+        [body.batchId],
+      );
+      expect(Number(licenseCount[0].count)).toBe(1);
+
+      const auditRows: { entityId: string; actorId: string }[] =
+        await ds.query(
+          `SELECT "entityId", "actorId" FROM audit_logs WHERE action = 'license_batch.created' AND "entityId" = $1`,
+          [body.batchId],
+        );
+      expect(auditRows).toHaveLength(1);
+      expect(auditRows[0].actorId).toBe(admin.id);
+    });
+
+    it('en USD sin tasa configurada responde 400 y no crea el lote', async () => {
+      const admin = await createUser(ds, { role: Role.ADMIN });
+      const catalog = await createCatalog(ds, { stock: 0 });
+      const before: { count: string }[] = await ds.query(
+        `SELECT count(*) FROM license_batches WHERE "planId" = $1`,
+        [catalog.plan.id],
+      );
+
+      const res = await request(app.getHttpServer())
+        .post('/admin/inventory/batches')
+        .set('Authorization', `Bearer ${tokenFor(admin)}`)
+        .send({
+          planId: catalog.plan.id,
+          costCurrency: 'USD',
+          unitCostCents: 200,
+          secrets: ['USD-1'],
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toMatch(/tasa USD→PEN/);
+      const after: { count: string }[] = await ds.query(
+        `SELECT count(*) FROM license_batches WHERE "planId" = $1`,
+        [catalog.plan.id],
+      );
+      expect(after[0].count).toBe(before[0].count);
+    });
+
+    it('en USD con tasa configurada congela el valor vigente en el lote', async () => {
+      const admin = await createUser(ds, { role: Role.ADMIN });
+      const catalog = await createCatalog(ds, { stock: 0 });
+      await ds.query(
+        `INSERT INTO settings (key, value) VALUES ('usdPenRate', '3.75'::jsonb)`,
+      );
+
+      const res = await request(app.getHttpServer())
+        .post('/admin/inventory/batches')
+        .set('Authorization', `Bearer ${tokenFor(admin)}`)
+        .send({
+          planId: catalog.plan.id,
+          costCurrency: 'USD',
+          unitCostCents: 200,
+          secrets: ['USD-OK'],
+        });
+
+      expect(res.status).toBe(200);
+      const batchRow: { fxRatePen: string }[] = await ds.query(
+        `SELECT "fxRatePen" FROM license_batches WHERE id = $1`,
+        [res.body.batchId],
+      );
+      expect(batchRow[0].fxRatePen).toBe('3.7500');
+    });
+
+    it('0 válidas responde 400 y no crea el lote (rollback)', async () => {
+      const admin = await createUser(ds, { role: Role.ADMIN });
+      const catalog = await createCatalog(ds, { stock: 0 });
+      const before: { count: string }[] = await ds.query(
+        `SELECT count(*) FROM license_batches WHERE "planId" = $1`,
+        [catalog.plan.id],
+      );
+
+      const res = await request(app.getHttpServer())
+        .post('/admin/inventory/batches')
+        .set('Authorization', `Bearer ${tokenFor(admin)}`)
+        .send({
+          planId: catalog.plan.id,
+          costCurrency: 'PEN',
+          unitCostCents: 500,
+          secrets: ['', '   '],
+        });
+
+      expect(res.status).toBe(400);
+      const after: { count: string }[] = await ds.query(
+        `SELECT count(*) FROM license_batches WHERE "planId" = $1`,
+        [catalog.plan.id],
+      );
+      expect(after[0].count).toBe(before[0].count);
     });
   });
 });
