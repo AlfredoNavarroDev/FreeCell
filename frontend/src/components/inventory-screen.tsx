@@ -67,6 +67,7 @@ export function InventoryScreen({ initial }: { initial: InventoryView }) {
       if (requestId !== previewRequestRef.current) return;
       if (result.ok) {
         setPreview(result.data);
+        setError(null);
       } else {
         setPreview(null);
         setError(result.message);
@@ -74,6 +75,15 @@ export function InventoryScreen({ initial }: { initial: InventoryView }) {
     }, 400);
     return () => clearTimeout(timeout);
   }, [formPlanId, secretsText]);
+
+  async function refetchLicensesForPlan(planId: string) {
+    const result = await fetchAvailableLicenses(planId);
+    if (result.ok) {
+      setLicensesByPlan((prev) => ({ ...prev, [planId]: result.data }));
+    } else {
+      setError(result.message);
+    }
+  }
 
   async function toggleExpand(planId: string) {
     if (expandedPlanId === planId) {
@@ -83,12 +93,7 @@ export function InventoryScreen({ initial }: { initial: InventoryView }) {
     setExpandedPlanId(planId);
     setVoidingId(null);
     if (!licensesByPlan[planId]) {
-      const result = await fetchAvailableLicenses(planId);
-      if (result.ok) {
-        setLicensesByPlan((prev) => ({ ...prev, [planId]: result.data }));
-      } else {
-        setError(result.message);
-      }
+      await refetchLicensesForPlan(planId);
     }
   }
 
@@ -169,6 +174,9 @@ export function InventoryScreen({ initial }: { initial: InventoryView }) {
       return next;
     });
     setMessage(`${loadedCount} licencias cargadas a ${planName}${skippedSuffix}.`);
+    if (expandedPlanId === formPlanId) {
+      await refetchLicensesForPlan(formPlanId);
+    }
     await refetchInventory();
   }
 
@@ -256,7 +264,9 @@ export function InventoryScreen({ initial }: { initial: InventoryView }) {
                 </div>
                 {expandedPlanId === item.planId ? (
                   <div className="flex flex-col gap-2 border-t border-line-soft bg-bg px-5 py-4">
-                    {(licensesByPlan[item.planId] ?? []).length === 0 ? (
+                    {licensesByPlan[item.planId] === undefined ? (
+                      <p className="text-sm text-muted">No se pudo cargar. Intenta de nuevo.</p>
+                    ) : licensesByPlan[item.planId]!.length === 0 ? (
                       <p className="text-sm text-muted">Sin licencias disponibles para expandir.</p>
                     ) : (
                       licensesByPlan[item.planId]!.map((license) => (
