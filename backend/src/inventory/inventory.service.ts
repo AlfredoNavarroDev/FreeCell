@@ -13,6 +13,8 @@ import { BatchPreviewResultDto } from './dto/batch-preview-result.dto';
 import { CreateBatchDto } from './dto/create-batch.dto';
 import { CreateBatchResultDto } from './dto/create-batch-result.dto';
 import { InventoryItemDto, InventoryResponseDto } from './dto/inventory-item.dto';
+import { VoidLicenseDto } from './dto/void-license.dto';
+import { UpdateUsdRateDto } from './dto/update-usd-rate.dto';
 
 interface SecretCandidate {
   plain: string;
@@ -143,6 +145,29 @@ export class InventoryService {
         errorCount,
       };
     });
+  }
+
+  async voidLicense(id: string, dto: VoidLicenseDto, admin: AuthenticatedUser): Promise<void> {
+    await this.ds.transaction(async (m) => {
+      const license = await m.findOneBy(LicenseItem, { id });
+      if (!license) {
+        throw new NotFoundException('Licencia no encontrada');
+      }
+      // Si license.status no es AVAILABLE, trg_license_status_guard bloquea el UPDATE con
+      // P0001 y AllExceptionsFilter ya lo traduce a 409 — no se necesita un catch aquí.
+      await m.update(LicenseItem, { id }, { status: LicenseStatus.VOID });
+      await this.audit.log(m, {
+        actorId: admin.id,
+        action: 'license_item.voided',
+        entity: 'license_item',
+        entityId: id,
+        meta: { reason: dto.reason, previousStatus: license.status },
+      });
+    });
+  }
+
+  async setUsdRate(rate: number, admin: AuthenticatedUser): Promise<void> {
+    await this.settings.setNumber(SETTING_USD_PEN_RATE, rate, admin.id);
   }
 
   private async requirePlan(manager: EntityManager, planId: string): Promise<void> {

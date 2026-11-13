@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Post, Put } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -10,6 +10,8 @@ import { BatchPreviewResultDto } from './dto/batch-preview-result.dto';
 import { CreateBatchDto } from './dto/create-batch.dto';
 import { CreateBatchResultDto } from './dto/create-batch-result.dto';
 import { InventoryResponseDto } from './dto/inventory-item.dto';
+import { VoidLicenseDto } from './dto/void-license.dto';
+import { UpdateUsdRateDto } from './dto/update-usd-rate.dto';
 import { InventoryService } from './inventory.service';
 
 @ApiTags('admin-inventory')
@@ -44,5 +46,24 @@ export class InventoryController {
     @Body() dto: CreateBatchDto,
   ): Promise<CreateBatchResultDto> {
     return this.inventory.createBatch(dto, admin);
+  }
+
+  @Post('licenses/:id/void')
+  @HttpCode(204)
+  voidLicense(
+    @CurrentUser() admin: AuthenticatedUser,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: VoidLicenseDto,
+  ): Promise<void> {
+    return this.inventory.voidLicense(id, dto, admin);
+  }
+
+  @Put('usd-rate')
+  @HttpCode(204)
+  updateUsdRate(
+    @CurrentUser() admin: AuthenticatedUser,
+    @Body() dto: UpdateUsdRateDto,
+  ): Promise<void> {
+    return this.inventory.setUsdRate(dto.rate, admin);
   }
 }

@@ -4,10 +4,10 @@ import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { CryptoService } from '../src/common/crypto/crypto.service';
-import { Role } from '../src/database/enums';
+import { Role, OrderStatus } from '../src/database/enums';
 import { LicenseItem, type User } from '../src/database/entities';
 import { LicenseStatus } from '../src/database/enums';
-import { createCatalog, createUser } from './utils/factories';
+import { createCatalog, createUser, insertOrder } from './utils/factories';
 import { createTestApp, resetState } from './utils/test-app';
 
 describe('/admin/inventory', () => {
@@ -279,6 +279,109 @@ describe('/admin/inventory', () => {
         [catalog.plan.id],
       );
       expect(after[0].count).toBe(before[0].count);
+    });
+  });
+
+  describe('POST /admin/inventory/licenses/:id/void', () => {
+    it('anula una licencia AVAILABLE y audita el motivo', async () => {
+      const admin = await createUser(ds, { role: Role.ADMIN });
+      const catalog = await createCatalog(ds, { stock: 1 });
+      const licenseId = catalog.licenseIds[0];
+
+      const res = await request(app.getHttpServer())
+        .post(`/admin/inventory/licenses/${licenseId}/void`)
+        .set('Authorization', `Bearer ${tokenFor(admin)}`)
+        .send({ reason: 'Clave reportada como inválida por el proveedor' });
+
+      expect(res.status).toBe(204);
+      const row: { status: string }[] = await ds.query(
+        `SELECT status FROM license_items WHERE id = $1`,
+        [licenseId],
+      );
+      expect(row[0].status).toBe('VOID');
+
+      const auditRows: { meta: { reason: string } }[] = await ds.query(
+        `SELECT meta FROM audit_logs WHERE action = 'license_item.voided' AND "entityId" = $1`,
+        [licenseId],
+      );
+      expect(auditRows[0].meta.reason).toBe(
+        'Clave reportada como inválida por el proveedor',
+      );
+    });
+
+    it('responde 409 si la licencia ya no está AVAILABLE', async () => {
+      const admin = await createUser(ds, { role: Role.ADMIN });
+      const customer = await createUser(ds, { role: Role.CUSTOMER });
+      const catalog = await createCatalog(ds, { stock: 1 });
+      await insertOrder(ds, {
+        userId: customer.id,
+        currency: 'PEN',
+        lines: [
+          {
+            planId: catalog.plan.id,
+            unitPriceCents: 1000,
+            licenseId: catalog.licenseIds[0],
+          },
+        ],
+        status: OrderStatus.IN_REVIEW,
+      });
+
+      const res = await request(app.getHttpServer())
+        .post(`/admin/inventory/licenses/${catalog.licenseIds[0]}/void`)
+        .set('Authorization', `Bearer ${tokenFor(admin)}`)
+        .send({ reason: 'Intento sobre una licencia reservada' });
+
+      expect(res.status).toBe(409);
+    });
+
+    it('responde 404 si la licencia no existe', async () => {
+      const admin = await createUser(ds, { role: Role.ADMIN });
+      const res = await request(app.getHttpServer())
+        .post(`/admin/inventory/licenses/${randomUUID()}/void`)
+        .set('Authorization', `Bearer ${tokenFor(admin)}`)
+        .send({ reason: 'No existe' });
+      expect(res.status).toBe(404);
+    });
+
+    it('responde 400 si el motivo está vacío o es solo espacios', async () => {
+      const admin = await createUser(ds, { role: Role.ADMIN });
+      const catalog = await createCatalog(ds, { stock: 1 });
+      const res = await request(app.getHttpServer())
+        .post(`/admin/inventory/licenses/${catalog.licenseIds[0]}/void`)
+        .set('Authorization', `Bearer ${tokenFor(admin)}`)
+        .send({ reason: '   ' });
+      expect(res.status).toBe(400);
+    });
+  });
+
+  describe('PUT /admin/inventory/usd-rate', () => {
+    it('actualiza la tasa y queda reflejada en GET /admin/inventory, auditada', async () => {
+      const admin = await createUser(ds, { role: Role.ADMIN });
+
+      const res = await request(app.getHttpServer())
+        .put('/admin/inventory/usd-rate')
+        .set('Authorization', `Bearer ${tokenFor(admin)}`)
+        .send({ rate: 3.8 });
+      expect(res.status).toBe(204);
+
+      const listRes = await request(app.getHttpServer())
+        .get('/admin/inventory')
+        .set('Authorization', `Bearer ${tokenFor(admin)}`);
+      expect(listRes.body.usdPenRate).toBe(3.8);
+
+      const auditRows: { meta: { value: number } }[] = await ds.query(
+        `SELECT meta FROM audit_logs WHERE action = 'setting.updated' AND "entityId" = 'usdPenRate'`,
+      );
+      expect(auditRows[0].meta.value).toBe(3.8);
+    });
+
+    it('responde 400 con una tasa menor o igual a cero', async () => {
+      const admin = await createUser(ds, { role: Role.ADMIN });
+      const res = await request(app.getHttpServer())
+        .put('/admin/inventory/usd-rate')
+        .set('Authorization', `Bearer ${tokenFor(admin)}`)
+        .send({ rate: 0 });
+      expect(res.status).toBe(400);
     });
   });
 });
