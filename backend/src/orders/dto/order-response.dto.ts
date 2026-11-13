@@ -6,6 +6,13 @@ import { OrderStatus, PaymentStatus } from '../../database/enums';
 export class OrderItemResponseDto {
   @ApiProperty() planId!: string;
   @ApiProperty() unitPriceCents!: number;
+  @ApiProperty() productName!: string;
+  @ApiProperty() planName!: string;
+}
+
+export interface PlanLabel {
+  productName: string;
+  planName: string;
 }
 
 export class OrderTrackingDto {
@@ -37,6 +44,7 @@ export class OrderResponseDto {
     order: Order,
     items: OrderItem[],
     latestPayment?: Payment | null,
+    planLabels: Map<string, PlanLabel> = new Map(),
   ): OrderResponseDto {
     return {
       id: order.id,
@@ -51,6 +59,8 @@ export class OrderResponseDto {
         .map((item) => ({
           planId: item.planId,
           unitPriceCents: item.unitPriceCents,
+          productName: planLabels.get(item.planId)?.productName ?? '',
+          planName: planLabels.get(item.planId)?.planName ?? '',
         })),
       paymentStatus: latestPayment?.status ?? null,
       paymentRejectionReason:

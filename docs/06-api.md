@@ -38,8 +38,8 @@ Ver `docs/backend/auth.md`, `docs/backend/orders.md` y `docs/backend/README.md` 
 ## Pedidos y pagos del cliente (Sprint 2)
 | | Ruta | Acceso | Notas |
 |---|---|---|---|
-| ✅ | `GET /orders?status=` | 👤 | Mis pedidos, paginado (`page`/`pageSize`). |
-| ✅ | `GET /orders/:id` | 👤 | Detalle + `tracking` (creado/pago aprobado/entregado) + `paymentStatus`. 404 si no es suyo. |
+| ✅ | `GET /orders?status=` | 👤 | Mis pedidos, paginado (`page`/`pageSize`). Cada `items[]` trae `productName`/`planName` además de `planId`/`unitPriceCents` (RF-PED-01/03). |
+| ✅ | `GET /orders/:id` | 👤 | Detalle + `tracking` (creado/pago aprobado/entregado) + `paymentStatus`. `items[]` con `productName`/`planName`. 404 si no es suyo. |
 | ⬜ | `POST /orders/:id/cancel` | 👤 | Solo `PENDING_PAYMENT`; libera la reserva. |
 | ✅ | `POST /orders/:id/payment/upload-url` | 👤 | Valida tipo/tamaño y devuelve URL firmada de R2 (`{uploadUrl, proofKey}`). 400 tipo o tamaño inválido; 404 pedido ajeno; 409 si no está `PENDING_PAYMENT` (D70). |
 | ✅ | `GET /payment-methods?currency=` | — | Público. Métodos de pago activos, filtrados por moneda si se indica (RF-COM-03, D63). |

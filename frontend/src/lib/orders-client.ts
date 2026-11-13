@@ -14,6 +14,8 @@ export type OrderStatusView =
 export interface OrderItemView {
   planId: string;
   unitPriceCents: number;
+  productName: string;
+  planName: string;
 }
 
 export interface OrderView {
@@ -32,6 +34,19 @@ export interface OrderView {
     paymentApprovedAt: string | null;
     deliveredAt: string | null;
   };
+}
+
+export interface PaginatedOrders {
+  items: OrderView[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface RevealedLicenseView {
+  orderItemId: string;
+  planId: string;
+  secret: string;
 }
 
 export type OrdersActionResult<T> =
@@ -112,4 +127,20 @@ export async function submitPayment(
 
 export async function resendVerificationEmail(): Promise<OrdersActionResult<undefined>> {
   return callBackend<undefined>("/auth/resend-verification", { method: "POST" });
+}
+
+export async function listOrders(
+  status?: OrderStatusView,
+): Promise<OrdersActionResult<PaginatedOrders>> {
+  const query = new URLSearchParams({ pageSize: "50" });
+  if (status) query.set("status", status);
+  return callBackend<PaginatedOrders>(`/orders?${query.toString()}`, { method: "GET" });
+}
+
+export async function revealLicense(
+  orderId: string,
+): Promise<OrdersActionResult<RevealedLicenseView[]>> {
+  return callBackend<RevealedLicenseView[]>(`/orders/${orderId}/license/reveal`, {
+    method: "POST",
+  });
 }

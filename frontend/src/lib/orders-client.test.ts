@@ -153,3 +153,55 @@ describe("getOrder / requestPaymentUploadUrl / submitPayment", () => {
     });
   });
 });
+
+describe("listOrders / revealLicense", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.resetAllMocks();
+  });
+
+  it("listOrders hace GET /orders sin status por defecto", async () => {
+    authMock.mockResolvedValue({ accessToken: "token-123" });
+    const page = { items: [], total: 0, page: 1, pageSize: 50 };
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(page), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { listOrders } = await import("./orders-client");
+    const result = await listOrders();
+
+    expect(result).toEqual({ ok: true, data: page });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toContain("/orders?pageSize=50");
+    expect(url).not.toContain("status=");
+    expect((init as RequestInit).method).toBe("GET");
+  });
+
+  it("listOrders agrega status cuando se pasa", async () => {
+    authMock.mockResolvedValue({ accessToken: "token-123" });
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ items: [], total: 0, page: 1, pageSize: 50 }), { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { listOrders } = await import("./orders-client");
+    await listOrders("DELIVERED");
+
+    const [url] = fetchMock.mock.calls[0];
+    expect(url).toContain("status=DELIVERED");
+  });
+
+  it("revealLicense hace POST /orders/:id/license/reveal y devuelve las claves", async () => {
+    authMock.mockResolvedValue({ accessToken: "token-123" });
+    const revealed = [{ orderItemId: "item-1", planId: "plan-1", secret: "CLAVE-SECRETA" }];
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(revealed), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { revealLicense } = await import("./orders-client");
+    const result = await revealLicense("order-1");
+
+    expect(result).toEqual({ ok: true, data: revealed });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toContain("/orders/order-1/license/reveal");
+    expect((init as RequestInit).method).toBe("POST");
+  });
+});

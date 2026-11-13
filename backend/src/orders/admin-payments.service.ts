@@ -28,6 +28,7 @@ import {
   licenseDeliveredKey,
   paymentRejectedKey,
 } from './orders.constants';
+import { planLabelsFor } from './plan-labels';
 
 interface AdminPaymentRow {
   paymentId: string;
@@ -175,10 +176,15 @@ export class AdminPaymentsService {
 
     const order = await this.findOrderByPayment(paymentId);
     await this.afterApprove(order);
+    const planLabels = await planLabelsFor(
+      this.ds,
+      (order.items ?? []).map((item) => item.planId),
+    );
     return OrderResponseDto.from(
       order,
       order.items ?? [],
       await this.latestPayment(order.id),
+      planLabels,
     );
   }
 
@@ -217,10 +223,15 @@ export class AdminPaymentsService {
 
     const order = await this.findOrderByPayment(paymentId);
     await this.afterReject(order, paymentId, newStatus, ttlMinutes);
+    const planLabels = await planLabelsFor(
+      this.ds,
+      (order.items ?? []).map((item) => item.planId),
+    );
     return OrderResponseDto.from(
       order,
       order.items ?? [],
       await this.latestPayment(order.id),
+      planLabels,
     );
   }
 

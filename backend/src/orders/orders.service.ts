@@ -35,6 +35,7 @@ import {
   DEFAULT_RESERVATION_TTL_MINUTES,
   orderCreatedKey,
 } from './orders.constants';
+import { planLabelsFor } from './plan-labels';
 
 interface PlanRow {
   id: string;
@@ -212,7 +213,11 @@ export class OrdersService {
     });
 
     await this.afterCreate(order, user.id, ttlMinutes);
-    return OrderResponseDto.from(order, orderItems);
+    const planLabels = await planLabelsFor(
+      this.ds,
+      orderItems.map((item) => item.planId),
+    );
+    return OrderResponseDto.from(order, orderItems, undefined, planLabels);
   }
 
   async findForUser(
@@ -221,7 +226,11 @@ export class OrdersService {
   ): Promise<OrderResponseDto> {
     const order = await this.findOwned(userId, orderId);
     const payment = await this.latestPayment(order.id);
-    return OrderResponseDto.from(order, order.items ?? [], payment);
+    const planLabels = await planLabelsFor(
+      this.ds,
+      (order.items ?? []).map((item) => item.planId),
+    );
+    return OrderResponseDto.from(order, order.items ?? [], payment, planLabels);
   }
 
   async listForUser(
@@ -238,11 +247,16 @@ export class OrdersService {
     const paymentsByOrder = await this.latestPaymentsByOrder(
       orders.map((order) => order.id),
     );
+    const planLabels = await planLabelsFor(
+      this.ds,
+      orders.flatMap((order) => (order.items ?? []).map((item) => item.planId)),
+    );
     const items = orders.map((order) =>
       OrderResponseDto.from(
         order,
         order.items ?? [],
         paymentsByOrder.get(order.id) ?? null,
+        planLabels,
       ),
     );
     return PaginatedResponseDto.from(items, total, dto.page, dto.pageSize);
@@ -255,7 +269,16 @@ export class OrdersService {
   ): Promise<OrderResponseDto> {
     const current = await this.findOwned(user.id, orderId);
     if (current.status === OrderStatus.CANCELLED) {
-      return OrderResponseDto.from(current, current.items ?? []);
+      const planLabels = await planLabelsFor(
+        this.ds,
+        (current.items ?? []).map((item) => item.planId),
+      );
+      return OrderResponseDto.from(
+        current,
+        current.items ?? [],
+        undefined,
+        planLabels,
+      );
     }
 
     const released = await this.ds.transaction(async (m) => {
@@ -280,7 +303,16 @@ export class OrdersService {
         'Solo puedes cancelar un pedido pendiente de pago',
       );
     }
-    return OrderResponseDto.from(fresh, fresh.items ?? []);
+    const planLabels = await planLabelsFor(
+      this.ds,
+      (fresh.items ?? []).map((item) => item.planId),
+    );
+    return OrderResponseDto.from(
+      fresh,
+      fresh.items ?? [],
+      undefined,
+      planLabels,
+    );
   }
 
   /** Solo mientras el pedido sigue PENDING_PAYMENT; no es una mutación (no hay auditoría, RNF-SEG-09). */
@@ -368,7 +400,16 @@ export class OrdersService {
     });
 
     const fresh = await this.findOwned(user.id, orderId);
-    return OrderResponseDto.from(fresh, fresh.items ?? []);
+    const planLabels = await planLabelsFor(
+      this.ds,
+      (fresh.items ?? []).map((item) => item.planId),
+    );
+    return OrderResponseDto.from(
+      fresh,
+      fresh.items ?? [],
+      undefined,
+      planLabels,
+    );
   }
 
   /**

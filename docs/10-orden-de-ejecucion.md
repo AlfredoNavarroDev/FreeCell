@@ -17,7 +17,7 @@ operación secundaria (inventario, reclamos, soporte) y en observabilidad/admin 
 | 3 | ✅ Frontend: página producto (`/p/[slug]`) + carrito + checkout (S2/S3) — 2026-11-03 | El flujo de compra en sí. Backend (`/orders`, `/orders/:id/payment*`) ya está completo para esto. |
 | 4 | ✅ Frontend: panel admin de pagos (S6) — 2026-11-07 | Junto con el paso 1, cierra el loop compra→aprobación→entrega de forma visible y probable. |
 | 5 | ✅ Backend + frontend: inventario (`/admin/inventory*`, S7) — 2026-11-11 | Sin carga de lotes real, el stock depende solo del seed; necesario para operar más de una vez. |
-| 6 | Frontend: "Mis pedidos" + reveal de clave (S4) | Cierra la experiencia del cliente; endpoints ya listos (`GET /orders`, `POST /orders/:id/license/reveal`). |
+| 6 | ✅ Frontend: "Mis pedidos" + reveal de clave (S4) — 2026-11-13 | Cierra la experiencia del cliente; endpoints ya listos (`GET /orders`, `POST /orders/:id/license/reveal`). |
 | 7 | Backend + frontend: reclamos (`/claims`, S8) | Parte del dominio core (reposición, D25/D26), pero depende de que ya haya pedidos `DELIVERED` reales. |
 | 8 | Backend + frontend: soporte / tickets (S9/S11) | Menor urgencia que ventas; no bloquea facturación. |
 | 9 | Backend + frontend: reseñas (S11) | Cosmético, no bloquea ventas. |
@@ -34,11 +34,13 @@ operación secundaria (inventario, reclamos, soporte) y en observabilidad/admin 
 - El detalle de **qué** incluye cada paso (DTOs, endpoints, pantallas) vive en `docs/02`, `docs/06`, `docs/07` y
   `docs/08`; este archivo solo fija el **orden**.
 
-## Estado (2026-11-11)
+## Estado (2026-11-13)
 
 Paso 1 completo (`/admin/payments`: list/approve/reject, migración `AdminPaymentFunctions`, 15 pruebas e2e).
 Paso 2 completo (catálogo del frontend conectado a la API real — 2026-11-02).
 Paso 3 completo (página producto, carrito y checkout de 3 pasos — 2026-11-03).
 Paso 4 completo (panel admin de pagos, S6 — 2026-11-07).
 Paso 5 completo (inventario, S7 — 2026-11-11).
-Próximo: **paso 6** ("Mis pedidos" + reveal de clave, S4).
+Paso 6 completo ("Mis pedidos" + reveal de clave, S4 — 2026-11-13; de paso, `GET /orders`/`GET /orders/:id` ahora
+devuelven `productName`/`planName` por ítem, que faltaba para RF-PED-03).
+Próximo: **paso 7** (reclamos, `/claims`, S8).

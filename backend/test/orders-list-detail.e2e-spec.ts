@@ -140,4 +140,32 @@ describe('GET /orders y GET /orders/:id enriquecido', () => {
     const res = await request(app.getHttpServer()).get('/orders');
     expect(res.status).toBe(401);
   });
+
+  it('los items incluyen el nombre del producto y del plan, tanto en lista como en detalle', async () => {
+    const user = await createUser(ds);
+    const catalog = await createCatalog(ds, { stock: 1 });
+    const { orderId } = await insertOrder(ds, {
+      userId: user.id,
+      currency: 'PEN',
+      lines: [{ planId: catalog.plan.id, unitPriceCents: 1000 }],
+    });
+
+    const list = await request(app.getHttpServer())
+      .get('/orders')
+      .set('Authorization', `Bearer ${tokenFor(user)}`);
+    const listBody = list.body as {
+      items: { items: { productName: string; planName: string }[] }[];
+    };
+    expect(listBody.items[0].items[0].productName).toBe(catalog.product.name);
+    expect(listBody.items[0].items[0].planName).toBe(catalog.plan.name);
+
+    const detail = await request(app.getHttpServer())
+      .get(`/orders/${orderId}`)
+      .set('Authorization', `Bearer ${tokenFor(user)}`);
+    const detailBody = detail.body as {
+      items: { productName: string; planName: string }[];
+    };
+    expect(detailBody.items[0].productName).toBe(catalog.product.name);
+    expect(detailBody.items[0].planName).toBe(catalog.plan.name);
+  });
 });
