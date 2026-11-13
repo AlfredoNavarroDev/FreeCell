@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { StockBadge } from "@/components/stock-badge";
 import {
   createBatch,
@@ -45,6 +45,7 @@ export function InventoryScreen({ initial }: { initial: InventoryView }) {
   const [secretsText, setSecretsText] = useState("");
   const [preview, setPreview] = useState<BatchPreviewResultView | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const previewRequestRef = useRef(0);
 
   async function refetchInventory() {
     const result = await fetchInventory();
@@ -61,8 +62,15 @@ export function InventoryScreen({ initial }: { initial: InventoryView }) {
       return;
     }
     const timeout = setTimeout(async () => {
+      const requestId = ++previewRequestRef.current;
       const result = await previewBatch(formPlanId, lines);
-      if (result.ok) setPreview(result.data);
+      if (requestId !== previewRequestRef.current) return;
+      if (result.ok) {
+        setPreview(result.data);
+      } else {
+        setPreview(null);
+        setError(result.message);
+      }
     }, 400);
     return () => clearTimeout(timeout);
   }, [formPlanId, secretsText]);
@@ -78,6 +86,8 @@ export function InventoryScreen({ initial }: { initial: InventoryView }) {
       const result = await fetchAvailableLicenses(planId);
       if (result.ok) {
         setLicensesByPlan((prev) => ({ ...prev, [planId]: result.data }));
+      } else {
+        setError(result.message);
       }
     }
   }
@@ -123,7 +133,7 @@ export function InventoryScreen({ initial }: { initial: InventoryView }) {
 
   async function handleCreateBatch() {
     const costCents = Math.round(Number(costInput.replace(",", ".")) * 100);
-    if (!formPlanId || !Number.isFinite(costCents) || costCents < 0) {
+    if (!formPlanId || !Number.isFinite(costCents) || costCents <= 0) {
       setError("Completa el plan y un costo válido antes de cargar");
       return;
     }
@@ -143,11 +153,22 @@ export function InventoryScreen({ initial }: { initial: InventoryView }) {
       return;
     }
     const planName = items.find((i) => i.planId === formPlanId)?.planName ?? "";
+    const { loadedCount, duplicateCount, errorCount } = result.data;
+    const skippedParts = [
+      duplicateCount > 0 ? `${duplicateCount} duplicadas` : null,
+      errorCount > 0 ? `${errorCount} con error` : null,
+    ].filter((part): part is string => part !== null);
+    const skippedSuffix = skippedParts.length > 0 ? ` (${skippedParts.join(", ")}, omitidas)` : "";
     setCostInput("");
     setSupplier("");
     setSecretsText("");
     setPreview(null);
-    setMessage(`${result.data.loadedCount} licencias cargadas a ${planName}.`);
+    setLicensesByPlan((prev) => {
+      const next = { ...prev };
+      delete next[formPlanId];
+      return next;
+    });
+    setMessage(`${loadedCount} licencias cargadas a ${planName}${skippedSuffix}.`);
     await refetchInventory();
   }
 
@@ -301,6 +322,7 @@ export function InventoryScreen({ initial }: { initial: InventoryView }) {
               <select
                 value={formPlanId}
                 onChange={(e) => setFormPlanId(e.target.value)}
+                aria-label="Plan"
                 className="min-h-11 rounded-[10px] border border-line-strong px-3"
               >
                 {items.map((item) => (
@@ -316,6 +338,7 @@ export function InventoryScreen({ initial }: { initial: InventoryView }) {
               <select
                 value={costCurrency}
                 onChange={(e) => setCostCurrency(e.target.value as "PEN" | "USD")}
+                aria-label="Moneda del costo"
                 className="min-h-11 rounded-[10px] border border-line-strong px-3"
               >
                 <option value="PEN">PEN</option>
