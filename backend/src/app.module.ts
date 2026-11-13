@@ -13,6 +13,7 @@ import { CoreModule } from './core/core.module';
 import type { EnvironmentVariables } from './core/config/env.validation';
 import { REDIS_CLIENT } from './core/redis/redis.module';
 import { HealthModule } from './health/health.module';
+import { InventoryModule } from './inventory/inventory.module';
 import { OrdersModule } from './orders/orders.module';
 import { PaymentMethodsModule } from './payment-methods/payment-methods.module';
 import { WorkersModule } from './workers.module';
@@ -53,6 +54,7 @@ function runWorkersInApi(): boolean {
     CatalogAdminModule,
     PaymentMethodsModule,
     OrdersModule,
+    InventoryModule,
     ...(runWorkersInApi() ? [WorkersModule] : []),
   ],
   providers: [
