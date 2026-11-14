@@ -9,6 +9,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { CatalogAdminModule } from './catalog-admin/catalog-admin.module';
 import { CatalogModule } from './catalog/catalog.module';
+import { ClaimsModule } from './claims/claims.module';
 import { CoreModule } from './core/core.module';
 import type { EnvironmentVariables } from './core/config/env.validation';
 import { REDIS_CLIENT } from './core/redis/redis.module';
@@ -55,6 +56,7 @@ function runWorkersInApi(): boolean {
     PaymentMethodsModule,
     OrdersModule,
     InventoryModule,
+    ClaimsModule,
     ...(runWorkersInApi() ? [WorkersModule] : []),
   ],
   providers: [
