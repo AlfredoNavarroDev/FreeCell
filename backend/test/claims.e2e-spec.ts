@@ -45,14 +45,20 @@ describe('POST /claims y GET /claims', () => {
   // trg_set_updated_at (DatabaseLogic) fija "updatedAt" = now() en cada UPDATE a "orders" sin
   // condición, así que un UPDATE directo no puede retrasar la fecha: hay que desactivar el
   // trigger para esta prueba, en una declaración aparte (no se puede en la misma transacción
-  // que insertó la fila: "pending trigger events"), y reactivarlo enseguida.
+  // que insertó la fila: "pending trigger events"), y reactivarlo enseguida. El ENABLE va en
+  // `finally`: si el UPDATE lanzara por cualquier motivo, el trigger quedaría desactivado para
+  // el resto de la corrida (resetState solo trunca datos, no restaura triggers) y corrompería
+  // "updatedAt" en toda suite posterior dentro del mismo `npm run test:e2e`.
   async function backdateOrder(orderId: string, days: number) {
     await ds.query(`ALTER TABLE orders DISABLE TRIGGER trg_set_updated_at`);
-    await ds.query(
-      `UPDATE orders SET "updatedAt" = now() - make_interval(days => $2) WHERE id = $1`,
-      [orderId, days],
-    );
-    await ds.query(`ALTER TABLE orders ENABLE TRIGGER trg_set_updated_at`);
+    try {
+      await ds.query(
+        `UPDATE orders SET "updatedAt" = now() - make_interval(days => $2) WHERE id = $1`,
+        [orderId, days],
+      );
+    } finally {
+      await ds.query(`ALTER TABLE orders ENABLE TRIGGER trg_set_updated_at`);
+    }
   }
 
   it('crea un reclamo sobre un pedido entregado', async () => {
