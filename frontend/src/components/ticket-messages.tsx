@@ -1,7 +1,7 @@
 import type { TicketMessageView } from "@/lib/support-client";
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString("es-PE", { dateStyle: "medium", timeStyle: "short" });
+  return new Date(iso).toLocaleString("es-PE", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Lima" });
 }
 
 export function TicketMessages({ messages }: { messages: TicketMessageView[] }) {
