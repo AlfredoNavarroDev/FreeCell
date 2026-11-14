@@ -94,11 +94,11 @@ Los criterios marcados con **[?]** dependen de una pregunta abierta en `09-decis
 
 | ID | Requerimiento | Prio | Estado |
 |---|---|---|---|
-| RF-REC-01 | El cliente reporta una clave inválida de un pedido entregado, con un motivo. | M | ⬜ |
-| RF-REC-02 | Solo se puede reclamar dentro de una ventana de **7 días** tras la entrega (D25). | M | ⬜ |
-| RF-REC-03 | Un pedido no puede tener más de un reclamo abierto a la vez. | M | ⬜ |
-| RF-REC-04 | El cliente ve el estado del reclamo (Abierto / Resuelto / Rechazado) y recibe la clave de reemplazo en Mis pedidos. | M | ⬜ |
-| RF-REC-05 | Máximo **1 reposición** por pedido; si no hay stock, el pedido queda en espera del próximo lote (sin reembolso automático) (D26). | M | ⬜ |
+| RF-REC-01 | El cliente reporta una clave inválida de un pedido entregado, con un motivo. | M | ✅ (`POST /claims` con `orderItemId` para elegir la licencia; botón «Reportar un problema» en `/pedidos`, S8) |
+| RF-REC-02 | Solo se puede reclamar dentro de una ventana de **7 días** tras la entrega (D25). | M | ✅ (`POST /claims` responde 409 fuera de ventana) |
+| RF-REC-03 | Un pedido no puede tener más de un reclamo abierto a la vez. | M | ✅ (índice único parcial `claims(orderId) WHERE status='OPEN'`; 409) |
+| RF-REC-04 | El cliente ve el estado del reclamo (Abierto / Resuelto / Rechazado) y recibe la clave de reemplazo en Mis pedidos. | M | ✅ (`GET /claims`; banner de estado y motivo de rechazo en `/pedidos`; la clave de reemplazo sale por el reveal existente) |
+| RF-REC-05 | Máximo **1 reposición** por pedido; si no hay stock, el pedido queda en espera del próximo lote (sin reembolso automático) (D26). | M | ✅ (`fn_resolve_claim`: 409 sin stock, el reclamo sigue `OPEN`; un reclamo `RESOLVED` consume la reposición, uno `REJECTED` no) |
 | RF-REC-06 | El cliente puede pedir reembolso manual (Yape/Plin/transferencia) como alternativa a esperar stock (D27). | S | ⬜ |
 
 ---
@@ -136,9 +136,9 @@ Los criterios marcados con **[?]** dependen de una pregunta abierta en `09-decis
 ### Reclamos
 | ID | Requerimiento | Prio | Estado |
 |---|---|---|---|
-| RF-ADM-30 | Cola de reclamos con lo que dijo el cliente, la clave entregada (oculta) y el stock disponible para reponer. | M | ⬜ |
-| RF-ADM-31 | **Entregar reemplazo:** marca la clave original `VOID`, asigna una nueva `SOLD` al cliente, resuelve el reclamo y notifica. | M | ⬜ |
-| RF-ADM-32 | Rechazar un reclamo con motivo. | M | ⬜ |
+| RF-ADM-30 | Cola de reclamos con lo que dijo el cliente, la clave entregada (oculta) y el stock disponible para reponer. | M | ✅ (`GET /admin/claims`; `/admin/reclamos` con cola y detalle, badge en el sidebar) |
+| RF-ADM-31 | **Entregar reemplazo:** marca la clave original `VOID`, asigna una nueva `SOLD` al cliente, resuelve el reclamo y notifica. | M | ✅ salvo la notificación (`POST /admin/claims/:id/replace`; correo/WhatsApp quedan en RF-NOT-05) |
+| RF-ADM-32 | Rechazar un reclamo con motivo. | M | ✅ (`POST /admin/claims/:id/reject`, columna `claims.rejectionReason`) |
 | RF-ADM-33 | Si no hay stock para reponer, avisar y permitir resolver más tarde. | S | ⬜ |
 
 ### Catálogo (gestión)
