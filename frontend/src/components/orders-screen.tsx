@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createClaim, type ClaimView } from "@/lib/claims-client";
 import { formatPriceCents } from "@/lib/format";
 import { ORDER_STATUS_BADGE, ORDER_STATUS_LABEL, ORDER_TABS, matchesTab, type OrderTab } from "@/lib/order-status";
 import { revealLicense, type OrderView, type RevealedLicenseView } from "@/lib/orders-client";
@@ -28,7 +29,120 @@ function TrackingStep({ label, at, done }: { label: string; at: string | null; d
   );
 }
 
-function OrderDetailPanel({ order }: { order: OrderView }) {
+function ClaimSection({
+  order,
+  claim,
+  onClaimCreated,
+}: {
+  order: OrderView;
+  claim: ClaimView | null;
+  onClaimCreated: (claim: ClaimView) => void;
+}) {
+  const [reporting, setReporting] = useState(false);
+  const [orderItemId, setOrderItemId] = useState(order.items[0]?.orderItemId ?? "");
+  const [reason, setReason] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit() {
+    setSubmitting(true);
+    setError(null);
+    const result = await createClaim(order.id, orderItemId, reason.trim());
+    setSubmitting(false);
+    if (result.ok) {
+      onClaimCreated(result.data);
+      setReporting(false);
+      setReason("");
+    } else {
+      setError(result.message);
+    }
+  }
+
+  if (claim?.status === "OPEN") {
+    return (
+      <div className="mt-4 rounded-xl bg-accent-soft-bg p-4 text-sm text-accent-soft-ink">
+        Tu reclamo está en revisión. Te avisamos cuando lo resolvamos.
+      </div>
+    );
+  }
+
+  if (claim?.status === "RESOLVED") {
+    return <p className="mt-4 text-sm text-muted">Ya se entregó una reposición para este pedido.</p>;
+  }
+
+  return (
+    <div className="mt-4 border-t border-line-soft pt-4">
+      {claim?.status === "REJECTED" && (
+        <p className="mb-3 text-sm text-danger-ink">
+          Tu reclamo anterior fue rechazado{claim.rejectionReason ? `: ${claim.rejectionReason}` : "."}
+        </p>
+      )}
+      {!reporting ? (
+        <button
+          type="button"
+          onClick={() => setReporting(true)}
+          className="flex h-11 items-center text-sm font-semibold text-danger-ink"
+        >
+          Reportar un problema
+        </button>
+      ) : (
+        <div className="flex flex-col gap-2.5">
+          {order.items.length > 1 && (
+            <select
+              value={orderItemId}
+              onChange={(e) => setOrderItemId(e.target.value)}
+              className="h-11 rounded-[10px] border border-line-strong px-3 text-sm text-ink"
+            >
+              {order.items.map((item, i) => (
+                <option key={item.orderItemId} value={item.orderItemId}>
+                  {item.productName} · {item.planName} (#{i + 1})
+                </option>
+              ))}
+            </select>
+          )}
+          <textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Contanos qué pasó con la clave"
+            rows={3}
+            className="rounded-[10px] border border-line-strong p-3 text-sm text-ink"
+          />
+          {error && <p className="text-sm text-danger-ink">{error}</p>}
+          <div className="flex gap-2.5">
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={submitting || reason.trim().length < 3}
+              className="flex h-11 items-center rounded-[10px] bg-danger-ink px-5 text-sm font-semibold text-white disabled:opacity-60"
+            >
+              {submitting ? "Enviando…" : "Enviar reclamo"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setReporting(false);
+                setError(null);
+              }}
+              className="flex h-11 items-center rounded-[10px] border border-line-strong px-5 text-sm font-semibold text-ink"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function OrderDetailPanel({
+  order,
+  claim,
+  onClaimCreated,
+}: {
+  order: OrderView;
+  claim: ClaimView | null;
+  onClaimCreated: (claim: ClaimView) => void;
+}) {
   const [revealed, setRevealed] = useState<RevealedLicenseView[] | null>(null);
   const [showKeys, setShowKeys] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -81,7 +195,7 @@ function OrderDetailPanel({ order }: { order: OrderView }) {
       </div>
 
       {order.status === "DELIVERED" && (
-        <div className="mb-6">
+        <div className="mb-2">
           <div className="mb-1.5 text-sm text-muted">
             {order.items.length > 1 ? "Tus claves de licencia" : "Tu clave de licencia"}
           </div>
@@ -121,6 +235,7 @@ function OrderDetailPanel({ order }: { order: OrderView }) {
               </button>
             )}
           </div>
+          <ClaimSection key={order.id} order={order} claim={claim} onClaimCreated={onClaimCreated} />
         </div>
       )}
 
@@ -143,16 +258,24 @@ function OrderDetailPanel({ order }: { order: OrderView }) {
   );
 }
 
-export function OrdersScreen({ initial }: { initial: OrderView[] }) {
+export function OrdersScreen({ initial, initialClaims }: { initial: OrderView[]; initialClaims: ClaimView[] }) {
   const [tab, setTab] = useState<OrderTab>("all");
   const [selectedId, setSelectedId] = useState<string | null>(initial[0]?.id ?? null);
+  const [claims, setClaims] = useState(initialClaims);
 
   const filtered = initial.filter((order) => matchesTab(order.status, tab));
   const selected = filtered.find((order) => order.id === selectedId) ?? filtered[0] ?? null;
+  const claimForSelected = selected
+    ? claims.filter((c) => c.orderId === selected.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] ?? null
+    : null;
 
   function selectTab(nextTab: OrderTab) {
     setTab(nextTab);
     setSelectedId(null);
+  }
+
+  function handleClaimCreated(claim: ClaimView) {
+    setClaims((prev) => [claim, ...prev]);
   }
 
   return (
@@ -209,7 +332,9 @@ export function OrdersScreen({ initial }: { initial: OrderView[] }) {
           ))}
         </section>
 
-        {selected && <OrderDetailPanel order={selected} />}
+        {selected && (
+          <OrderDetailPanel order={selected} claim={claimForSelected} onClaimCreated={handleClaimCreated} />
+        )}
       </div>
     </div>
   );
