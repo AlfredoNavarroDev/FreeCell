@@ -83,19 +83,19 @@ export async function fetchAdminTickets(
 }
 
 export async function getAdminTicket(id: string): Promise<AdminSupportActionResult<AdminTicketDetail>> {
-  return callBackend<AdminTicketDetail>(`/admin/support-tickets/${id}`, { method: "GET" });
+  return callBackend<AdminTicketDetail>(`/admin/support-tickets/${encodeURIComponent(id)}`, { method: "GET" });
 }
 
 export async function replyAdminTicket(
   id: string,
   body: string,
 ): Promise<AdminSupportActionResult<AdminTicketDetail>> {
-  return callBackend<AdminTicketDetail>(`/admin/support-tickets/${id}/messages`, {
+  return callBackend<AdminTicketDetail>(`/admin/support-tickets/${encodeURIComponent(id)}/messages`, {
     method: "POST",
     body: { body },
   });
 }
 
 export async function closeAdminTicket(id: string): Promise<AdminSupportActionResult<TicketCloseResult>> {
-  return callBackend<TicketCloseResult>(`/admin/support-tickets/${id}/close`, { method: "POST" });
+  return callBackend<TicketCloseResult>(`/admin/support-tickets/${encodeURIComponent(id)}/close`, { method: "POST" });
 }

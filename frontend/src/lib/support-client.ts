@@ -76,9 +76,9 @@ export async function listTickets(): Promise<SupportActionResult<PaginatedTicket
 }
 
 export async function getTicket(id: string): Promise<SupportActionResult<TicketDetailView>> {
-  return callBackend<TicketDetailView>(`/support-tickets/${id}`, { method: "GET" });
+  return callBackend<TicketDetailView>(`/support-tickets/${encodeURIComponent(id)}`, { method: "GET" });
 }
 
 export async function replyTicket(id: string, body: string): Promise<SupportActionResult<TicketDetailView>> {
-  return callBackend<TicketDetailView>(`/support-tickets/${id}/messages`, { method: "POST", body: { body } });
+  return callBackend<TicketDetailView>(`/support-tickets/${encodeURIComponent(id)}/messages`, { method: "POST", body: { body } });
 }

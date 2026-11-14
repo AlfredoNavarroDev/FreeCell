@@ -80,7 +80,11 @@ export function AdminTicketDetailPanel({
         <p className="font-display text-xl font-bold text-ink">{ticket.subject}</p>
         <p className="text-sm text-muted">{ticket.customerName ?? ticket.customerEmail}</p>
       </div>
-      <TicketMessages messages={ticket.messages} />
+      <TicketMessages
+        messages={ticket.messages}
+        viewer="admin"
+        customerLabel={ticket.customerName ?? ticket.customerEmail}
+      />
       <form onSubmit={handleReply} className="mt-5 flex flex-col gap-3 border-t border-line-soft pt-5">
         <label htmlFor="admin-reply" className="font-medium text-ink">
           Responder

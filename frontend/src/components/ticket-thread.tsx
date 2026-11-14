@@ -19,6 +19,7 @@ export function TicketThread({ initial }: { initial: TicketDetailView }) {
     setSubmitting(false);
     if (!result.ok) {
       setError(result.message);
+      if (result.status === 409) setTicket({ ...ticket, status: "CLOSED" });
       return;
     }
     setTicket(result.data);
@@ -33,7 +34,8 @@ export function TicketThread({ initial }: { initial: TicketDetailView }) {
           {ticket.status === "OPEN" ? "Abierto" : "Cerrado"}
         </span>
       </div>
-      <TicketMessages messages={ticket.messages} />
+      <TicketMessages messages={ticket.messages} viewer="customer" />
+      {error ? <p className="rounded-[10px] bg-danger-bg px-3 py-2 text-danger-ink">{error}</p> : null}
       {ticket.status === "OPEN" ? (
         <form onSubmit={handleReply} className="flex flex-col gap-3 border-t border-line-soft pt-5">
           <label htmlFor="reply-body" className="font-medium text-ink">
@@ -47,7 +49,6 @@ export function TicketThread({ initial }: { initial: TicketDetailView }) {
             rows={4}
             className="rounded-[10px] border border-line-strong p-3 text-ink"
           />
-          {error ? <p className="rounded-[10px] bg-danger-bg px-3 py-2 text-danger-ink">{error}</p> : null}
           <button
             type="submit"
             disabled={body.trim().length < 1 || submitting}

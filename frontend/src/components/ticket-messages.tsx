@@ -4,7 +4,16 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleString("es-PE", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Lima" });
 }
 
-export function TicketMessages({ messages }: { messages: TicketMessageView[] }) {
+export function TicketMessages({
+  messages,
+  viewer,
+  customerLabel,
+}: {
+  messages: TicketMessageView[];
+  viewer: "customer" | "admin";
+  customerLabel?: string;
+}) {
+  const ownLabel = viewer === "admin" ? (customerLabel ?? "Cliente") : "Tú";
   return (
     <ol aria-label="Mensajes del ticket" className="flex flex-col gap-3">
       {messages.map((m) => (
@@ -14,7 +23,7 @@ export function TicketMessages({ messages }: { messages: TicketMessageView[] }) 
             m.isAdmin ? "self-start bg-accent-soft-bg text-accent-soft-ink" : "self-end bg-bg text-ink"
           }`}
         >
-          <p className="mb-1 text-xs font-semibold">{m.isAdmin ? "Soporte Free Cell" : "Tú"}</p>
+          <p className="mb-1 text-xs font-semibold">{m.isAdmin ? "Soporte Free Cell" : ownLabel}</p>
           <p className="whitespace-pre-wrap">{m.body}</p>
           <p className="mt-1 text-xs text-muted">{formatDate(m.createdAt)}</p>
         </li>
