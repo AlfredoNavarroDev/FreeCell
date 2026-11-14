@@ -4,20 +4,23 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
-  { href: "/admin", label: "Inicio", badge: false },
-  { href: "/admin/pagos", label: "Pagos", badge: true },
-  { href: "/admin/inventario", label: "Inventario", badge: false },
-  { href: "/admin/reclamos", label: "Reclamos", badge: false },
+  { href: "/admin", label: "Inicio", badgeKey: null },
+  { href: "/admin/pagos", label: "Pagos", badgeKey: "payments" as const },
+  { href: "/admin/inventario", label: "Inventario", badgeKey: null },
+  { href: "/admin/reclamos", label: "Reclamos", badgeKey: "claims" as const },
 ] as const;
 
 export function AdminSidebar({
   pendingPaymentsCount,
+  pendingClaimsCount,
   adminName,
 }: {
   pendingPaymentsCount: number;
+  pendingClaimsCount: number;
   adminName: string | null;
 }) {
   const pathname = usePathname();
+  const counts: Record<string, number> = { payments: pendingPaymentsCount, claims: pendingClaimsCount };
 
   return (
     <aside className="flex w-full max-w-[260px] flex-col gap-1 border-r border-line bg-surface p-4">
@@ -25,6 +28,7 @@ export function AdminSidebar({
       <div className="px-2 pb-2 text-xs font-semibold tracking-wide text-muted">ADMIN</div>
       {NAV_ITEMS.map((item) => {
         const active = pathname === item.href;
+        const count = item.badgeKey ? counts[item.badgeKey] : 0;
         return (
           <Link
             key={item.href}
@@ -35,9 +39,9 @@ export function AdminSidebar({
             }`}
           >
             {item.label}
-            {item.badge && pendingPaymentsCount > 0 ? (
+            {count > 0 ? (
               <span className="ml-auto rounded-full bg-danger-bg px-2 text-xs font-semibold text-danger-ink">
-                {pendingPaymentsCount}
+                {count}
               </span>
             ) : null}
           </Link>
