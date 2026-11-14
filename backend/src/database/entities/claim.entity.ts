@@ -57,6 +57,9 @@ export class Claim {
   @JoinColumn({ name: 'replacementLicenseId' })
   replacementLicense?: LicenseItem | null;
 
+  @Column({ type: 'text', nullable: true })
+  rejectionReason!: string | null;
+
   @Column({ type: 'uuid', nullable: true })
   resolvedById!: string | null;
 
