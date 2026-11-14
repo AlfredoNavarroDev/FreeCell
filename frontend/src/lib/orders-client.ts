@@ -16,6 +16,7 @@ export interface OrderItemView {
   unitPriceCents: number;
   productName: string;
   planName: string;
+  orderItemId: string;
 }
 
 export interface OrderView {
