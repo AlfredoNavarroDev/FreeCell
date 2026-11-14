@@ -148,7 +148,7 @@ Los criterios marcados con **[?]** dependen de una pregunta abierta en `09-decis
 | RF-ADM-41 | Gestión de usuarios (ver, bloquear). | C | ⬜ |
 | RF-ADM-42 | Configuración (`settings`): TTL de reserva, horario de atención, datos de pago, SLA de revisión (24 h), monto máximo de primer pedido para clientes nuevos. | M | ⬜ |
 | RF-ADM-43 | Reportes por rango de fechas: **ventas por día/semana**, **margen por producto**, **stock valorizado**, **top productos/planes vendidos** (D55). | M | ⬜ |
-| RF-ADM-44 | Resolver tickets de soporte: ver cola, responder, cerrar (D34). | M | ⬜ |
+| RF-ADM-44 | Resolver tickets de soporte: ver cola, responder, cerrar (D34). | M | ✅ (`GET /admin/support-tickets`, `POST /admin/support-tickets/:id/messages` y `/close`; `/admin/soporte` con cola, hilo y cierre, badge en el sidebar; 2026-11-14) |
 | RF-ADM-45 | Moderar reseñas: aprobar u ocultar (D33). | S | ⬜ |
 
 ---
@@ -171,10 +171,10 @@ Los criterios marcados con **[?]** dependen de una pregunta abierta en `09-decis
 
 | ID | Requerimiento | Prio | Estado |
 |---|---|---|---|
-| RF-SUP-01 | El cliente crea un ticket de soporte con asunto y mensaje inicial. | M | ⬜ |
-| RF-SUP-02 | El cliente ve sus tickets y su historial de mensajes; puede responder mientras esté `OPEN`. | M | ⬜ |
-| RF-SUP-03 | El admin ve la cola de tickets abiertos, responde y cierra (`CLOSED`). | M | ⬜ |
-| RF-SUP-04 | Un ticket cerrado no acepta nuevos mensajes del cliente (debe abrir uno nuevo). | S | ⬜ |
+| RF-SUP-01 | El cliente crea un ticket de soporte con asunto y mensaje inicial. | M | ✅ (`POST /support-tickets`; formulario en `/tickets`, S9; 2026-11-14) |
+| RF-SUP-02 | El cliente ve sus tickets y su historial de mensajes; puede responder mientras esté `OPEN`. | M | ✅ (`GET /support-tickets`, `GET /support-tickets/:id` solo propios y `POST /support-tickets/:id/messages`; `/tickets` y `/tickets/[id]`; 2026-11-14) |
+| RF-SUP-03 | El admin ve la cola de tickets abiertos, responde y cierra (`CLOSED`). | M | ✅ (`/admin/soporte` sobre `/admin/support-tickets*`; el cierre escribe `audit_logs` `ticket.closed`; 2026-11-14) |
+| RF-SUP-04 | Un ticket cerrado no acepta nuevos mensajes del cliente (debe abrir uno nuevo). | S | ✅ (`POST /support-tickets/:id/messages` responde 409 si está `CLOSED`, también ante cierre concurrente; la UI oculta el campo de respuesta; 2026-11-14) |
 
 ---
 

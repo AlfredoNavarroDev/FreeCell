@@ -22,8 +22,8 @@ Todo lo que no sea `backend/` o `frontend/` vive en `docs/` (complementario). Re
   conectada a la API real (Sprint 2) + **sesión NextAuth** (credentials + Google,
   refresh proactivo, logout con revocación, rutas `/admin` y `/cuenta` protegidas; RF-AUT-09/10, D46/D53/D56).
   S2–S11 van por sprint.
-- ⬜ **Sprints 2–4**: catálogo (resto), CRUD de catálogo, comprobantes (R2), panel admin, reclamos, soporte
-  (tickets), reseñas, correo/WhatsApp, despliegue real en Fly.io. Ver `docs/08-plan-de-sprints.md`.
+- ⬜ **Sprints 2–4**: catálogo (resto), CRUD de catálogo, comprobantes (R2), panel admin, reclamos,
+  reseñas, correo/WhatsApp, despliegue real en Fly.io. Ver `docs/08-plan-de-sprints.md`.
 - Referencias visuales en `docs/design/` (pantallas S1–S11).
 - Brainstorming de Sprint 2–4 **completado** (2026-10-05): decisiones **D14–D55** en `docs/09-decisiones-y-preguntas-abiertas.md`. Sin preguntas abiertas. Incluye login con Google (D53/D54) y reportes admin con KPIs definidos (D55: ventas día/semana, margen, stock valorizado, top planes).
 - Diseño de Fundaciones (backend) **completado** (2026-10-06): decisiones **D56–D65** en `docs/09-decisiones-y-preguntas-abiertas.md` (tokens y refresh, lógica en Postgres, monedas PEN/USD, métodos de pago configurables).

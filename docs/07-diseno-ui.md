@@ -57,7 +57,7 @@ Cola + detalle (patrón maestro-detalle) · Barra de stock · Tarjeta de acción
 | **S7** | Inventario (`AdminInventario`) | Totales; filtros Todos/Stock bajo/Agotados; fila por plan con badge (sin barra, decidido fuera de alcance); panel **Cargar licencias** (plan, costo PEN/USD con tasa congelada, pegar claves una por línea —sin CSV, decidido fuera de alcance—, resumen válidas/duplicadas/error); expandir fila para ver licencias disponibles y anularlas. | `GET /admin/inventory`, `GET …/plans/:planId/licenses`, `POST …/batches/preview`, `POST …/batches`, `POST …/licenses/:id/void`, `PUT /admin/inventory/usd-rate` |
 | **S8** | Reclamos (`AdminReclamos`) | Maestro-detalle: motivo del cliente, clave entregada (oculta), stock para reponer; **Entregar reemplazo** / **Rechazar** / WhatsApp. | `GET /admin/claims`, `POST …/replace`, `POST …/reject` |
 | **S10** | Catálogo (gestión) (`AdminCatalogo`) | CRUD de categorías/productos/planes; toggle `requiresToolUsername`; campo moneda (D38, adelantado a Sprint 2). | `GET/POST/PATCH /admin/products`, `/admin/plans`, `/admin/categories` |
-| **S11** | Soporte y reseñas (`AdminSoporte`) | Dos pestañas: cola de tickets (responder/cerrar) y cola de reseñas pendientes (aprobar/ocultar) (D34, D33). | `GET/POST /admin/support-tickets…`, `GET/POST /admin/reviews…` |
+| **S11** | Soporte y reseñas (`AdminSoporte`) | Dos pestañas: cola de tickets (responder/cerrar) y cola de reseñas pendientes (aprobar/ocultar) (D34, D33). **Parcial:** la pestaña de tickets está hecha (`/admin/soporte`, 2026-11-14); falta la de reseñas. | `GET/POST /admin/support-tickets…`, `GET/POST /admin/reviews…` |
 
 ## Comportamiento interactivo ya prototipado (replicar)
 - Filtro por categoría y búsqueda en el catálogo.
