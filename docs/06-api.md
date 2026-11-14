@@ -38,15 +38,15 @@ Ver `docs/backend/auth.md`, `docs/backend/orders.md` y `docs/backend/README.md` 
 ## Pedidos y pagos del cliente (Sprint 2)
 | | Ruta | Acceso | Notas |
 |---|---|---|---|
-| ✅ | `GET /orders?status=` | 👤 | Mis pedidos, paginado (`page`/`pageSize`). Cada `items[]` trae `productName`/`planName` además de `planId`/`unitPriceCents` (RF-PED-01/03). |
+| ✅ | `GET /orders?status=` | 👤 | Mis pedidos, paginado (`page`/`pageSize`). Cada `items[]` trae `productName`/`planName` y `orderItemId` además de `planId`/`unitPriceCents` (RF-PED-01/03, S8). |
 | ✅ | `GET /orders/:id` | 👤 | Detalle + `tracking` (creado/pago aprobado/entregado) + `paymentStatus`. `items[]` con `productName`/`planName`. 404 si no es suyo. |
 | ⬜ | `POST /orders/:id/cancel` | 👤 | Solo `PENDING_PAYMENT`; libera la reserva. |
 | ✅ | `POST /orders/:id/payment/upload-url` | 👤 | Valida tipo/tamaño y devuelve URL firmada de R2 (`{uploadUrl, proofKey}`). 400 tipo o tamaño inválido; 404 pedido ajeno; 409 si no está `PENDING_PAYMENT` (D70). |
 | ✅ | `GET /payment-methods?currency=` | — | Público. Métodos de pago activos, filtrados por moneda si se indica (RF-COM-03, D63). |
 | ✅ | `POST /orders/:id/payment` | 👤 | Body `{paymentMethodId, proofKey, proofHash, operationNumber, acceptsLegalDeclaration}` → pedido `IN_REVIEW`, pago `PENDING`. `proofHash` lo calcula el cliente (D71). Solo desde `PENDING_PAYMENT` y con reserva vigente (409 si no). El método debe estar activo y aceptar `orders.currency` (D63, trigger `trg_payment_method_currency`, 409). 409 si `(paymentMethodId, operationNumber)` o `proofHash` ya existen (D21, D64). 400 si `proofKey` no corresponde al pedido o no se acepta la declaración legal (RF-COM-13/D43/D72). 404 pedido ajeno. |
 | ✅ | `POST /orders/:id/license/reveal` | 👤 | Devuelve la(s) clave(s) en claro de las licencias `SOLD` del pedido **y registra auditoría** (`license.revealed`, nunca la clave). Solo `DELIVERED` (409 si no). Límite: 20/min por IP (D73). |
-| ⬜ | `POST /claims` | 👤 | Body `{orderId, reason}`. 409 si ya hay uno abierto, fuera de ventana (7 días, D25) o ya usó su reposición (D26). |
-| ⬜ | `GET /claims` | 👤 | Mis reclamos. |
+| ✅ | `POST /claims` | 👤 | Body `{orderId, orderItemId, reason}`. 409 si ya hay uno abierto, fuera de ventana (7 días, D25) o ya usó su reposición (D26). |
+| ✅ | `GET /claims` | 👤 | Mis reclamos. |
 | ⬜ | `POST /support-tickets` | 👤 | Body `{subject, body}` → crea ticket `OPEN` (D34). |
 | ⬜ | `GET /support-tickets` | 👤 | Mis tickets. |
 | ⬜ | `POST /support-tickets/:id/messages` | 👤 | Body `{body}`. 409 si el ticket está `CLOSED`. |
@@ -78,9 +78,9 @@ Ver `docs/backend/auth.md`, `docs/backend/orders.md` y `docs/backend/README.md` 
 | ✅ | `POST /admin/inventory/batches` | Body `{planId, costCurrency, unitCostCents, supplier?, secrets[]}`. Revalida desde cero (no confía en el preview), crea lote + licencias cifradas, congela `fxRatePen` si es USD (400 si no hay tasa configurada), audita. 400 si 0 líneas válidas. |
 | ✅ | `POST /admin/inventory/licenses/:id/void` | Body `{reason}`. Anula una licencia (`AVAILABLE -> VOID`); 409 si ya no está `AVAILABLE` (`trg_license_status_guard`); 404 si no existe; audita el motivo. |
 | ✅ | `PUT /admin/inventory/usd-rate` | Body `{rate}` (> 0). Actualiza `settings.usdPenRate`, auditado; la rige el siguiente lote en USD. |
-| ⬜ | `GET /admin/claims?status=OPEN` | Cola con motivo, pedido y stock para reponer. |
-| ⬜ | `POST /admin/claims/:id/replace` | Transacción: original → VOID, nueva (SKIP LOCKED) → SOLD, reclamo → RESOLVED, notificación. 409 sin stock. |
-| ⬜ | `POST /admin/claims/:id/reject` | Body `{reason}`. |
+| ✅ | `GET /admin/claims?status=OPEN` | Cola con motivo, pedido y stock para reponer. |
+| ✅ | `POST /admin/claims/:id/replace` | Transacción: original → VOID, nueva (SKIP LOCKED) → SOLD, reclamo → RESOLVED, notificación. 409 sin stock. |
+| ✅ | `POST /admin/claims/:id/reject` | Body `{reason}`. |
 | ⬜ | `GET/POST/PATCH /admin/products`, `/admin/plans`, `/admin/categories` | CRUD completo, **Sprint 2** (D38, adelantado). |
 | ⬜ | `GET/PUT /admin/settings` | TTL, horario, datos de pago, SLA (24h), monto máx. cliente nuevo (D19, D22). |
 | ⬜ | `GET /admin/support-tickets?status=OPEN` | Cola de tickets. |

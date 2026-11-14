@@ -8,6 +8,7 @@ export class OrderItemResponseDto {
   @ApiProperty() unitPriceCents!: number;
   @ApiProperty() productName!: string;
   @ApiProperty() planName!: string;
+  @ApiProperty() orderItemId!: string;
 }
 
 export interface PlanLabel {
@@ -61,6 +62,7 @@ export class OrderResponseDto {
           unitPriceCents: item.unitPriceCents,
           productName: planLabels.get(item.planId)?.productName ?? '',
           planName: planLabels.get(item.planId)?.planName ?? '',
+          orderItemId: item.id,
         })),
       paymentStatus: latestPayment?.status ?? null,
       paymentRejectionReason:

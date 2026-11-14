@@ -1,20 +1,24 @@
 import { OrdersScreen } from "@/components/orders-screen";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { listClaims } from "@/lib/claims-client";
 import { listOrders } from "@/lib/orders-client";
 
 export default async function PedidosPage() {
-  const result = await listOrders();
+  const [ordersResult, claimsResult] = await Promise.all([listOrders(), listClaims()]);
 
   return (
     <>
       <SiteHeader />
       <main className="flex-1">
         <section className="mx-auto max-w-[1200px] px-6 py-10">
-          {!result.ok ? (
-            <p className="text-danger-ink">{result.message}</p>
+          {!ordersResult.ok ? (
+            <p className="text-danger-ink">{ordersResult.message}</p>
           ) : (
-            <OrdersScreen initial={result.data.items} />
+            <OrdersScreen
+              initial={ordersResult.data.items}
+              initialClaims={claimsResult.ok ? claimsResult.data.items : []}
+            />
           )}
         </section>
       </main>
