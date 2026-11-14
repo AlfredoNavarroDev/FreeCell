@@ -47,9 +47,10 @@ Ver `docs/backend/auth.md`, `docs/backend/orders.md` y `docs/backend/README.md` 
 | ✅ | `POST /orders/:id/license/reveal` | 👤 | Devuelve la(s) clave(s) en claro de las licencias `SOLD` del pedido **y registra auditoría** (`license.revealed`, nunca la clave). Solo `DELIVERED` (409 si no). Límite: 20/min por IP (D73). |
 | ✅ | `POST /claims` | 👤 | Body `{orderId, orderItemId, reason}`. 409 si ya hay uno abierto, fuera de ventana (7 días, D25) o ya usó su reposición (D26). |
 | ✅ | `GET /claims` | 👤 | Mis reclamos. |
-| ⬜ | `POST /support-tickets` | 👤 | Body `{subject, body}` → crea ticket `OPEN` (D34). |
-| ⬜ | `GET /support-tickets` | 👤 | Mis tickets. |
-| ⬜ | `POST /support-tickets/:id/messages` | 👤 | Body `{body}`. 409 si el ticket está `CLOSED`. |
+| ✅ | `POST /support-tickets` | 👤 | Body `{subject, body}` → crea ticket `OPEN` (D34); audita `ticket.created`. |
+| ✅ | `GET /support-tickets` | 👤 | Mis tickets. |
+| ✅ | `GET /support-tickets/:id` | 👤 | Detalle con mensajes. Solo tickets propios; 404 si es ajeno o no existe. |
+| ✅ | `POST /support-tickets/:id/messages` | 👤 | Body `{body}`. Devuelve el detalle actualizado. 409 si el ticket está `CLOSED`. |
 | ⬜ | `POST /reviews` | 👤 | Body `{orderId, productId, rating, body}`. 403 si el pedido no es `DELIVERED` del cliente. Crea en `PENDING` (D33). |
 
 ## Administración (Sprint 3, todo 🛡️)
@@ -83,9 +84,10 @@ Ver `docs/backend/auth.md`, `docs/backend/orders.md` y `docs/backend/README.md` 
 | ✅ | `POST /admin/claims/:id/reject` | Body `{reason}`. |
 | ⬜ | `GET/POST/PATCH /admin/products`, `/admin/plans`, `/admin/categories` | CRUD completo, **Sprint 2** (D38, adelantado). |
 | ⬜ | `GET/PUT /admin/settings` | TTL, horario, datos de pago, SLA (24h), monto máx. cliente nuevo (D19, D22). |
-| ⬜ | `GET /admin/support-tickets?status=OPEN` | Cola de tickets. |
-| ⬜ | `POST /admin/support-tickets/:id/messages` | Responde; body `{body}`. |
-| ⬜ | `POST /admin/support-tickets/:id/close` | Cierra el ticket. |
+| ✅ | `GET /admin/support-tickets?status=OPEN` | Cola de tickets. |
+| ✅ | `GET /admin/support-tickets/:id` | Detalle con datos del cliente y mensajes. |
+| ✅ | `POST /admin/support-tickets/:id/messages` | Responde; body `{body}`. Devuelve el detalle actualizado. |
+| ✅ | `POST /admin/support-tickets/:id/close` | Cierra el ticket; responde `{ticketId, status}`; audita `ticket.closed`. |
 | ⬜ | `GET /admin/reviews?status=PENDING` | Cola de moderación. |
 | ⬜ | `POST /admin/reviews/:id/approve` \| `/reject` | Modera una reseña. |
 | ⬜ | `GET /admin/reports/sales?from=&to=&group=day\|week` | Ventas (soles) y n.º de pedidos por día o semana (D55). |

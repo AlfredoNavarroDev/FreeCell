@@ -19,7 +19,7 @@ operación secundaria (inventario, reclamos, soporte) y en observabilidad/admin 
 | 5 | ✅ Backend + frontend: inventario (`/admin/inventory*`, S7) — 2026-11-11 | Sin carga de lotes real, el stock depende solo del seed; necesario para operar más de una vez. |
 | 6 | ✅ Frontend: "Mis pedidos" + reveal de clave (S4) — 2026-11-13 | Cierra la experiencia del cliente; endpoints ya listos (`GET /orders`, `POST /orders/:id/license/reveal`). |
 | 7 | ✅ Backend + frontend: reclamos (`/claims`, S8) — 2026-11-14 | Parte del dominio core (reposición, D25/D26), pero depende de que ya haya pedidos `DELIVERED` reales. |
-| 8 | Backend + frontend: soporte / tickets (S9/S11) | Menor urgencia que ventas; no bloquea facturación. |
+| 8 | ✅ Backend + frontend: soporte / tickets (S9/S11) — 2026-11-14 | Menor urgencia que ventas; no bloquea facturación. |
 | 9 | Backend + frontend: reseñas (S11) | Cosmético, no bloquea ventas. |
 | 10 | Admin: inicio/summary + reportes (S5, D55) | Útil cuando ya hay datos reales corriendo, no antes. |
 | 11 | Admin: catálogo CRUD UI (S10) | Backend ya ✅; hoy se puede operar por seed/Postman, baja urgencia de UI. |
@@ -45,4 +45,6 @@ Paso 6 completo ("Mis pedidos" + reveal de clave, S4 — 2026-11-13; de paso, `G
 devuelven `productName`/`planName` por ítem, que faltaba para RF-PED-03).
 Paso 7 completo (reclamos, S8 — 2026-11-14: `/claims`, `/admin/claims*`, migración `ClaimFunctions`, `/pedidos` y
 `/admin/reclamos`; sin notificación por correo/WhatsApp, RF-NOT-05).
-Próximo: **paso 8** (soporte / tickets, S9/S11).
+Paso 8 completo (soporte / tickets, S9/S11 — 2026-11-14: `/support-tickets*`, `/admin/support-tickets*`, `/tickets`,
+`/tickets/[id]` y `/admin/soporte`; S11 queda parcial, falta la pestaña de reseñas; sin notificación por correo/WhatsApp).
+Próximo: **paso 9** (reseñas, S11 pestaña de reseñas).

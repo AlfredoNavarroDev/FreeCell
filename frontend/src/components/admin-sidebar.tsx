@@ -8,19 +8,26 @@ const NAV_ITEMS = [
   { href: "/admin/pagos", label: "Pagos", badgeKey: "payments" as const },
   { href: "/admin/inventario", label: "Inventario", badgeKey: null },
   { href: "/admin/reclamos", label: "Reclamos", badgeKey: "claims" as const },
+  { href: "/admin/soporte", label: "Soporte", badgeKey: "tickets" as const },
 ] as const;
 
 export function AdminSidebar({
   pendingPaymentsCount,
   pendingClaimsCount,
+  pendingTicketsCount,
   adminName,
 }: {
   pendingPaymentsCount: number;
   pendingClaimsCount: number;
+  pendingTicketsCount: number;
   adminName: string | null;
 }) {
   const pathname = usePathname();
-  const counts: Record<string, number> = { payments: pendingPaymentsCount, claims: pendingClaimsCount };
+  const counts: Record<string, number> = {
+    payments: pendingPaymentsCount,
+    claims: pendingClaimsCount,
+    tickets: pendingTicketsCount,
+  };
 
   return (
     <aside className="flex w-full max-w-[260px] flex-col gap-1 border-r border-line bg-surface p-4">
