@@ -46,6 +46,6 @@ devuelven `productName`/`planName` por ítem, que faltaba para RF-PED-03).
 Paso 7 completo (reclamos, S8 — 2026-11-14: `/claims`, `/admin/claims*`, migración `ClaimFunctions`, `/pedidos` y
 `/admin/reclamos`; sin notificación por correo/WhatsApp, RF-NOT-05).
 Paso 8 completo (soporte / tickets, S9/S11 — 2026-11-14: `/support-tickets*`, `/admin/support-tickets*`, `/tickets`,
-`/tickets/[id]` y `/admin/soporte`; S11 queda parcial, falta la pestaña de reseñas; sin notificación por correo/WhatsApp).
+`/tickets/[id]` y `/admin/soporte`; S11 quedó parcial entonces (sin la pestaña de reseñas); se completó en el paso 9; sin notificación por correo/WhatsApp).
 Paso 9 completo (reseñas, S11 — 2026-11-15: `/reviews`, `/admin/reviews*`, `GET /catalog/products/:slug/reviews`, migración `ReviewFunctions`, «Valorar» en `/pedidos`, pestaña «Reseñas» en la ficha y en `/admin/soporte`; sin aviso por correo/WhatsApp).
 Próximo: **paso 10** (admin: inicio/summary + reportes, S5, D55).
