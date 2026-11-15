@@ -13,6 +13,7 @@ export type OrderStatusView =
 
 export interface OrderItemView {
   planId: string;
+  productId: string;
   unitPriceCents: number;
   productName: string;
   planName: string;

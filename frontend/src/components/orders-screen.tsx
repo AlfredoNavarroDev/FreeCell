@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { StarRating } from "@/components/star-rating";
 import { createClaim, type ClaimView } from "@/lib/claims-client";
 import { formatPriceCents } from "@/lib/format";
 import { ORDER_STATUS_BADGE, ORDER_STATUS_LABEL, ORDER_TABS, matchesTab, type OrderTab } from "@/lib/order-status";
 import { revealLicense, type OrderView, type RevealedLicenseView } from "@/lib/orders-client";
+import { createReview, type MyReviewView, type ReviewStatus } from "@/lib/reviews-client";
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString("es-PE", { dateStyle: "medium", timeStyle: "short" });
@@ -134,14 +136,157 @@ function ClaimSection({
   );
 }
 
+const REVIEW_STATUS_TEXT: Record<ReviewStatus, string> = {
+  PENDING: "Tu reseña está en revisión.",
+  APPROVED: "Tu reseña está publicada.",
+  HIDDEN: "Tu reseña no se publicó.",
+};
+
+function ReviewRow({
+  order,
+  productId,
+  productName,
+  review,
+  onReviewCreated,
+}: {
+  order: OrderView;
+  productId: string;
+  productName: string;
+  review: MyReviewView | null;
+  onReviewCreated: (review: MyReviewView) => void;
+}) {
+  const [writing, setWriting] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [body, setBody] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit() {
+    setSubmitting(true);
+    setError(null);
+    const result = await createReview(order.id, productId, rating, body.trim());
+    setSubmitting(false);
+    if (result.ok) {
+      onReviewCreated(result.data);
+      setWriting(false);
+    } else {
+      setError(result.message);
+    }
+  }
+
+  return (
+    <li className="rounded-xl bg-bg p-3">
+      <div className="text-sm font-medium text-ink">{productName}</div>
+      {review ? (
+        <div className="mt-1 flex flex-col gap-1">
+          <StarRating value={review.rating} />
+          <p className="text-sm text-muted">{REVIEW_STATUS_TEXT[review.status]}</p>
+        </div>
+      ) : !writing ? (
+        <button
+          type="button"
+          onClick={() => setWriting(true)}
+          className="mt-1 flex h-11 items-center text-sm font-semibold text-accent"
+        >
+          Valorar
+        </button>
+      ) : (
+        <div className="mt-2 flex flex-col gap-2.5">
+          <div role="radiogroup" aria-label="Puntuación" className="flex gap-1.5">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button
+                key={n}
+                type="button"
+                role="radio"
+                aria-checked={rating === n}
+                aria-label={`${n} de 5`}
+                onClick={() => setRating(n)}
+                className={`flex h-11 w-11 items-center justify-center rounded-[10px] border text-sm font-semibold ${
+                  rating === n ? "border-ink bg-ink text-white" : "border-line-strong text-ink"
+                }`}
+              >
+                {n}★
+              </button>
+            ))}
+          </div>
+          <textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            placeholder="Cuéntanos cómo te fue con la herramienta"
+            rows={3}
+            maxLength={1000}
+            className="rounded-[10px] border border-line-strong p-3 text-sm text-ink"
+          />
+          <p className="text-xs text-muted">Mínimo 10 caracteres. Las reseñas se publican tras una revisión.</p>
+          {error && <p className="text-sm text-danger-ink">{error}</p>}
+          <div className="flex gap-2.5">
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={submitting || rating < 1 || body.trim().length < 10}
+              className="flex h-11 items-center rounded-[10px] bg-accent px-5 text-sm font-semibold text-white disabled:opacity-60"
+            >
+              {submitting ? "Enviando…" : "Enviar reseña"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setWriting(false);
+                setError(null);
+              }}
+              className="flex h-11 items-center rounded-[10px] border border-line-strong px-5 text-sm font-semibold text-ink"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+    </li>
+  );
+}
+
+function ReviewSection({
+  order,
+  reviews,
+  onReviewCreated,
+}: {
+  order: OrderView;
+  reviews: MyReviewView[];
+  onReviewCreated: (review: MyReviewView) => void;
+}) {
+  const products = [...new Map(order.items.map((item) => [item.productId, item.productName])).entries()];
+
+  return (
+    <div className="mt-4 border-t border-line-soft pt-4">
+      <div className="mb-2 text-sm font-semibold text-ink">Valora tu compra</div>
+      <ul className="flex flex-col gap-2">
+        {products.map(([productId, productName]) => (
+          <ReviewRow
+            key={productId}
+            order={order}
+            productId={productId}
+            productName={productName}
+            review={reviews.find((r) => r.orderId === order.id && r.productId === productId) ?? null}
+            onReviewCreated={onReviewCreated}
+          />
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function OrderDetailPanel({
   order,
   claim,
   onClaimCreated,
+  reviews,
+  onReviewCreated,
 }: {
   order: OrderView;
   claim: ClaimView | null;
   onClaimCreated: (claim: ClaimView) => void;
+  reviews: MyReviewView[];
+  onReviewCreated: (review: MyReviewView) => void;
 }) {
   const [revealed, setRevealed] = useState<RevealedLicenseView[] | null>(null);
   const [showKeys, setShowKeys] = useState(false);
@@ -236,6 +381,7 @@ function OrderDetailPanel({
             )}
           </div>
           <ClaimSection key={order.id} order={order} claim={claim} onClaimCreated={onClaimCreated} />
+          <ReviewSection key={`review-${order.id}`} order={order} reviews={reviews} onReviewCreated={onReviewCreated} />
         </div>
       )}
 
@@ -258,10 +404,19 @@ function OrderDetailPanel({
   );
 }
 
-export function OrdersScreen({ initial, initialClaims }: { initial: OrderView[]; initialClaims: ClaimView[] }) {
+export function OrdersScreen({
+  initial,
+  initialClaims,
+  initialReviews,
+}: {
+  initial: OrderView[];
+  initialClaims: ClaimView[];
+  initialReviews: MyReviewView[];
+}) {
   const [tab, setTab] = useState<OrderTab>("all");
   const [selectedId, setSelectedId] = useState<string | null>(initial[0]?.id ?? null);
   const [claims, setClaims] = useState(initialClaims);
+  const [reviews, setReviews] = useState(initialReviews);
 
   const filtered = initial.filter((order) => matchesTab(order.status, tab));
   const selected = filtered.find((order) => order.id === selectedId) ?? filtered[0] ?? null;
@@ -276,6 +431,10 @@ export function OrdersScreen({ initial, initialClaims }: { initial: OrderView[];
 
   function handleClaimCreated(claim: ClaimView) {
     setClaims((prev) => [claim, ...prev]);
+  }
+
+  function handleReviewCreated(review: MyReviewView) {
+    setReviews((prev) => [review, ...prev]);
   }
 
   return (
@@ -333,7 +492,13 @@ export function OrdersScreen({ initial, initialClaims }: { initial: OrderView[];
         </section>
 
         {selected && (
-          <OrderDetailPanel order={selected} claim={claimForSelected} onClaimCreated={handleClaimCreated} />
+          <OrderDetailPanel
+            order={selected}
+            claim={claimForSelected}
+            onClaimCreated={handleClaimCreated}
+            reviews={reviews}
+            onReviewCreated={handleReviewCreated}
+          />
         )}
       </div>
     </div>
