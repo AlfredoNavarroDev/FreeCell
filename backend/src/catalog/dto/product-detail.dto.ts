@@ -31,5 +31,7 @@ export class ProductDetailDto {
   faq!: { question: string; answer: string }[] | null;
   @ApiProperty({ type: String, nullable: true }) categoryName!: string | null;
   @ApiProperty() requiresToolUsername!: boolean;
+  @ApiProperty({ type: Number, nullable: true }) ratingAvg!: number | null;
+  @ApiProperty() ratingCount!: number;
   @ApiProperty({ type: [PlanOfferDto] }) plans!: PlanOfferDto[];
 }
