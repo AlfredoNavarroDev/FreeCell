@@ -19,6 +19,17 @@ describe("fetchProductReviews", () => {
     expect((init as RequestInit).cache).toBe("no-store");
   });
 
+  it("con fresh=false usa revalidación de 60 s en vez de no-store (ISR)", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ items: [] }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await fetchProductReviews("mi-producto", 1, 10, false);
+
+    const init = fetchMock.mock.calls[0][1] as RequestInit & { next?: { revalidate?: number } };
+    expect(init.next).toEqual({ revalidate: 60 });
+    expect(init.cache).toBeUndefined();
+  });
+
   it("usa página 1 y pageSize 10 por defecto", async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ items: [] }), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);

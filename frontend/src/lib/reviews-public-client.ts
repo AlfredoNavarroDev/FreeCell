@@ -23,11 +23,12 @@ export async function fetchProductReviews(
   slug: string,
   page = 1,
   pageSize = 10,
+  fresh = true,
 ): Promise<ProductReviewsPage | null> {
   try {
     const res = await fetch(
       `${API_URL}/catalog/products/${encodeURIComponent(slug)}/reviews?page=${page}&pageSize=${pageSize}`,
-      { cache: "no-store" },
+      fresh ? { cache: "no-store" } : { next: { revalidate: 60 } },
     );
     if (!res.ok) return null;
     return (await res.json()) as ProductReviewsPage;

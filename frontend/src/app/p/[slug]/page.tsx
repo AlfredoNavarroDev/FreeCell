@@ -9,7 +9,7 @@ import { fetchProductReviews } from "@/lib/reviews-public-client";
 
 export default async function ProductPage({ params }: PageProps<"/p/[slug]">) {
   const { slug } = await params;
-  const [product, reviews] = await Promise.all([fetchProductDetail(slug), fetchProductReviews(slug)]);
+  const [product, reviews] = await Promise.all([fetchProductDetail(slug), fetchProductReviews(slug, 1, 10, false)]);
 
   if (!product) {
     notFound();

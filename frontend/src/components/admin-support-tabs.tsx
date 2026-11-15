@@ -16,9 +16,11 @@ const TABS: { key: TabKey; label: string }[] = [
 export function AdminSupportTabs({
   initialTickets,
   initialReviews,
+  reviewsError = null,
 }: {
   initialTickets: AdminTicketSummary[];
   initialReviews: AdminReviewView[];
+  reviewsError?: string | null;
 }) {
   const [active, setActive] = useState<TabKey>("tickets");
 
@@ -56,6 +58,7 @@ export function AdminSupportTabs({
         aria-labelledby="soporte-tab-reviews"
         hidden={active !== "reviews"}
       >
+        {reviewsError ? <p className="mb-3 text-danger-ink">{reviewsError}</p> : null}
         <AdminReviewsQueue initialReviews={initialReviews} />
       </div>
     </div>

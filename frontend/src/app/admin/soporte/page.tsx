@@ -10,10 +10,12 @@ export default async function AdminSoportePage() {
       <h1 className="mb-5 font-display text-2xl font-bold text-ink">Soporte</h1>
       {!ticketsResult.ok ? (
         <p className="text-danger-ink">{ticketsResult.message}</p>
-      ) : !reviewsResult.ok ? (
-        <p className="text-danger-ink">{reviewsResult.message}</p>
       ) : (
-        <AdminSupportTabs initialTickets={ticketsResult.data.items} initialReviews={reviewsResult.data.items} />
+        <AdminSupportTabs
+          initialTickets={ticketsResult.data.items}
+          initialReviews={reviewsResult.ok ? reviewsResult.data.items : []}
+          reviewsError={reviewsResult.ok ? null : reviewsResult.message}
+        />
       )}
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { StarRating } from "@/components/star-rating";
 import { createClaim, type ClaimView } from "@/lib/claims-client";
 import { formatPriceCents } from "@/lib/format";
@@ -160,6 +160,7 @@ function ReviewRow({
   const [body, setBody] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const bodyId = useId();
 
   async function handleSubmit() {
     setSubmitting(true);
@@ -186,6 +187,7 @@ function ReviewRow({
         <button
           type="button"
           onClick={() => setWriting(true)}
+          aria-label={`Valorar ${productName}`}
           className="mt-1 flex h-11 items-center text-sm font-semibold text-accent"
         >
           Valorar
@@ -209,7 +211,11 @@ function ReviewRow({
               </button>
             ))}
           </div>
+          <label htmlFor={bodyId} className="text-sm font-medium text-ink">
+            Tu reseña
+          </label>
           <textarea
+            id={bodyId}
             value={body}
             onChange={(e) => setBody(e.target.value)}
             placeholder="Cuéntanos cómo te fue con la herramienta"
