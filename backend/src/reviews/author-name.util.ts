@@ -4,6 +4,10 @@ export function formatAuthorName(name: string | null | undefined): string {
   if (parts.length === 0) {
     return 'Cliente verificado';
   }
+  // Un «nombre» con @ es un correo mal guardado: nunca se publica (D77).
+  if (parts[0].includes('@')) {
+    return 'Cliente verificado';
+  }
   if (parts.length === 1) {
     return parts[0];
   }

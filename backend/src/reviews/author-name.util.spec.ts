@@ -17,6 +17,14 @@ describe('formatAuthorName', () => {
     expect(formatAuthorName('Ana')).toBe('Ana');
   });
 
+  it('una sola palabra con @ (correo) devuelve «Cliente verificado»', () => {
+    expect(formatAuthorName('juan.perez@gmail.com')).toBe('Cliente verificado');
+  });
+
+  it('si la primera palabra contiene @ devuelve «Cliente verificado»', () => {
+    expect(formatAuthorName('juan@gmail.com Pérez')).toBe('Cliente verificado');
+  });
+
   it('espacios repetidos no rompen el formato', () => {
     expect(formatAuthorName('  Luis    Gómez  ')).toBe('Luis G.');
   });
