@@ -30,9 +30,9 @@ pantallas en el frontend, y la pestaña «Reseñas» que `docs/07` ya reserva de
 6. **Regla en Postgres**: un trigger `BEFORE INSERT` en `reviews` exige que `orderId` sea un pedido `DELIVERED` del
    mismo `userId` y que contenga un ítem de un plan de `productId` (D33, D57). El service valida lo mismo para dar
    respuestas 404/403 claras; el trigger es la red de seguridad si algo salta el service.
-7. **Sin función SQL de moderación**: el cambio de estado es un único `UPDATE ... WHERE id = $1 AND status <> $2
-   RETURNING` dentro de una transacción con la fila de auditoría. No hay stock ni dinero en juego, así que una función
-   plpgsql no aporta nada (a diferencia de `fn_resolve_claim`).
+7. **Sin función SQL de moderación**: el cambio de estado es un `SELECT ... FOR UPDATE` seguido de un `UPDATE`, dentro
+   de una transacción con la fila de auditoría (404 si no existe, 409 si ya tiene ese estado). No hay stock ni dinero
+   en juego, así que una función plpgsql no aporta nada (a diferencia de `fn_resolve_claim`).
 8. **Validación**: `rating` entero 1–5; `body` 10–1000 caracteres tras `trim` (la columna es `text`, el tope lo pone el
    DTO). El cuerpo se muestra siempre como texto plano (React escapa; no se interpreta HTML).
 9. **Auditoría**: `review.created`, `review.approved`, `review.hidden`. Las dos últimas guardan el estado previo.
@@ -43,7 +43,8 @@ pantallas en el frontend, y la pestaña «Reseñas» que `docs/07` ya reserva de
 
 - Vista `v_product_ratings(productId, ratingAvg numeric(3,2), ratingCount int)`: `GROUP BY productId` sobre reseñas
   `APPROVED`. Los productos sin reseñas aprobadas no aparecen (se unen con `LEFT JOIN`).
-- Índice parcial `reviews("productId", "createdAt" DESC) WHERE status = 'APPROVED'` para la lista pública.
+- Índice parcial `reviews("productId", "createdAt") WHERE status = 'APPROVED'` para la lista pública (ascendente:
+  TypeORM no declara orden `DESC` en índices y Postgres lo recorre al revés; así no hay deriva con la entidad).
 - Trigger `trg_review_requires_delivered` (`BEFORE INSERT ON reviews`) como en la decisión 6; mensaje de error en
   español, `ERRCODE` `P0001`.
 - `down()` simétrico (borra trigger, función, índice y vista).
@@ -56,6 +57,11 @@ pantallas en el frontend, y la pestaña «Reseñas» que `docs/07` ya reserva de
 |---|---|---|---|
 | `POST` | `/reviews` | `{orderId, productId, rating, body}` | Crea en `PENDING`. 404 si el pedido no es mío; 403 si no es `DELIVERED` o no contiene ese producto; 409 si ya reseñé ese producto en ese pedido. Audita `review.created`. 201. |
 | `GET` | `/reviews?page&pageSize` | — | Mis reseñas: `{id, orderId, productId, productName, rating, body, status, createdAt}[]` paginado, más reciente primero. `/pedidos` lo usa para saber qué productos ya valoró y su estado. |
+
+### Pedidos — cambio menor
+
+`GET /orders` y `GET /orders/:id` agregan `productId` a cada `items[]` (junto a `orderItemId`): `/pedidos` lo necesita
+para enviar `POST /reviews` y para saber qué productos ya valoró el cliente.
 
 ### Público — `CatalogController` (ya existente)
 
@@ -75,7 +81,8 @@ pantallas en el frontend, y la pestaña «Reseñas» que `docs/07` ya reserva de
 ## Frontend
 
 - `lib/reviews-client.ts` (Server Actions, cliente): `createReview(orderId, productId, rating, body)`, `listMyReviews()`.
-- `lib/reviews-public.ts`: `fetchProductReviews(slug, page)` (sin sesión; mismo patrón que `catalog-client.ts`).
+- `lib/reviews-public-client.ts` (Server Action, sin sesión): `fetchProductReviews(slug, page)`; la ficha carga la primera
+  página en el servidor y «Cargar más» la invoca desde el cliente.
 - `lib/reviews-admin-client.ts`: `fetchAdminReviews(status)`, `approveReview(id)`, `hideReview(id)`.
 - `/pedidos` (S4): bajo la clave entregada, bloque «Valora tu compra» con una fila por producto del pedido: «Valorar»
   abre estrellas (botones nativos, `aria-pressed`) y textarea; tras enviar muestra «Tu reseña está en revisión». Si
