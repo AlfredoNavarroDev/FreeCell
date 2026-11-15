@@ -1,17 +1,26 @@
 "use client";
 
 import { useState } from "react";
+import { ProductReviews } from "@/components/product-reviews";
 import type { CatalogProductDetail } from "@/lib/catalog-client";
+import type { ProductReviewsPage } from "@/lib/reviews-public-client";
 
-type TabKey = "description" | "activation" | "faq";
+type TabKey = "description" | "activation" | "faq" | "reviews";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "description", label: "Descripción" },
   { key: "activation", label: "Cómo activar" },
   { key: "faq", label: "Preguntas" },
+  { key: "reviews", label: "Reseñas" },
 ];
 
-export function ProductTabs({ product }: { product: CatalogProductDetail }) {
+export function ProductTabs({
+  product,
+  reviews,
+}: {
+  product: CatalogProductDetail;
+  reviews: ProductReviewsPage | null;
+}) {
   const [active, setActive] = useState<TabKey>("description");
 
   return (
@@ -29,6 +38,7 @@ export function ProductTabs({ product }: { product: CatalogProductDetail }) {
             }`}
           >
             {tab.label}
+            {tab.key === "reviews" && product.ratingCount > 0 ? ` (${product.ratingCount})` : ""}
           </button>
         ))}
       </div>
@@ -68,6 +78,8 @@ export function ProductTabs({ product }: { product: CatalogProductDetail }) {
             <p className="text-muted">Sin preguntas frecuentes todavía.</p>
           )
         ) : null}
+
+        {active === "reviews" ? <ProductReviews slug={product.slug} initial={reviews} /> : null}
       </div>
     </div>
   );
