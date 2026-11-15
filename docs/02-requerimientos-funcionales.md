@@ -46,7 +46,7 @@ Los criterios marcados con **[?]** dependen de una pregunta abierta en `09-decis
 | RF-CAT-07 | Un plan agotado no permite comprar. | M | ✅ (la reserva responde 409) |
 | RF-CAT-08 | "Más vendidos" y "Recién llegados" en la portada. | S | 🟡 ("Recién llegados" vía `?sort=newest` ✅; "Más vendidos" falta — necesita datos de ventas agregados) |
 | RF-CAT-09 | Productos relacionados en la ficha. | C | ⬜ |
-| RF-CAT-10 | Reseñas de compradores con pedido `DELIVERED` de ese producto, moderadas por admin antes de publicarse (D33). | S | ⬜ |
+| RF-CAT-10 | Reseñas de compradores con pedido `DELIVERED` de ese producto, moderadas por admin antes de publicarse (D33). | S | ✅ (`POST /reviews` desde «Valorar» en `/pedidos`; `GET /catalog/products/:slug/reviews`; pestaña «Reseñas» en `/p/[slug]` y estrellas en la tarjeta, S11) |
 | RF-CAT-11 | Catálogo muestra el nombre de la herramienta solo en texto, sin logo oficial de terceros (D42). | M | ⬜ |
 
 ---
@@ -149,7 +149,7 @@ Los criterios marcados con **[?]** dependen de una pregunta abierta en `09-decis
 | RF-ADM-42 | Configuración (`settings`): TTL de reserva, horario de atención, datos de pago, SLA de revisión (24 h), monto máximo de primer pedido para clientes nuevos. | M | ⬜ |
 | RF-ADM-43 | Reportes por rango de fechas: **ventas por día/semana**, **margen por producto**, **stock valorizado**, **top productos/planes vendidos** (D55). | M | ⬜ |
 | RF-ADM-44 | Resolver tickets de soporte: ver cola, responder, cerrar (D34). | M | ✅ (`GET /admin/support-tickets`, `POST /admin/support-tickets/:id/messages` y `/close`; `/admin/soporte` con cola, hilo y cierre, badge en el sidebar; 2026-11-14) |
-| RF-ADM-45 | Moderar reseñas: aprobar u ocultar (D33). | S | ⬜ |
+| RF-ADM-45 | Moderar reseñas: aprobar u ocultar (D33). | S | ✅ (`GET /admin/reviews`, `POST /admin/reviews/:id/approve` y `/hide`; pestaña «Reseñas» en `/admin/soporte`) |
 
 ---
 

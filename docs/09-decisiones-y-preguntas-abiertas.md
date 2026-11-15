@@ -120,6 +120,11 @@ de este documento) quedaron resueltas como decisiones **D14–D55**.
 | Id | Decisión | Razón |
 |---|---|---|
 | D75 | `POST /auth/google`: si el correo ya existe **sin** `googleId` (cuenta registrada con contraseña), se **vincula** la cuenta de Google a esa cuenta existente en vez de rechazar o duplicar; se audita `user.google_linked`. | D53/D54 no cubren este caso; vincular es seguro (ambos medios ya probaron que esa persona controla el correo) y evita frustrar a un cliente que ya tenía cuenta. |
+| D76 | Las reseñas se escriben solo desde `/pedidos` (pedido `DELIVERED`, un «Valorar» por producto) y se muestran en la pestaña «Reseñas» de `/p/[slug]` y como estrellas + conteo en `ProductCard`. No hay reseñas en la portada. | Un solo punto de entrada reutiliza la propiedad del pedido ya resuelta y evita un formulario que consulte pedidos desde la ficha pública. |
+| D77 | Autor público de una reseña: «Nombre + inicial del último apellido» (ej. «Carlos P.»), o «Cliente verificado» si no hay nombre; siempre con «Compra verificada». Nunca apellido completo ni correo. | Credibilidad sin exponer datos personales que el cliente no pidió publicar. |
+| D78 | Moderación reversible: `PENDING`/`HIDDEN` → `APPROVED` y `PENDING`/`APPROVED` → `HIDDEN`; repetir el estado actual es 409. Sin motivo obligatorio y sin edición ni borrado por el cliente. | Una reseña mal aprobada debe poder retirarse; pedir motivo o permitir edición añade flujo que D33 no exige. |
+| D79 | «Solo reseñas reales» (D33) se garantiza con el trigger `trg_review_requires_delivered` en Postgres, además de la validación del service; el promedio sale de la vista `v_product_ratings` (solo `APPROVED`), no de columnas desnormalizadas. | Mismo criterio que D57: la regla de integridad no depende de que NestJS se comporte; la vista no puede desincronizarse. |
+| D80 | La ruta para retirar una reseña es `POST /admin/reviews/:id/hide` (no `/reject`). | El estado destino es `HIDDEN`; «rechazar» sugería una decisión sobre una reseña aún no publicada y no cubre ocultar una ya aprobada. |
 
 ## C. Riesgos principales
 | Riesgo | Impacto | Mitigación |
