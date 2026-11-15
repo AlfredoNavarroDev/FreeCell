@@ -47,8 +47,6 @@ export interface PlanOffer {
   durationDays: number;
   prices: PlanPrice[];
   stockState: StockState;
-  ratingAvg: number | null;
-  ratingCount: number;
 }
 
 export interface CatalogProductDetail {
