@@ -92,7 +92,10 @@ describe('CRUD admin de catálogo', () => {
           requiresToolUsername: true,
         });
       expect(created.status).toBe(201);
-      const body = created.body as { id: string; requiresToolUsername: boolean };
+      const body = created.body as {
+        id: string;
+        requiresToolUsername: boolean;
+      };
       expect(body.requiresToolUsername).toBe(true);
 
       const deactivated = await request(app.getHttpServer())

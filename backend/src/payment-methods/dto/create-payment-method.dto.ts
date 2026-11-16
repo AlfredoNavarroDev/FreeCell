@@ -19,7 +19,8 @@ export class CreatePaymentMethodDto {
   @ApiProperty()
   @IsString({ message: 'code debe ser texto' })
   @Matches(/^[a-z0-9_-]{2,40}$/, {
-    message: 'code solo admite minúsculas, números, "-" y "_" (2 a 40 caracteres)',
+    message:
+      'code solo admite minúsculas, números, "-" y "_" (2 a 40 caracteres)',
   })
   code!: string;
 

@@ -85,9 +85,7 @@ export class AuthService {
   async loginWithGoogle(dto: GoogleLoginDto): Promise<AuthResponseDto> {
     const profile = await this.googleAuth.verifyIdToken(dto.idToken);
     if (!profile.emailVerified) {
-      throw new UnauthorizedException(
-        'El correo de Google no está verificado',
-      );
+      throw new UnauthorizedException('El correo de Google no está verificado');
     }
     const email = UsersService.normalizeEmail(profile.email);
 
@@ -98,10 +96,14 @@ export class AuthService {
       if (!user) {
         user = await m.findOne(User, { where: { email } });
         if (user) {
-          await m.update(User, { id: user.id }, {
-            googleId: profile.googleId,
-            emailVerifiedAt: user.emailVerifiedAt ?? new Date(),
-          });
+          await m.update(
+            User,
+            { id: user.id },
+            {
+              googleId: profile.googleId,
+              emailVerifiedAt: user.emailVerifiedAt ?? new Date(),
+            },
+          );
           user = await m.findOneByOrFail(User, { id: user.id });
           await this.audit.log(m, {
             actorId: user.id,

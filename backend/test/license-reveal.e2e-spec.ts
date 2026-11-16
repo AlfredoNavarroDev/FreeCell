@@ -104,8 +104,16 @@ describe('POST /orders/:id/license/reveal', () => {
       userId: user.id,
       currency: 'PEN',
       lines: [
-        { planId: catalog.plan.id, unitPriceCents: 1000, licenseId: catalog.licenseIds[0] },
-        { planId: catalog.plan.id, unitPriceCents: 1000, licenseId: catalog.licenseIds[1] },
+        {
+          planId: catalog.plan.id,
+          unitPriceCents: 1000,
+          licenseId: catalog.licenseIds[0],
+        },
+        {
+          planId: catalog.plan.id,
+          unitPriceCents: 1000,
+          licenseId: catalog.licenseIds[1],
+        },
       ],
     });
     await markDelivered(orderId, catalog.licenseIds);
@@ -145,7 +153,11 @@ describe('POST /orders/:id/license/reveal', () => {
       userId: owner.id,
       currency: 'PEN',
       lines: [
-        { planId: catalog.plan.id, unitPriceCents: 1000, licenseId: catalog.licenseIds[0] },
+        {
+          planId: catalog.plan.id,
+          unitPriceCents: 1000,
+          licenseId: catalog.licenseIds[0],
+        },
       ],
     });
     await markDelivered(orderId, catalog.licenseIds);

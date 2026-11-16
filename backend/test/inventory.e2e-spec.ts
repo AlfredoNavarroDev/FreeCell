@@ -46,7 +46,10 @@ describe('/admin/inventory', () => {
 
     it('devuelve una fila por plan con conteos, umbral, estado y la tasa USD→PEN (null si no se configuró)', async () => {
       const admin = await createUser(ds, { role: Role.ADMIN });
-      const catalog = await createCatalog(ds, { stock: 2, lowStockThreshold: 5 });
+      const catalog = await createCatalog(ds, {
+        stock: 2,
+        lowStockThreshold: 5,
+      });
 
       const res = await request(app.getHttpServer())
         .get('/admin/inventory')
@@ -132,7 +135,11 @@ describe('/admin/inventory', () => {
         });
 
       expect(res.status).toBe(200);
-      expect(res.body).toEqual({ validCount: 1, duplicateCount: 2, errorCount: 1 });
+      expect(res.body).toEqual({
+        validCount: 1,
+        duplicateCount: 2,
+        errorCount: 1,
+      });
 
       const countAfter: { count: string }[] = await ds.query(
         `SELECT count(*) FROM license_items WHERE "planId" = $1`,
@@ -194,11 +201,10 @@ describe('/admin/inventory', () => {
       );
       expect(Number(licenseCount[0].count)).toBe(1);
 
-      const auditRows: { entityId: string; actorId: string }[] =
-        await ds.query(
-          `SELECT "entityId", "actorId" FROM audit_logs WHERE action = 'license_batch.created' AND "entityId" = $1`,
-          [body.batchId],
-        );
+      const auditRows: { entityId: string; actorId: string }[] = await ds.query(
+        `SELECT "entityId", "actorId" FROM audit_logs WHERE action = 'license_batch.created' AND "entityId" = $1`,
+        [body.batchId],
+      );
       expect(auditRows).toHaveLength(1);
       expect(auditRows[0].actorId).toBe(admin.id);
     });

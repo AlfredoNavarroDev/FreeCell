@@ -10,7 +10,8 @@ describe('POST /claims y GET /claims', () => {
   let app: NestExpressApplication;
   let ds: DataSource;
 
-  const tokenFor = (user: User) => app.get(JwtService).sign({ sub: user.id, role: user.role });
+  const tokenFor = (user: User) =>
+    app.get(JwtService).sign({ sub: user.id, role: user.role });
 
   beforeAll(async () => {
     app = await createTestApp();
@@ -26,8 +27,12 @@ describe('POST /claims y GET /claims', () => {
   });
 
   async function markDelivered(orderId: string, licenseIds: string[]) {
-    await ds.query(`UPDATE orders SET status = 'IN_REVIEW' WHERE id = $1`, [orderId]);
-    await ds.query(`UPDATE orders SET status = 'DELIVERED' WHERE id = $1`, [orderId]);
+    await ds.query(`UPDATE orders SET status = 'IN_REVIEW' WHERE id = $1`, [
+      orderId,
+    ]);
+    await ds.query(`UPDATE orders SET status = 'DELIVERED' WHERE id = $1`, [
+      orderId,
+    ]);
     await ds.query(
       `UPDATE license_items SET status = 'SOLD', "soldAt" = now() WHERE id = ANY($1::uuid[])`,
       [licenseIds],
@@ -67,7 +72,13 @@ describe('POST /claims y GET /claims', () => {
     const { orderId } = await insertOrder(ds, {
       userId: user.id,
       currency: 'PEN',
-      lines: [{ planId: catalog.plan.id, unitPriceCents: 1000, licenseId: catalog.licenseIds[0] }],
+      lines: [
+        {
+          planId: catalog.plan.id,
+          unitPriceCents: 1000,
+          licenseId: catalog.licenseIds[0],
+        },
+      ],
     });
     await markDelivered(orderId, [catalog.licenseIds[0]]);
     const orderItemId = await orderItemIdFor(catalog.licenseIds[0]);
@@ -75,7 +86,11 @@ describe('POST /claims y GET /claims', () => {
     const res = await request(app.getHttpServer())
       .post('/claims')
       .set('Authorization', `Bearer ${tokenFor(user)}`)
-      .send({ orderId, orderItemId, reason: 'La clave no activa la herramienta' });
+      .send({
+        orderId,
+        orderItemId,
+        reason: 'La clave no activa la herramienta',
+      });
 
     expect(res.status).toBe(201);
     expect(res.body.status).toBe('OPEN');
@@ -89,8 +104,16 @@ describe('POST /claims y GET /claims', () => {
       userId: user.id,
       currency: 'PEN',
       lines: [
-        { planId: catalog.plan.id, unitPriceCents: 1000, licenseId: catalog.licenseIds[0] },
-        { planId: catalog.plan.id, unitPriceCents: 1000, licenseId: catalog.licenseIds[1] },
+        {
+          planId: catalog.plan.id,
+          unitPriceCents: 1000,
+          licenseId: catalog.licenseIds[0],
+        },
+        {
+          planId: catalog.plan.id,
+          unitPriceCents: 1000,
+          licenseId: catalog.licenseIds[1],
+        },
       ],
     });
     await markDelivered(orderId, catalog.licenseIds);
@@ -99,7 +122,11 @@ describe('POST /claims y GET /claims', () => {
     const res = await request(app.getHttpServer())
       .post('/claims')
       .set('Authorization', `Bearer ${tokenFor(user)}`)
-      .send({ orderId, orderItemId, reason: 'Esta clave en particular no funciona' });
+      .send({
+        orderId,
+        orderItemId,
+        reason: 'Esta clave en particular no funciona',
+      });
 
     expect(res.status).toBe(201);
     const [claim]: { licenseItemId: string }[] = await ds.query(
@@ -121,7 +148,11 @@ describe('POST /claims y GET /claims', () => {
     const res = await request(app.getHttpServer())
       .post('/claims')
       .set('Authorization', `Bearer ${tokenFor(user)}`)
-      .send({ orderId, orderItemId: '00000000-0000-0000-0000-000000000000', reason: 'No llegó la clave' });
+      .send({
+        orderId,
+        orderItemId: '00000000-0000-0000-0000-000000000000',
+        reason: 'No llegó la clave',
+      });
 
     expect(res.status).toBe(403);
   });
@@ -133,7 +164,13 @@ describe('POST /claims y GET /claims', () => {
     const { orderId } = await insertOrder(ds, {
       userId: owner.id,
       currency: 'PEN',
-      lines: [{ planId: catalog.plan.id, unitPriceCents: 1000, licenseId: catalog.licenseIds[0] }],
+      lines: [
+        {
+          planId: catalog.plan.id,
+          unitPriceCents: 1000,
+          licenseId: catalog.licenseIds[0],
+        },
+      ],
     });
     await markDelivered(orderId, [catalog.licenseIds[0]]);
     const orderItemId = await orderItemIdFor(catalog.licenseIds[0]);
@@ -152,7 +189,13 @@ describe('POST /claims y GET /claims', () => {
     const { orderId } = await insertOrder(ds, {
       userId: user.id,
       currency: 'PEN',
-      lines: [{ planId: catalog.plan.id, unitPriceCents: 1000, licenseId: catalog.licenseIds[0] }],
+      lines: [
+        {
+          planId: catalog.plan.id,
+          unitPriceCents: 1000,
+          licenseId: catalog.licenseIds[0],
+        },
+      ],
     });
     await markDelivered(orderId, [catalog.licenseIds[0]]);
     await backdateOrder(orderId, 8);
@@ -172,7 +215,13 @@ describe('POST /claims y GET /claims', () => {
     const { orderId } = await insertOrder(ds, {
       userId: user.id,
       currency: 'PEN',
-      lines: [{ planId: catalog.plan.id, unitPriceCents: 1000, licenseId: catalog.licenseIds[0] }],
+      lines: [
+        {
+          planId: catalog.plan.id,
+          unitPriceCents: 1000,
+          licenseId: catalog.licenseIds[0],
+        },
+      ],
     });
     await markDelivered(orderId, [catalog.licenseIds[0]]);
     const orderItemId = await orderItemIdFor(catalog.licenseIds[0]);
@@ -195,7 +244,13 @@ describe('POST /claims y GET /claims', () => {
     const { orderId } = await insertOrder(ds, {
       userId: user.id,
       currency: 'PEN',
-      lines: [{ planId: catalog.plan.id, unitPriceCents: 1000, licenseId: catalog.licenseIds[0] }],
+      lines: [
+        {
+          planId: catalog.plan.id,
+          unitPriceCents: 1000,
+          licenseId: catalog.licenseIds[0],
+        },
+      ],
     });
     await markDelivered(orderId, [catalog.licenseIds[0]]);
     const orderItemId = await orderItemIdFor(catalog.licenseIds[0]);
@@ -219,7 +274,13 @@ describe('POST /claims y GET /claims', () => {
     const { orderId } = await insertOrder(ds, {
       userId: user.id,
       currency: 'PEN',
-      lines: [{ planId: catalog.plan.id, unitPriceCents: 1000, licenseId: catalog.licenseIds[0] }],
+      lines: [
+        {
+          planId: catalog.plan.id,
+          unitPriceCents: 1000,
+          licenseId: catalog.licenseIds[0],
+        },
+      ],
     });
     await markDelivered(orderId, [catalog.licenseIds[0]]);
     const orderItemId = await orderItemIdFor(catalog.licenseIds[0]);
@@ -246,12 +307,24 @@ describe('POST /claims y GET /claims', () => {
     const { orderId: mine } = await insertOrder(ds, {
       userId: user.id,
       currency: 'PEN',
-      lines: [{ planId: catalog.plan.id, unitPriceCents: 1000, licenseId: catalog.licenseIds[0] }],
+      lines: [
+        {
+          planId: catalog.plan.id,
+          unitPriceCents: 1000,
+          licenseId: catalog.licenseIds[0],
+        },
+      ],
     });
     const { orderId: other } = await insertOrder(ds, {
       userId: stranger.id,
       currency: 'PEN',
-      lines: [{ planId: catalog.plan.id, unitPriceCents: 1000, licenseId: catalog.licenseIds[1] }],
+      lines: [
+        {
+          planId: catalog.plan.id,
+          unitPriceCents: 1000,
+          licenseId: catalog.licenseIds[1],
+        },
+      ],
     });
     await markDelivered(mine, [catalog.licenseIds[0]]);
     await markDelivered(other, [catalog.licenseIds[1]]);

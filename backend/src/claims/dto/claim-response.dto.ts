@@ -7,7 +7,8 @@ export class ClaimResponseDto {
   @ApiProperty() orderNumber!: number;
   @ApiProperty({ enum: ClaimStatus }) status!: ClaimStatus;
   @ApiProperty() reason!: string;
-  @ApiProperty({ type: String, nullable: true }) rejectionReason!: string | null;
+  @ApiProperty({ type: String, nullable: true }) rejectionReason!:
+    string | null;
   @ApiProperty() createdAt!: Date;
   @ApiProperty({ type: Date, nullable: true }) resolvedAt!: Date | null;
 }

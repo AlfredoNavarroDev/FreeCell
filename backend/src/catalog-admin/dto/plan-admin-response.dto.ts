@@ -16,7 +16,8 @@ export class PlanAdminResponseDto {
   @ApiProperty() durationDays!: number;
   @ApiProperty() lowStockThreshold!: number;
   @ApiProperty() active!: boolean;
-  @ApiProperty({ type: [PlanPriceResponseDto] }) prices!: PlanPriceResponseDto[];
+  @ApiProperty({ type: [PlanPriceResponseDto] })
+  prices!: PlanPriceResponseDto[];
 
   static from(
     entity: Plan,

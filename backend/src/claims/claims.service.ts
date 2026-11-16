@@ -50,10 +50,14 @@ export class ClaimsService {
         throw new NotFoundException('Pedido no encontrado');
       }
       if (order.status !== OrderStatus.DELIVERED) {
-        throw new ForbiddenException('Solo puedes reclamar un pedido entregado');
+        throw new ForbiddenException(
+          'Solo puedes reclamar un pedido entregado',
+        );
       }
       if (Date.now() - order.updatedAt.getTime() > REPLACEMENT_WINDOW_MS) {
-        throw new ConflictException('La ventana de reposición de 7 días ya venció');
+        throw new ConflictException(
+          'La ventana de reposición de 7 días ya venció',
+        );
       }
 
       const licenses: { id: string }[] = await m.query(
@@ -64,7 +68,9 @@ export class ClaimsService {
       );
       const license = licenses[0];
       if (!license) {
-        throw new NotFoundException('La licencia indicada no es parte de este pedido');
+        throw new NotFoundException(
+          'La licencia indicada no es parte de este pedido',
+        );
       }
 
       const existing: { status: ClaimStatus }[] = await m.query(
@@ -72,7 +78,9 @@ export class ClaimsService {
         [dto.orderId],
       );
       if (existing.some((c) => c.status === ClaimStatus.OPEN)) {
-        throw new ConflictException('Ya hay un reclamo abierto para este pedido');
+        throw new ConflictException(
+          'Ya hay un reclamo abierto para este pedido',
+        );
       }
       if (existing.some((c) => c.status === ClaimStatus.RESOLVED)) {
         throw new ConflictException('Este pedido ya usó su reposición');
@@ -124,7 +132,10 @@ export class ClaimsService {
     );
   }
 
-  private async findOne(userId: string, claimId: string): Promise<ClaimResponseDto> {
+  private async findOne(
+    userId: string,
+    claimId: string,
+  ): Promise<ClaimResponseDto> {
     const rows: ClaimRow[] = await this.ds.query(
       `SELECT c.id, c."orderId", o."orderNumber", c.status, c.reason, c."rejectionReason",
               c."createdAt", c."resolvedAt"

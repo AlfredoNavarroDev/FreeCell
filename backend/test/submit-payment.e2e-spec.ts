@@ -47,12 +47,19 @@ describe('POST /orders/:id/payment', () => {
   it('registra el pago y pasa el pedido a IN_REVIEW', async () => {
     const user = await createUser(ds);
     const method = await createPaymentMethod(ds, { currencies: ['PEN'] });
-    const catalog = await createCatalog(ds, { stock: 1, prices: { PEN: 1000 } });
+    const catalog = await createCatalog(ds, {
+      stock: 1,
+      prices: { PEN: 1000 },
+    });
     const { orderId } = await insertOrder(ds, {
       userId: user.id,
       currency: 'PEN',
       lines: [
-        { planId: catalog.plan.id, unitPriceCents: 1000, licenseId: catalog.licenseIds[0] },
+        {
+          planId: catalog.plan.id,
+          unitPriceCents: 1000,
+          licenseId: catalog.licenseIds[0],
+        },
       ],
     });
 
@@ -185,7 +192,10 @@ describe('POST /orders/:id/payment', () => {
   it('responde 409 si el método de pago no acepta la moneda del pedido (trigger D63)', async () => {
     const user = await createUser(ds);
     const method = await createPaymentMethod(ds, { currencies: ['USD'] });
-    const catalog = await createCatalog(ds, { stock: 1, prices: { PEN: 1000 } });
+    const catalog = await createCatalog(ds, {
+      stock: 1,
+      prices: { PEN: 1000 },
+    });
     const { orderId } = await insertOrder(ds, {
       userId: user.id,
       currency: 'PEN',
@@ -203,7 +213,10 @@ describe('POST /orders/:id/payment', () => {
   it('responde 409 si el número de operación ya se usó con ese método (D64)', async () => {
     const user = await createUser(ds);
     const method = await createPaymentMethod(ds, { currencies: ['PEN'] });
-    const catalog = await createCatalog(ds, { stock: 2, prices: { PEN: 1000 } });
+    const catalog = await createCatalog(ds, {
+      stock: 2,
+      prices: { PEN: 1000 },
+    });
     const operationNumber = `OP-${randomBytes(4).toString('hex')}`;
 
     const first = await insertOrder(ds, {
@@ -242,14 +255,19 @@ describe('POST /orders/:id/payment', () => {
   it('responde 401 sin sesión', async () => {
     const res = await request(app.getHttpServer())
       .post(`/orders/00000000-0000-0000-0000-000000000000/payment`)
-      .send(validBody('00000000-0000-0000-0000-000000000000', { proofKey: 'x' }));
+      .send(
+        validBody('00000000-0000-0000-0000-000000000000', { proofKey: 'x' }),
+      );
     expect(res.status).toBe(401);
   });
 
   it('concurrencia: dos envíos simultáneos sobre el mismo pedido → solo uno pasa', async () => {
     const user = await createUser(ds);
     const method = await createPaymentMethod(ds, { currencies: ['PEN'] });
-    const catalog = await createCatalog(ds, { stock: 1, prices: { PEN: 1000 } });
+    const catalog = await createCatalog(ds, {
+      stock: 1,
+      prices: { PEN: 1000 },
+    });
     const { orderId } = await insertOrder(ds, {
       userId: user.id,
       currency: 'PEN',

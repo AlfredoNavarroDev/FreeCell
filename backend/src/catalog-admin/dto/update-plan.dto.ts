@@ -50,7 +50,9 @@ export class UpdatePlanDto {
   })
   @IsOptional()
   @IsArray({ message: 'prices debe ser una lista' })
-  @ArrayMinSize(1, { message: 'prices necesita al menos un precio si se envía' })
+  @ArrayMinSize(1, {
+    message: 'prices necesita al menos un precio si se envía',
+  })
   @ArrayUnique((price: PlanPriceInputDto) => price.currency, {
     message: 'No repitas la misma moneda en prices',
   })

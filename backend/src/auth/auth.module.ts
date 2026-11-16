@@ -25,7 +25,12 @@ import { RefreshTokensService } from './refresh-tokens.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, RefreshTokensService, JwtStrategy, GoogleAuthService],
+  providers: [
+    AuthService,
+    RefreshTokensService,
+    JwtStrategy,
+    GoogleAuthService,
+  ],
   exports: [JwtModule],
 })
 export class AuthModule {}

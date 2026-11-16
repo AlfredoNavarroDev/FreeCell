@@ -6,6 +6,8 @@ import { OrderStatus } from '../../database/enums';
 export class ListOrdersQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({ enum: OrderStatus })
   @IsOptional()
-  @IsIn(Object.values(OrderStatus), { message: 'status no es un estado válido' })
+  @IsIn(Object.values(OrderStatus), {
+    message: 'status no es un estado válido',
+  })
   status?: OrderStatus;
 }

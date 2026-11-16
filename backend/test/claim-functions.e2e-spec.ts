@@ -22,15 +22,23 @@ describe('fn_resolve_claim / fn_reject_claim', () => {
   });
 
   async function markDelivered(orderId: string, licenseIds: string[]) {
-    await ds.query(`UPDATE orders SET status = 'IN_REVIEW' WHERE id = $1`, [orderId]);
-    await ds.query(`UPDATE orders SET status = 'DELIVERED' WHERE id = $1`, [orderId]);
+    await ds.query(`UPDATE orders SET status = 'IN_REVIEW' WHERE id = $1`, [
+      orderId,
+    ]);
+    await ds.query(`UPDATE orders SET status = 'DELIVERED' WHERE id = $1`, [
+      orderId,
+    ]);
     await ds.query(
       `UPDATE license_items SET status = 'SOLD', "soldAt" = now() WHERE id = ANY($1::uuid[])`,
       [licenseIds],
     );
   }
 
-  async function insertClaim(orderId: string, licenseItemId: string, userId: string): Promise<string> {
+  async function insertClaim(
+    orderId: string,
+    licenseItemId: string,
+    userId: string,
+  ): Promise<string> {
     const [{ id }]: { id: string }[] = await ds.query(
       `INSERT INTO claims ("orderId", "licenseItemId", "userId", reason, status)
        VALUES ($1, $2, $3, 'La clave no funciona', 'OPEN') RETURNING id`,
@@ -46,7 +54,13 @@ describe('fn_resolve_claim / fn_reject_claim', () => {
     const { orderId } = await insertOrder(ds, {
       userId: user.id,
       currency: 'PEN',
-      lines: [{ planId: catalog.plan.id, unitPriceCents: 1000, licenseId: catalog.licenseIds[0] }],
+      lines: [
+        {
+          planId: catalog.plan.id,
+          unitPriceCents: 1000,
+          licenseId: catalog.licenseIds[0],
+        },
+      ],
     });
     await markDelivered(orderId, [catalog.licenseIds[0]]);
     const claimId = await insertClaim(orderId, catalog.licenseIds[0], user.id);
@@ -57,14 +71,19 @@ describe('fn_resolve_claim / fn_reject_claim', () => {
     );
     expect(result).toBe('RESOLVED');
 
-    const [original]: { status: string; orderItemId: string | null }[] = await ds.query(
-      `SELECT status, "orderItemId" FROM license_items WHERE id = $1`,
-      [catalog.licenseIds[0]],
-    );
+    const [original]: { status: string; orderItemId: string | null }[] =
+      await ds.query(
+        `SELECT status, "orderItemId" FROM license_items WHERE id = $1`,
+        [catalog.licenseIds[0]],
+      );
     expect(original.status).toBe('VOID');
     expect(original.orderItemId).not.toBeNull();
 
-    const [replacement]: { status: string; orderItemId: string; replacesId: string }[] = await ds.query(
+    const [replacement]: {
+      status: string;
+      orderItemId: string;
+      replacesId: string;
+    }[] = await ds.query(
       `SELECT status, "orderItemId", "replacesId" FROM license_items WHERE id = $1`,
       [catalog.licenseIds[1]],
     );
@@ -72,10 +91,11 @@ describe('fn_resolve_claim / fn_reject_claim', () => {
     expect(replacement.orderItemId).toBe(original.orderItemId);
     expect(replacement.replacesId).toBe(catalog.licenseIds[0]);
 
-    const [claim]: { status: string; replacementLicenseId: string }[] = await ds.query(
-      `SELECT status, "replacementLicenseId" FROM claims WHERE id = $1`,
-      [claimId],
-    );
+    const [claim]: { status: string; replacementLicenseId: string }[] =
+      await ds.query(
+        `SELECT status, "replacementLicenseId" FROM claims WHERE id = $1`,
+        [claimId],
+      );
     expect(claim.status).toBe('RESOLVED');
     expect(claim.replacementLicenseId).toBe(catalog.licenseIds[1]);
   });
@@ -87,7 +107,13 @@ describe('fn_resolve_claim / fn_reject_claim', () => {
     const { orderId } = await insertOrder(ds, {
       userId: user.id,
       currency: 'PEN',
-      lines: [{ planId: catalog.plan.id, unitPriceCents: 1000, licenseId: catalog.licenseIds[0] }],
+      lines: [
+        {
+          planId: catalog.plan.id,
+          unitPriceCents: 1000,
+          licenseId: catalog.licenseIds[0],
+        },
+      ],
     });
     await markDelivered(orderId, [catalog.licenseIds[0]]);
     const claimId = await insertClaim(orderId, catalog.licenseIds[0], user.id);
@@ -104,7 +130,10 @@ describe('fn_resolve_claim / fn_reject_claim', () => {
     );
     expect(original.status).toBe('SOLD');
 
-    const [claim]: { status: string }[] = await ds.query(`SELECT status FROM claims WHERE id = $1`, [claimId]);
+    const [claim]: { status: string }[] = await ds.query(
+      `SELECT status FROM claims WHERE id = $1`,
+      [claimId],
+    );
     expect(claim.status).toBe('OPEN');
   });
 
@@ -115,7 +144,13 @@ describe('fn_resolve_claim / fn_reject_claim', () => {
     const { orderId } = await insertOrder(ds, {
       userId: user.id,
       currency: 'PEN',
-      lines: [{ planId: catalog.plan.id, unitPriceCents: 1000, licenseId: catalog.licenseIds[0] }],
+      lines: [
+        {
+          planId: catalog.plan.id,
+          unitPriceCents: 1000,
+          licenseId: catalog.licenseIds[0],
+        },
+      ],
     });
     await markDelivered(orderId, [catalog.licenseIds[0]]);
     const claimId = await insertClaim(orderId, catalog.licenseIds[0], user.id);
@@ -126,10 +161,11 @@ describe('fn_resolve_claim / fn_reject_claim', () => {
     );
     expect(rejected).toBe(true);
 
-    const [claim]: { status: string; rejectionReason: string }[] = await ds.query(
-      `SELECT status, "rejectionReason" FROM claims WHERE id = $1`,
-      [claimId],
-    );
+    const [claim]: { status: string; rejectionReason: string }[] =
+      await ds.query(
+        `SELECT status, "rejectionReason" FROM claims WHERE id = $1`,
+        [claimId],
+      );
     expect(claim.status).toBe('REJECTED');
     expect(claim.rejectionReason).toBe('La clave funciona correctamente');
   });
@@ -141,14 +177,28 @@ describe('fn_resolve_claim / fn_reject_claim', () => {
     const { orderId } = await insertOrder(ds, {
       userId: user.id,
       currency: 'PEN',
-      lines: [{ planId: catalog.plan.id, unitPriceCents: 1000, licenseId: catalog.licenseIds[0] }],
+      lines: [
+        {
+          planId: catalog.plan.id,
+          unitPriceCents: 1000,
+          licenseId: catalog.licenseIds[0],
+        },
+      ],
     });
     await markDelivered(orderId, [catalog.licenseIds[0]]);
     const claimId = await insertClaim(orderId, catalog.licenseIds[0], user.id);
-    await ds.query(`SELECT fn_reject_claim($1, $2, $3)`, [claimId, admin.id, 'motivo 1']);
+    await ds.query(`SELECT fn_reject_claim($1, $2, $3)`, [
+      claimId,
+      admin.id,
+      'motivo 1',
+    ]);
 
     await expect(
-      ds.query(`SELECT fn_reject_claim($1, $2, $3)`, [claimId, admin.id, 'motivo 2']),
+      ds.query(`SELECT fn_reject_claim($1, $2, $3)`, [
+        claimId,
+        admin.id,
+        'motivo 2',
+      ]),
     ).rejects.toThrow();
   });
 });

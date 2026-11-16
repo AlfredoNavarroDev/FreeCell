@@ -1,18 +1,28 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { DataSource, type EntityManager } from 'typeorm';
 import { AuditService } from '../audit/audit.service';
 import { CryptoService } from '../common/crypto/crypto.service';
 import type { AuthenticatedUser } from '../common/types/authenticated-user';
 import { LicenseBatch, LicenseItem } from '../database/entities';
 import { LicenseStatus } from '../database/enums';
-import { SettingsService, SETTING_USD_PEN_RATE } from '../settings/settings.service';
+import {
+  SettingsService,
+  SETTING_USD_PEN_RATE,
+} from '../settings/settings.service';
 import type { StockState } from '../database/views/plan-stock.view';
 import { AvailableLicenseDto } from './dto/available-license.dto';
 import { BatchPreviewDto } from './dto/batch-preview.dto';
 import { BatchPreviewResultDto } from './dto/batch-preview-result.dto';
 import { CreateBatchDto } from './dto/create-batch.dto';
 import { CreateBatchResultDto } from './dto/create-batch-result.dto';
-import { InventoryItemDto, InventoryResponseDto } from './dto/inventory-item.dto';
+import {
+  InventoryItemDto,
+  InventoryResponseDto,
+} from './dto/inventory-item.dto';
 import { VoidLicenseDto } from './dto/void-license.dto';
 import { UpdateUsdRateDto } from './dto/update-usd-rate.dto';
 
@@ -48,7 +58,8 @@ export class InventoryService {
         JOIN v_plan_stock vs ON vs."planId" = pl.id
        ORDER BY pr.name, pl.name
     `);
-    const usdPenRate = await this.settings.getNumberOrNull(SETTING_USD_PEN_RATE);
+    const usdPenRate =
+      await this.settings.getNumberOrNull(SETTING_USD_PEN_RATE);
     return { items: rows.map((row) => InventoryItemDto.from(row)), usdPenRate };
   }
 
@@ -81,7 +92,10 @@ export class InventoryService {
 
       let fxRatePen: string | null = null;
       if (dto.costCurrency === 'USD') {
-        const rate = await this.settings.getNumberOrNull(SETTING_USD_PEN_RATE, m);
+        const rate = await this.settings.getNumberOrNull(
+          SETTING_USD_PEN_RATE,
+          m,
+        );
         if (rate === null) {
           throw new BadRequestException(
             'Configura la tasa USD→PEN antes de cargar un lote en dólares',
@@ -147,7 +161,11 @@ export class InventoryService {
     });
   }
 
-  async voidLicense(id: string, dto: VoidLicenseDto, admin: AuthenticatedUser): Promise<void> {
+  async voidLicense(
+    id: string,
+    dto: VoidLicenseDto,
+    admin: AuthenticatedUser,
+  ): Promise<void> {
     await this.ds.transaction(async (m) => {
       const license = await m.findOneBy(LicenseItem, { id });
       if (!license) {
@@ -170,7 +188,10 @@ export class InventoryService {
     await this.settings.setNumber(SETTING_USD_PEN_RATE, rate, admin.id);
   }
 
-  private async requirePlan(manager: EntityManager, planId: string): Promise<void> {
+  private async requirePlan(
+    manager: EntityManager,
+    planId: string,
+  ): Promise<void> {
     const rows: { id: string }[] = await manager.query(
       `SELECT id FROM plans WHERE id = $1`,
       [planId],
@@ -187,7 +208,11 @@ export class InventoryService {
   private async classifySecrets(
     secrets: string[],
     manager: EntityManager,
-  ): Promise<{ valid: SecretCandidate[]; duplicateCount: number; errorCount: number }> {
+  ): Promise<{
+    valid: SecretCandidate[];
+    duplicateCount: number;
+    errorCount: number;
+  }> {
     const seen = new Set<string>();
     const candidates: SecretCandidate[] = [];
     let duplicateCount = 0;

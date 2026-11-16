@@ -1,16 +1,16 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { type MigrationInterface, type QueryRunner } from 'typeorm';
 
 export class ClaimFunctions1794665429384 implements MigrationInterface {
-    name = 'ClaimFunctions1794665429384'
+  name = 'ClaimFunctions1794665429384';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE "claims" ADD "rejectionReason" text`);
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`ALTER TABLE "claims" ADD "rejectionReason" text`);
 
-        // RF-ADM-31/D26/D28: repone con una licencia AVAILABLE del mismo plan (SKIP LOCKED); sin stock no toca
-        // nada y el reclamo sigue OPEN. La original va a VOID conservando su orderItemId histórico; la nueva
-        // toma ese MISMO orderItemId, así POST /orders/:id/license/reveal (ya existe desde S4) la encuentra sin
-        // ningún cambio ahí.
-        await queryRunner.query(`
+    // RF-ADM-31/D26/D28: repone con una licencia AVAILABLE del mismo plan (SKIP LOCKED); sin stock no toca
+    // nada y el reclamo sigue OPEN. La original va a VOID conservando su orderItemId histórico; la nueva
+    // toma ese MISMO orderItemId, así POST /orders/:id/license/reveal (ya existe desde S4) la encuentra sin
+    // ningún cambio ahí.
+    await queryRunner.query(`
       CREATE OR REPLACE FUNCTION fn_resolve_claim(p_claim_id uuid, p_admin_id uuid)
       RETURNS text LANGUAGE plpgsql AS $$
       DECLARE
@@ -60,7 +60,7 @@ export class ClaimFunctions1794665429384 implements MigrationInterface {
       END $$;
     `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
       CREATE OR REPLACE FUNCTION fn_reject_claim(p_claim_id uuid, p_admin_id uuid, p_reason text)
       RETURNS boolean LANGUAGE plpgsql AS $$
       DECLARE
@@ -80,12 +80,17 @@ export class ClaimFunctions1794665429384 implements MigrationInterface {
         RETURN true;
       END $$;
     `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`DROP FUNCTION IF EXISTS fn_reject_claim(uuid, uuid, text)`);
-        await queryRunner.query(`DROP FUNCTION IF EXISTS fn_resolve_claim(uuid, uuid)`);
-        await queryRunner.query(`ALTER TABLE "claims" DROP COLUMN "rejectionReason"`);
-    }
-
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `DROP FUNCTION IF EXISTS fn_reject_claim(uuid, uuid, text)`,
+    );
+    await queryRunner.query(
+      `DROP FUNCTION IF EXISTS fn_resolve_claim(uuid, uuid)`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "claims" DROP COLUMN "rejectionReason"`,
+    );
+  }
 }

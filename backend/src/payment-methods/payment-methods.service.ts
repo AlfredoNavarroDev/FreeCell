@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import type { QueryDeepPartialEntity } from 'typeorm';
 import { AuditService } from '../audit/audit.service';
@@ -72,7 +76,9 @@ export class PaymentMethodsService {
     id: string,
     dto: UpdatePaymentMethodDto,
   ): Promise<PaymentMethodResponseDto> {
-    const current = await this.ds.getRepository(PaymentMethod).findOneBy({ id });
+    const current = await this.ds
+      .getRepository(PaymentMethod)
+      .findOneBy({ id });
     if (!current) {
       throw new NotFoundException('Método de pago no encontrado');
     }
@@ -103,7 +109,10 @@ export class PaymentMethodsService {
     return PaymentMethodResponseDto.from(updated);
   }
 
-  private assertCryptoIsUsdOnly(kind: PaymentMethodKind, currencies: Currency[]): void {
+  private assertCryptoIsUsdOnly(
+    kind: PaymentMethodKind,
+    currencies: Currency[],
+  ): void {
     if (
       kind === PaymentMethodKind.CRYPTO &&
       (currencies.length !== 1 || currencies[0] !== 'USD')

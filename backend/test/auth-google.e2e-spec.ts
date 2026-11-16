@@ -117,11 +117,14 @@ describe('POST /auth/google (RF-AUT-10/D53/D54/D75)', () => {
     const body = res.body as { user: { email: string } };
     expect(body.user.email).toBe(email);
 
-    const rows: { id: string; googleId: string; emailVerifiedAt: Date | null }[] =
-      await ds.query(
-        `SELECT id, "googleId", "emailVerifiedAt" FROM users WHERE id = $1`,
-        [existing.id],
-      );
+    const rows: {
+      id: string;
+      googleId: string;
+      emailVerifiedAt: Date | null;
+    }[] = await ds.query(
+      `SELECT id, "googleId", "emailVerifiedAt" FROM users WHERE id = $1`,
+      [existing.id],
+    );
     expect(rows[0].googleId).toBe('google-sub-link');
     expect(rows[0].emailVerifiedAt).not.toBeNull();
 
