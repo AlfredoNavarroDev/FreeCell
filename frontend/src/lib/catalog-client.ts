@@ -15,6 +15,8 @@ export interface CatalogProductListItem {
   priceFromCents: number;
   currency: Currency;
   stockState: StockState;
+  ratingAvg: number | null;
+  ratingCount: number;
 }
 
 export interface CatalogProductsResult {
@@ -58,6 +60,8 @@ export interface CatalogProductDetail {
   faq: { question: string; answer: string }[] | null;
   categoryName: string | null;
   requiresToolUsername: boolean;
+  ratingAvg: number | null;
+  ratingCount: number;
   plans: PlanOffer[];
 }
 

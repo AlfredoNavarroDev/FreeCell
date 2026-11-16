@@ -3,9 +3,14 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { listClaims } from "@/lib/claims-client";
 import { listOrders } from "@/lib/orders-client";
+import { listMyReviews } from "@/lib/reviews-client";
 
 export default async function PedidosPage() {
-  const [ordersResult, claimsResult] = await Promise.all([listOrders(), listClaims()]);
+  const [ordersResult, claimsResult, reviewsResult] = await Promise.all([
+    listOrders(),
+    listClaims(),
+    listMyReviews(),
+  ]);
 
   return (
     <>
@@ -18,6 +23,7 @@ export default async function PedidosPage() {
             <OrdersScreen
               initial={ordersResult.data.items}
               initialClaims={claimsResult.ok ? claimsResult.data.items : []}
+              initialReviews={reviewsResult.ok ? reviewsResult.data.items : []}
             />
           )}
         </section>

@@ -54,7 +54,7 @@ erDiagram
 | `claims` | Reclamo de clave inválida | `orderId` (FK, agregada para el índice único "un reclamo `OPEN` por pedido"), `licenseItemId`, `userId`, `reason`, `status`, `replacementLicenseId`, `resolvedById`, `resolvedAt`, `rejectionReason` |
 | `support_tickets` | Ticket de soporte general (D34) | `userId`, `subject`, `status` (OPEN/CLOSED), `createdAt` |
 | `ticket_messages` | Mensaje dentro de un ticket (D34) | `ticketId`, `authorId`, `body`, `isAdmin` (bool), `createdAt` |
-| `reviews` | Reseña de producto (D33) | `productId`, `userId`, `orderId`, `rating` (1–5), `body`, `status` (PENDING/APPROVED/HIDDEN), `createdAt` |
+| `reviews` | Reseña de producto (D33) | `productId`, `userId`, `orderId`, `rating` (1–5), `body`, `status` (PENDING/APPROVED/HIDDEN), `createdAt`. Trigger `trg_review_requires_delivered` (solo pedido `DELIVERED` propio que contenga el producto) y vista `v_product_ratings` (promedio y conteo de `APPROVED`) |
 | `settings` | Configuración clave/valor (TTL, horario, SLA, monto máx. cliente nuevo) | `key` **único**, `value` (jsonb) |
 | `audit_logs` | Quién hizo qué | `actorId`, `action`, `entity`, `entityId`, `meta` (jsonb) |
 | `notification_logs` | Idempotencia de envíos | `key` **único**, `channel`, `recipient`, `template` |
@@ -70,6 +70,7 @@ erDiagram
 - `claims`: índice único parcial `WHERE status='OPEN'` por `orderId` → invariante 6.
 - `payments(status)`, `claims(status)`, `support_tickets(status)` → colas del panel admin.
 - `audit_logs(entity, entityId)` → historial de cualquier objeto.
+- `reviews("productId","createdAt") WHERE status='APPROVED'` → lista pública de reseñas.
 - `settings.key` único.
 
 ## Invariantes (deben cumplirse siempre; hay o debe haber prueba)

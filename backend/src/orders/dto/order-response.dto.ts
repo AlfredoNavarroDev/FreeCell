@@ -5,6 +5,7 @@ import { OrderStatus, PaymentStatus } from '../../database/enums';
 
 export class OrderItemResponseDto {
   @ApiProperty() planId!: string;
+  @ApiProperty() productId!: string;
   @ApiProperty() unitPriceCents!: number;
   @ApiProperty() productName!: string;
   @ApiProperty() planName!: string;
@@ -12,6 +13,7 @@ export class OrderItemResponseDto {
 }
 
 export interface PlanLabel {
+  productId: string;
   productName: string;
   planName: string;
 }
@@ -59,6 +61,7 @@ export class OrderResponseDto {
         .sort((a, b) => a.planId.localeCompare(b.planId))
         .map((item) => ({
           planId: item.planId,
+          productId: planLabels.get(item.planId)?.productId ?? '',
           unitPriceCents: item.unitPriceCents,
           productName: planLabels.get(item.planId)?.productName ?? '',
           planName: planLabels.get(item.planId)?.planName ?? '',

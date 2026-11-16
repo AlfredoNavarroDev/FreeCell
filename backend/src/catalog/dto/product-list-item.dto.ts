@@ -11,4 +11,6 @@ export class ProductListItemDto {
   @ApiProperty({ enum: CURRENCIES }) currency!: Currency;
   @ApiProperty({ enum: ['IN_STOCK', 'LOW', 'OUT_OF_STOCK'] })
   stockState!: StockState;
+  @ApiProperty({ type: Number, nullable: true }) ratingAvg!: number | null;
+  @ApiProperty() ratingCount!: number;
 }

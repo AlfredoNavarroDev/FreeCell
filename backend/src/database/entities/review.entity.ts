@@ -17,6 +17,9 @@ import { User } from './user.entity';
 
 @Entity('reviews')
 @Index(['status'])
+@Index('IDX_reviews_approved_by_product', ['productId', 'createdAt'], {
+  where: `"status" = 'APPROVED'`,
+})
 @Unique('UQ_reviews_order_product', ['orderId', 'productId'])
 @Check('CHK_reviews_rating', `"rating" BETWEEN 1 AND 5`)
 export class Review {

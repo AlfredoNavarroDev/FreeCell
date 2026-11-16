@@ -7,18 +7,26 @@ export async function planLabelsFor(
   planIds: string[],
 ): Promise<Map<string, PlanLabel>> {
   if (planIds.length === 0) return new Map();
-  const rows: { id: string; planName: string; productName: string }[] =
-    await ds.query(
-      `SELECT pl.id, pl.name AS "planName", pr.name AS "productName"
+  const rows: {
+    id: string;
+    planName: string;
+    productName: string;
+    productId: string;
+  }[] = await ds.query(
+    `SELECT pl.id, pl.name AS "planName", pr.name AS "productName", pr.id AS "productId"
          FROM plans pl
          JOIN products pr ON pr.id = pl."productId"
         WHERE pl.id = ANY($1::uuid[])`,
-      [[...new Set(planIds)]],
-    );
+    [[...new Set(planIds)]],
+  );
   return new Map(
     rows.map((row) => [
       row.id,
-      { planName: row.planName, productName: row.productName },
+      {
+        planName: row.planName,
+        productName: row.productName,
+        productId: row.productId,
+      },
     ]),
   );
 }

@@ -1,5 +1,6 @@
 import type { CatalogProductListItem } from "@/lib/catalog-client";
 import { formatPriceCents } from "@/lib/format";
+import { StarRating } from "./star-rating";
 import { StockBadge } from "./stock-badge";
 
 export function ProductCard({ product }: { product: CatalogProductListItem }) {
@@ -19,6 +20,11 @@ export function ProductCard({ product }: { product: CatalogProductListItem }) {
           {formatPriceCents(product.priceFromCents, product.currency)}
         </span>
       </p>
+      {product.ratingCount > 0 && product.ratingAvg !== null ? (
+        <div className="mt-2">
+          <StarRating value={product.ratingAvg} count={product.ratingCount} />
+        </div>
+      ) : null}
     </article>
   );
 }

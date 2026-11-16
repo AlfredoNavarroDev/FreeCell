@@ -16,6 +16,7 @@ import {
   LicenseStatus,
   OrderStatus,
   PaymentMethodKind,
+  ReviewStatus,
   Role,
 } from '../../src/database/enums';
 
@@ -177,6 +178,72 @@ export async function insertOrder(
     }
     return { orderId };
   });
+}
+
+/** Pedido propio ya DELIVERED con su licencia vendida (mismo camino que usan los e2e de reclamos). */
+export async function insertDeliveredOrder(
+  ds: DataSource,
+  input: {
+    userId: string;
+    planId: string;
+    licenseId: string;
+    currency?: Currency;
+    unitPriceCents?: number;
+  },
+): Promise<{ orderId: string; orderItemId: string }> {
+  const { orderId } = await insertOrder(ds, {
+    userId: input.userId,
+    currency: input.currency ?? 'PEN',
+    lines: [
+      {
+        planId: input.planId,
+        unitPriceCents: input.unitPriceCents ?? 1000,
+        licenseId: input.licenseId,
+      },
+    ],
+  });
+  await ds.query(`UPDATE orders SET status = 'IN_REVIEW' WHERE id = $1`, [
+    orderId,
+  ]);
+  await ds.query(`UPDATE orders SET status = 'DELIVERED' WHERE id = $1`, [
+    orderId,
+  ]);
+  await ds.query(
+    `UPDATE license_items SET status = 'SOLD', "soldAt" = now() WHERE id = $1`,
+    [input.licenseId],
+  );
+  const [{ orderItemId }]: { orderItemId: string }[] = await ds.query(
+    `SELECT "orderItemId" FROM license_items WHERE id = $1`,
+    [input.licenseId],
+  );
+  return { orderId, orderItemId };
+}
+
+/** Inserta una reseña por SQL (pasa por el trigger de compradores reales). Devuelve su id. */
+export async function insertReview(
+  ds: DataSource,
+  input: {
+    userId: string;
+    orderId: string;
+    productId: string;
+    rating: number;
+    status?: ReviewStatus;
+    body?: string;
+  },
+): Promise<string> {
+  const [{ id }]: { id: string }[] = await ds.query(
+    `INSERT INTO reviews ("productId", "userId", "orderId", rating, body, status)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+    [
+      input.productId,
+      input.userId,
+      input.orderId,
+      input.rating,
+      input.body ?? 'Reseña de prueba con texto suficiente',
+      input.status ?? ReviewStatus.PENDING,
+    ],
+  );
+  return id;
 }
 
 /** Vacía todas las tablas excepto migrations (TRUNCATE no dispara el trigger de audit_logs). */

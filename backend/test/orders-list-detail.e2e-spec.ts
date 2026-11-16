@@ -154,20 +154,34 @@ describe('GET /orders y GET /orders/:id enriquecido', () => {
       .get('/orders')
       .set('Authorization', `Bearer ${tokenFor(user)}`);
     const listBody = list.body as {
-      items: { items: { productName: string; planName: string; orderItemId: string }[] }[];
+      items: {
+        items: {
+          productId: string;
+          productName: string;
+          planName: string;
+          orderItemId: string;
+        }[];
+      }[];
     };
     expect(listBody.items[0].items[0].productName).toBe(catalog.product.name);
     expect(listBody.items[0].items[0].planName).toBe(catalog.plan.name);
     expect(typeof listBody.items[0].items[0].orderItemId).toBe('string');
+    expect(listBody.items[0].items[0].productId).toBe(catalog.product.id);
 
     const detail = await request(app.getHttpServer())
       .get(`/orders/${orderId}`)
       .set('Authorization', `Bearer ${tokenFor(user)}`);
     const detailBody = detail.body as {
-      items: { productName: string; planName: string; orderItemId: string }[];
+      items: {
+        productId: string;
+        productName: string;
+        planName: string;
+        orderItemId: string;
+      }[];
     };
     expect(detailBody.items[0].productName).toBe(catalog.product.name);
     expect(detailBody.items[0].planName).toBe(catalog.plan.name);
     expect(typeof detailBody.items[0].orderItemId).toBe('string');
+    expect(detailBody.items[0].productId).toBe(catalog.product.id);
   });
 });

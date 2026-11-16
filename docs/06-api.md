@@ -31,15 +31,16 @@ Ver `docs/backend/auth.md`, `docs/backend/orders.md` y `docs/backend/README.md` 
 ## Catálogo (Sprint 2)
 | | Ruta | Acceso | Notas |
 |---|---|---|---|
-| ✅ | `GET /catalog/products?query=&category=&currency=&sort=&page=&pageSize=` | 🌐 | Productos activos con `priceFromCents` (en la moneda pedida, PEN por defecto, D66), `categoryName` y `stockState` agregado (D69). `category` es el id de la categoría (D67). `sort` opcional (`price_asc`\|`price_desc`\|`newest`); sin él, se ordena por nombre. Paginado `{items, total, page, pageSize}`. |
-| ✅ | `GET /catalog/products/:slug` | 🌐 | Ficha: `description`, `whatIncluded`, `compatibility`, `activationGuide`, `faq` (D68) y `plans: [{id, name, kind, durationDays, prices: [{currency, priceCents}], stockState}]`. Solo planes con al menos un precio. Nunca expone cantidad exacta (D29). 404 si el slug no existe o el producto está inactivo. |
+| ✅ | `GET /catalog/products?query=&category=&currency=&sort=&page=&pageSize=` | 🌐 | Productos activos con `priceFromCents` (en la moneda pedida, PEN por defecto, D66), `categoryName` y `stockState` agregado (D69). `category` es el id de la categoría (D67). `sort` opcional (`price_asc`\|`price_desc`\|`newest`); sin él, se ordena por nombre. Paginado `{items, total, page, pageSize}`. Incluye `ratingAvg` (null si no hay) y `ratingCount`. |
+| ✅ | `GET /catalog/products/:slug` | 🌐 | Ficha: `description`, `whatIncluded`, `compatibility`, `activationGuide`, `faq` (D68) y `plans: [{id, name, kind, durationDays, prices: [{currency, priceCents}], stockState}]`. Solo planes con al menos un precio. Nunca expone cantidad exacta (D29). Incluye `ratingAvg` (null si no hay) y `ratingCount`. 404 si el slug no existe o el producto está inactivo. |
+| ✅ | `GET /catalog/products/:slug/reviews` | 🌐 | Solo reseñas aprobadas, paginadas, con `authorName` («Carlos P.»), `ratingAvg` y `ratingCount`. |
 | ✅ | `GET /catalog/categories` | 🌐 | `[{id, name}]` ordenadas por nombre. |
 
 ## Pedidos y pagos del cliente (Sprint 2)
 | | Ruta | Acceso | Notas |
 |---|---|---|---|
-| ✅ | `GET /orders?status=` | 👤 | Mis pedidos, paginado (`page`/`pageSize`). Cada `items[]` trae `productName`/`planName` y `orderItemId` además de `planId`/`unitPriceCents` (RF-PED-01/03, S8). |
-| ✅ | `GET /orders/:id` | 👤 | Detalle + `tracking` (creado/pago aprobado/entregado) + `paymentStatus`. `items[]` con `productName`/`planName`. 404 si no es suyo. |
+| ✅ | `GET /orders?status=` | 👤 | Mis pedidos, paginado (`page`/`pageSize`). Cada `items[]` trae `productName`/`planName` y `orderItemId` además de `planId`/`unitPriceCents` (RF-PED-01/03, S8). `items[]` trae también `productId`. |
+| ✅ | `GET /orders/:id` | 👤 | Detalle + `tracking` (creado/pago aprobado/entregado) + `paymentStatus`. `items[]` con `productName`/`planName`. `items[]` trae también `productId`. 404 si no es suyo. |
 | ⬜ | `POST /orders/:id/cancel` | 👤 | Solo `PENDING_PAYMENT`; libera la reserva. |
 | ✅ | `POST /orders/:id/payment/upload-url` | 👤 | Valida tipo/tamaño y devuelve URL firmada de R2 (`{uploadUrl, proofKey}`). 400 tipo o tamaño inválido; 404 pedido ajeno; 409 si no está `PENDING_PAYMENT` (D70). |
 | ✅ | `GET /payment-methods?currency=` | — | Público. Métodos de pago activos, filtrados por moneda si se indica (RF-COM-03, D63). |
@@ -51,7 +52,8 @@ Ver `docs/backend/auth.md`, `docs/backend/orders.md` y `docs/backend/README.md` 
 | ✅ | `GET /support-tickets` | 👤 | Mis tickets. |
 | ✅ | `GET /support-tickets/:id` | 👤 | Detalle con mensajes. Solo tickets propios; 404 si es ajeno o no existe. |
 | ✅ | `POST /support-tickets/:id/messages` | 👤 | Body `{body}`. Devuelve el detalle actualizado. 409 si el ticket está `CLOSED`. |
-| ⬜ | `POST /reviews` | 👤 | Body `{orderId, productId, rating, body}`. 403 si el pedido no es `DELIVERED` del cliente. Crea en `PENDING` (D33). |
+| ✅ | `POST /reviews` | 👤 | Body `{orderId, productId, rating (1–5), body (10–1000)}`. 404 si el pedido no es del cliente; 403 si no es `DELIVERED` o no contiene el producto; 409 si ya valoró ese producto en ese pedido. Crea en `PENDING` (D33). |
+| ✅ | `GET /reviews` | 👤 | Mis reseñas con estado, paginado. |
 
 ## Administración (Sprint 3, todo 🛡️)
 | | Ruta | Notas |
@@ -88,8 +90,9 @@ Ver `docs/backend/auth.md`, `docs/backend/orders.md` y `docs/backend/README.md` 
 | ✅ | `GET /admin/support-tickets/:id` | Detalle con datos del cliente y mensajes. |
 | ✅ | `POST /admin/support-tickets/:id/messages` | Responde; body `{body}`. Devuelve el detalle actualizado. |
 | ✅ | `POST /admin/support-tickets/:id/close` | Cierra el ticket; responde `{ticketId, status}`; audita `ticket.closed`. |
-| ⬜ | `GET /admin/reviews?status=PENDING` | Cola de moderación. |
-| ⬜ | `POST /admin/reviews/:id/approve` \| `/reject` | Modera una reseña. |
+| ✅ | `GET /admin/reviews?status=PENDING` | Cola de moderación. |
+| ✅ | `POST /admin/reviews/:id/approve` | PENDING/HIDDEN → APPROVED; 409 si ya está aprobada. |
+| ✅ | `POST /admin/reviews/:id/hide` | PENDING/APPROVED → HIDDEN; 409 si ya está oculta. |
 | ⬜ | `GET /admin/reports/sales?from=&to=&group=day\|week` | Ventas (soles) y n.º de pedidos por día o semana (D55). |
 | ⬜ | `GET /admin/reports/margin?from=&to=` | Margen por producto/plan: `unitPriceCents − unitCostCents` agregado (D55). |
 | ⬜ | `GET /admin/reports/stock-value` | Valor total del inventario `AVAILABLE` (Σ `unitCostCents`) (D55). |

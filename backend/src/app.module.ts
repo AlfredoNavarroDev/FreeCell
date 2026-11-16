@@ -17,6 +17,7 @@ import { HealthModule } from './health/health.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { OrdersModule } from './orders/orders.module';
 import { PaymentMethodsModule } from './payment-methods/payment-methods.module';
+import { ReviewsModule } from './reviews/reviews.module';
 import { SupportModule } from './support/support.module';
 import { WorkersModule } from './workers.module';
 
@@ -59,6 +60,7 @@ function runWorkersInApi(): boolean {
     InventoryModule,
     ClaimsModule,
     SupportModule,
+    ReviewsModule,
     ...(runWorkersInApi() ? [WorkersModule] : []),
   ],
   providers: [
