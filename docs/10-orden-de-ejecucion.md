@@ -49,3 +49,9 @@ Paso 8 completo (soporte / tickets, S9/S11 — 2026-11-14: `/support-tickets*`, 
 `/tickets/[id]` y `/admin/soporte`; S11 quedó parcial entonces (sin la pestaña de reseñas); se completó en el paso 9; sin notificación por correo/WhatsApp).
 Paso 9 completo (reseñas, S11 — 2026-11-15: `/reviews`, `/admin/reviews*`, `GET /catalog/products/:slug/reviews`, migración `ReviewFunctions`, «Valorar» en `/pedidos`, pestaña «Reseñas» en la ficha y en `/admin/soporte`; sin aviso por correo/WhatsApp).
 Próximo: **paso 10** (admin: inicio/summary + reportes, S5, D55).
+
+**Nota (2026-11-15):** en paralelo, decidido arrancar también Sprint 4 (`docs/08`, "Robustez y salida a producción")
+antes del paso 10 — el loop de venta (pasos 1–6) ya cierra, así que tiene sentido empujar hacia despliegue real. Primer
+sub-proyecto de Sprint 4 completo: jobs `low-stock-check` + `order-review-sla-check` (RF-ADM-26, RF-COM-14/D19).
+Resto de Sprint 4 pendiente: observabilidad (Bull Board/logs/health/Sentry), CI, despliegue (Fly.io/Vercel/Neon/R2),
+legal/accesibilidad, pruebas de carga, README. No reemplaza el paso 10; son pistas independientes.

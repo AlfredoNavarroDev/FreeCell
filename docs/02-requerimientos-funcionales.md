@@ -68,7 +68,7 @@ Los criterios marcados con **[?]** dependen de una pregunta abierta en `09-decis
 | RF-COM-11 | Pago con pasarela y confirmación automática. | W | — |
 | RF-COM-12 | Tras rechazar un pago, el pedido vuelve a `PENDING_PAYMENT` con plazo extra; máximo 2 reintentos, luego se cancela (D18). | M | ✅ |
 | RF-COM-13 | Checkbox obligatorio al pagar: declaración de titularidad/autorización sobre el equipo (D43). | M | 🟡 (`acceptsLegalDeclaration` obligatorio en `POST /orders/:id/payment`, D72 ✅; falta el checkbox en la UI, Sprint 2 frontend) |
-| RF-COM-14 | Pedido `IN_REVIEW` por más de 24 h genera alerta al operador (D19); no se cancela automáticamente. | M | ⬜ |
+| RF-COM-14 | Pedido `IN_REVIEW` por más de 24 h genera alerta al operador (D19); no se cancela automáticamente. | M | ✅ (job `order-review-sla-check`, 2026-11-15) |
 
 **Criterios de aceptación clave**
 - 10 compras simultáneas con 3 licencias → exactamente 3 pedidos creados, 7 con 409, ninguna licencia repetida. ✅ (test e2e)
@@ -131,7 +131,7 @@ Los criterios marcados con **[?]** dependen de una pregunta abierta en `09-decis
 | RF-ADM-23 | Cada carga crea un **lote** y deja auditoría. | M | ✅ (2026-11-11) |
 | RF-ADM-24 | Anular (`VOID`) una licencia disponible con motivo. | S | ✅ (2026-11-11) |
 | RF-ADM-25 | Umbral de stock bajo configurable por plan. | S | ✅ (campo `lowStockThreshold`) |
-| RF-ADM-26 | Alerta cuando un plan cae bajo el umbral (trabajo `low-stock-check`). | S | ⬜ |
+| RF-ADM-26 | Alerta cuando un plan cae bajo el umbral (trabajo `low-stock-check`). | S | ✅ (2026-11-15) |
 
 ### Reclamos
 | ID | Requerimiento | Prio | Estado |

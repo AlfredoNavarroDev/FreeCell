@@ -82,8 +82,8 @@ Entregado (detalle verificado contra el código en `docs/backend/`):
   mensajes del cliente.
 
 ## Sprint 4 — Robustez y salida a producción
-- [ ] Job repetible `low-stock-check` + alertas (RF-ADM-26, RNF-OBS-05).
-- [ ] Alerta al operador tras 24h en `IN_REVIEW` sin cancelar automáticamente (D19).
+- [x] Job repetible `low-stock-check` + alertas (RF-ADM-26, RNF-OBS-05 parcial) — 2026-11-15.
+- [x] Alerta al operador tras 24h en `IN_REVIEW` sin cancelar automáticamente (D19) — 2026-11-15.
 - [ ] Bull Board en `/admin/queues` (solo ADMIN); logs estructurados (pino); `/health/ready`; Sentry.
 - [ ] CI en GitHub Actions con servicios Postgres/Redis.
 - [ ] Despliegue: Fly.io (API + workers + Redis propio) + Vercel (web) + Neon (Postgres) + R2 (D48, D49); migraciones en el

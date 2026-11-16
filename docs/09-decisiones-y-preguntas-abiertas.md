@@ -126,6 +126,13 @@ de este documento) quedaron resueltas como decisiones **D14–D55**.
 | D79 | «Solo reseñas reales» (D33) se garantiza con el trigger `trg_review_requires_delivered` en Postgres, además de la validación del service; el promedio sale de la vista `v_product_ratings` (solo `APPROVED`), no de columnas desnormalizadas. | Mismo criterio que D57: la regla de integridad no depende de que NestJS se comporte; la vista no puede desincronizarse. |
 | D80 | La ruta para retirar una reseña es `POST /admin/reviews/:id/hide` (no `/reject`). | El estado destino es `HIDDEN`; «rechazar» sugería una decisión sobre una reseña aún no publicada y no cubre ocultar una ya aprobada. |
 
+### Decisiones de jobs de alertas operativas — Sprint 4 (2026-11-15)
+| Id | Decisión | Razón |
+|---|---|---|
+| D81 | Las alertas de `low-stock-check` y `order-review-sla-check` se mandan a **todos** los usuarios `role = ADMIN` (consulta a `users`, no solo `ADMIN_EMAIL`). | Hoy da el mismo resultado (un solo admin), pero no exige recordar `ADMIN_EMAIL` si se suma una segunda cuenta admin. |
+| D82 | `low-stock-check` alerta tanto `LOW` como `OUT_OF_STOCK` (no solo `LOW`). | Sin stock es un caso peor que "bajo"; el cliente no puede comprar ese plan, pero el operador igual necesita el aviso para reponer. |
+| D83 | Cadencia de re-alerta: **una vez por día** mientras la condición persista, usando una `key` de `notification_logs` con la fecha UTC (`low-stock-<planId>-<adminId>-<YYYY-MM-DD>`, análogo para SLA). Sin tabla nueva. | Coincide con un operador que revisa ~1×/día (razón de D19); evita spam sin depender de que alguien marque la alerta como vista. |
+
 ## C. Riesgos principales
 | Riesgo | Impacto | Mitigación |
 |---|---|---|

@@ -72,7 +72,7 @@ deben validarse con el negocio. **Estado:** ✅ cumplido y probado · 🟡 parci
 | RNF-OBS-02 | Logs estructurados en JSON con *request id* y sin datos sensibles (pino). | ✅ (`nestjs-pino`; JSON en producción, `pino-pretty` en dev; `X-Request-Id` propagado/generado; redacta `authorization`, `cookie`, `password`, `refreshToken`, `accessToken`, `secret`) |
 | RNF-OBS-03 | Panel de colas (**Bull Board** en `/admin/queues`, solo ADMIN) y conservación de trabajos fallidos. | ⬜ (los fallidos ya se conservan) |
 | RNF-OBS-04 | Reporte de errores (Sentry o similar) en API y frontend. | ⬜ |
-| RNF-OBS-05 | Alertas: cola de fallidos > 0, stock bajo, pagos esperando más de [X] min. | ⬜ |
+| RNF-OBS-05 | Alertas: cola de fallidos > 0, stock bajo, pagos esperando más de [X] min. | 🟡 (stock bajo y pagos esperando >24h ✅, jobs `low-stock-check`/`order-review-sla-check`, 2026-11-15; falta "cola de fallidos > 0", va con Bull Board/Sentry) |
 
 ## RNF-MAN · Mantenibilidad y calidad
 | ID | Requerimiento | Estado |
