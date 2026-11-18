@@ -1,6 +1,7 @@
 export const QUEUE_OPERATIONAL_ALERTS = 'operational-alerts';
 export const JOB_LOW_STOCK_CHECK = 'low-stock-check';
 export const JOB_ORDER_REVIEW_SLA_CHECK = 'order-review-sla-check';
+export const JOB_FAILED_JOBS_CHECK = 'failed-jobs-check';
 
 /** Cada cuánto corre el barrido repetible (RF-ADM-26, D19). */
 export const CHECK_EVERY_MS = 60 * 60 * 1000;
@@ -27,4 +28,12 @@ export function orderReviewSlaKey(
   now?: Date,
 ): string {
   return `order-review-sla-${orderId}-${adminId}-${todayUtc(now)}`;
+}
+
+export function failedJobsKey(
+  queueName: string,
+  adminId: string,
+  now?: Date,
+): string {
+  return `failed-jobs-${queueName}-${adminId}-${todayUtc(now)}`;
 }

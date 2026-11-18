@@ -1,17 +1,21 @@
 import { getQueueToken } from '@nestjs/bullmq';
 import { type NestExpressApplication } from '@nestjs/platform-express';
 import { randomBytes, randomUUID } from 'node:crypto';
-import { type Job, type Queue } from 'bullmq';
+import { Queue, Worker, type Job } from 'bullmq';
 import { DataSource } from 'typeorm';
+import { parseRedisUrl } from '../src/core/redis/redis.module';
 import { OrderStatus, PaymentStatus, Role } from '../src/database/enums';
 import {
+  failedJobsKey,
   lowStockKey,
   orderReviewSlaKey,
+  JOB_FAILED_JOBS_CHECK,
   JOB_LOW_STOCK_CHECK,
   JOB_ORDER_REVIEW_SLA_CHECK,
   QUEUE_OPERATIONAL_ALERTS,
 } from '../src/operational-alerts/operational-alerts.constants';
 import { QUEUE_NOTIFICATIONS } from '../src/notifications/notification.types';
+import { QUEUE_ORDERS } from '../src/orders/orders.constants';
 import { OperationalAlertsModule } from '../src/operational-alerts/operational-alerts.module';
 import { OperationalAlertsProcessor } from '../src/operational-alerts/operational-alerts.processor';
 import { OperationalAlertsService } from '../src/operational-alerts/operational-alerts.service';
@@ -47,6 +51,30 @@ async function insertPayment(
     ],
   );
   return id;
+}
+
+/** Procesa un job real que siempre falla, para dejarlo en estado `failed` de verdad (no simulado). */
+async function failAJob(queueName: string): Promise<void> {
+  const worker = new Worker(
+    queueName,
+    () => {
+      throw new Error('boom');
+    },
+    { connection: parseRedisUrl(process.env.REDIS_URL!) },
+  );
+  try {
+    const failed = new Promise<void>((resolve) =>
+      worker.once('failed', () => resolve()),
+    );
+    const producer = new Queue(queueName, {
+      connection: parseRedisUrl(process.env.REDIS_URL!),
+    });
+    await producer.add('x', {});
+    await failed;
+    await producer.close();
+  } finally {
+    await worker.close();
+  }
 }
 
 describe('Alertas operativas (low-stock-check, SLA 24h IN_REVIEW)', () => {
@@ -166,6 +194,26 @@ describe('Alertas operativas (low-stock-check, SLA 24h IN_REVIEW)', () => {
     await expect(service.checkOrderReviewSla()).resolves.toBe(0);
   });
 
+  it('checkFailedJobs alerta cuando una cola tiene jobs en failed', async () => {
+    const admin = await createUser(ds, { role: Role.ADMIN });
+    await failAJob(QUEUE_ORDERS);
+
+    await expect(service.checkFailedJobs()).resolves.toBe(1);
+
+    const job = await notificationsQueue.getJob(
+      failedJobsKey(QUEUE_ORDERS, admin.id),
+    );
+    expect(job?.data).toMatchObject({
+      template: 'failed-jobs-alert',
+      recipient: admin.email,
+    });
+  }, 15000);
+
+  it('checkFailedJobs no alerta si ninguna cola tiene jobs en failed', async () => {
+    await createUser(ds, { role: Role.ADMIN });
+    await expect(service.checkFailedJobs()).resolves.toBe(0);
+  });
+
   it('el processor enruta los jobs y registra los schedulers periódicos', async () => {
     const processor = new OperationalAlertsProcessor(service, queue);
 
@@ -176,6 +224,9 @@ describe('Alertas operativas (low-stock-check, SLA 24h IN_REVIEW)', () => {
       processor.process({ name: JOB_ORDER_REVIEW_SLA_CHECK, data: {} } as Job),
     ).resolves.toBe(0);
     await expect(
+      processor.process({ name: JOB_FAILED_JOBS_CHECK, data: {} } as Job),
+    ).resolves.toBe(0);
+    await expect(
       processor.process({ name: 'desconocido', data: {} } as Job),
     ).rejects.toThrow('Job desconocido: desconocido');
 
@@ -184,6 +235,7 @@ describe('Alertas operativas (low-stock-check, SLA 24h IN_REVIEW)', () => {
     const keys = schedulers.map((s) => s.key);
     expect(keys).toContain(JOB_LOW_STOCK_CHECK);
     expect(keys).toContain(JOB_ORDER_REVIEW_SLA_CHECK);
+    expect(keys).toContain(JOB_FAILED_JOBS_CHECK);
   });
 
   it('las keys son estables por día: distintos días producen keys distintas', () => {

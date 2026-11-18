@@ -16,6 +16,12 @@ export interface TestAppOptions {
   controllers?: Type[];
   /** Para overrideProvider(...). */
   configure?: (builder: TestingModuleBuilder) => TestingModuleBuilder;
+  /**
+   * Corre tras `configureApp` pero antes de `app.init()`. Un `app.use()` agregado después de
+   * `init()` queda detrás del catch-all de Nest y nunca se alcanza (confirmado): todo middleware
+   * extra (Bull Board, etc.) debe registrarse acá.
+   */
+  beforeInit?: (app: NestExpressApplication) => void;
 }
 
 export async function createTestApp(
@@ -33,6 +39,7 @@ export async function createTestApp(
     logger: false,
   });
   configureApp(app);
+  options.beforeInit?.(app);
   await app.init();
   return app;
 }

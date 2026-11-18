@@ -6,7 +6,8 @@ export type NotificationTemplate =
   | 'license-delivered'
   | 'payment-rejected'
   | 'low-stock-alert'
-  | 'order-review-sla';
+  | 'order-review-sla'
+  | 'failed-jobs-alert';
 
 export interface NotificationJob {
   /** Identifica el mensaje de forma única (p. ej. `order-created-<orderId>`). También es el jobId. */

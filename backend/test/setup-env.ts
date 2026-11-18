@@ -21,3 +21,5 @@ process.env.GOOGLE_CLIENT_ID =
 process.env.CORS_ORIGIN = 'http://localhost:3001';
 process.env.THROTTLE_ENABLED = 'false';
 process.env.LOG_LEVEL = 'silent';
+process.env.ADMIN_QUEUES_USER = 'test-queues-admin';
+process.env.ADMIN_QUEUES_PASSWORD = 'test-queues-password-123';

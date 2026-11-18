@@ -4,6 +4,7 @@ import { Job, Queue } from 'bullmq';
 import { OperationalAlertsService } from './operational-alerts.service';
 import {
   CHECK_EVERY_MS,
+  JOB_FAILED_JOBS_CHECK,
   JOB_LOW_STOCK_CHECK,
   JOB_ORDER_REVIEW_SLA_CHECK,
   QUEUE_OPERATIONAL_ALERTS,
@@ -33,6 +34,11 @@ export class OperationalAlertsProcessor
       { every: CHECK_EVERY_MS },
       { name: JOB_ORDER_REVIEW_SLA_CHECK },
     );
+    await this.queue.upsertJobScheduler(
+      JOB_FAILED_JOBS_CHECK,
+      { every: CHECK_EVERY_MS },
+      { name: JOB_FAILED_JOBS_CHECK },
+    );
   }
 
   async process(job: Job): Promise<number> {
@@ -41,6 +47,8 @@ export class OperationalAlertsProcessor
         return this.alerts.checkLowStock();
       case JOB_ORDER_REVIEW_SLA_CHECK:
         return this.alerts.checkOrderReviewSla();
+      case JOB_FAILED_JOBS_CHECK:
+        return this.alerts.checkFailedJobs();
       default:
         throw new Error(`Job desconocido: ${job.name}`);
     }

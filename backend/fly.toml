@@ -31,5 +31,7 @@ primary_region = "[región]"
     timeout = "5s"
 
 # Secretos (fly secrets set): DATABASE_URL, DB_SSL=true, REDIS_URL, JWT_SECRET, JWT_REFRESH_PEPPER,
-# LICENSE_ENC_KEY, CORS_ORIGIN. APP_ROLE no hace falta: en producción el default es "api",
-# y el proceso worker usa su propio entrypoint.
+# LICENSE_ENC_KEY, CORS_ORIGIN, ADMIN_QUEUES_USER, ADMIN_QUEUES_PASSWORD (obligatorias: sin ellas
+# main.ts lanza un error al montar /admin/queues), SENTRY_DSN (opcional: sin ella Sentry queda
+# inerte). APP_ROLE no hace falta: en producción el default es "api", y el proceso worker usa su
+# propio entrypoint.

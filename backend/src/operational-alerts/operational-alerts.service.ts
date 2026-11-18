@@ -1,7 +1,16 @@
+import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable } from '@nestjs/common';
+import { Queue } from 'bullmq';
 import { DataSource } from 'typeorm';
+import { QUEUE_NOTIFICATIONS } from '../notifications/notification.types';
 import { NotificationsService } from '../notifications/notifications.service';
-import { lowStockKey, orderReviewSlaKey } from './operational-alerts.constants';
+import { QUEUE_ORDERS } from '../orders/orders.constants';
+import {
+  failedJobsKey,
+  lowStockKey,
+  orderReviewSlaKey,
+  QUEUE_OPERATIONAL_ALERTS,
+} from './operational-alerts.constants';
 
 interface AdminRecipient {
   id: string;
@@ -10,10 +19,21 @@ interface AdminRecipient {
 
 @Injectable()
 export class OperationalAlertsService {
+  private readonly monitoredQueues: Queue[];
+
   constructor(
     private readonly ds: DataSource,
     private readonly notifications: NotificationsService,
-  ) {}
+    @InjectQueue(QUEUE_ORDERS) ordersQueue: Queue,
+    @InjectQueue(QUEUE_NOTIFICATIONS) notificationsQueue: Queue,
+    @InjectQueue(QUEUE_OPERATIONAL_ALERTS) operationalAlertsQueue: Queue,
+  ) {
+    this.monitoredQueues = [
+      ordersQueue,
+      notificationsQueue,
+      operationalAlertsQueue,
+    ];
+  }
 
   /** RF-ADM-26: un plan cae a LOW u OUT_OF_STOCK (ambos requieren reponer, v_plan_stock). */
   async checkLowStock(): Promise<number> {
@@ -80,6 +100,32 @@ export class OperationalAlertsService {
           template: 'order-review-sla',
           recipient: admin.email,
           data: { orderNumber: row.orderNumber },
+        });
+        enqueued++;
+      }
+    }
+    return enqueued;
+  }
+
+  /** RNF-OBS-05: cola de fallidos > 0. Jobs que ya agotaron sus reintentos y quedaron en `failed`. */
+  async checkFailedJobs(): Promise<number> {
+    const admins = await this.admins();
+    if (admins.length === 0) {
+      return 0;
+    }
+
+    let enqueued = 0;
+    for (const queue of this.monitoredQueues) {
+      const failedCount = await queue.getJobCountByTypes('failed');
+      if (failedCount === 0) {
+        continue;
+      }
+      for (const admin of admins) {
+        await this.notifications.enqueue({
+          key: failedJobsKey(queue.name, admin.id),
+          template: 'failed-jobs-alert',
+          recipient: admin.email,
+          data: { queueName: queue.name, failedCount },
         });
         enqueued++;
       }

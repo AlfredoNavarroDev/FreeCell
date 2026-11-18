@@ -94,6 +94,21 @@ export class EnvironmentVariables {
   @IsString()
   @MinLength(12)
   ADMIN_PASSWORD?: string;
+
+  /** Protege /admin/queues (Bull Board) con HTTP Basic Auth; no se relaciona con el JWT de la app. */
+  @IsOptional()
+  @IsString()
+  ADMIN_QUEUES_USER?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(12)
+  ADMIN_QUEUES_PASSWORD?: string;
+
+  /** Sin DSN, Sentry.init() nunca se llama y el SDK queda inerte (RNF-OBS-04). */
+  @IsOptional()
+  @IsString()
+  SENTRY_DSN?: string;
 }
 
 export function validateEnv(

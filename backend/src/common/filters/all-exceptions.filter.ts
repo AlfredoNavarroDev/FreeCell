@@ -6,6 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
+import * as Sentry from '@sentry/nestjs';
 import { QueryFailedError } from 'typeorm';
 
 export interface ErrorBody {
@@ -88,6 +89,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
         { err: exception, requestId: request.id },
         'Error al procesar la solicitud',
       );
+      // Sin SENTRY_DSN, Sentry.init() nunca corrió y esta llamada es un no-op (RNF-OBS-04).
+      Sentry.captureException(exception);
     }
     this.adapterHost.httpAdapter.reply(
       ctx.getResponse(),

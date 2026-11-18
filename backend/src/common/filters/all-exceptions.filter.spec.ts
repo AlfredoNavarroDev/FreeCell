@@ -1,6 +1,11 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
+import type { ArgumentsHost } from '@nestjs/common';
+import type { HttpAdapterHost } from '@nestjs/core';
+import * as Sentry from '@sentry/nestjs';
 import { QueryFailedError } from 'typeorm';
-import { toErrorBody } from './all-exceptions.filter';
+import { AllExceptionsFilter, toErrorBody } from './all-exceptions.filter';
+
+jest.mock('@sentry/nestjs', () => ({ captureException: jest.fn() }));
 
 const pgError = (code: string) =>
   new QueryFailedError(
@@ -59,5 +64,34 @@ describe('toErrorBody', () => {
       error: 'Internal Server Error',
     });
     expect(toErrorBody(pgError('42P01')).statusCode).toBe(500);
+  });
+});
+
+describe('AllExceptionsFilter.catch', () => {
+  const buildHost = (): ArgumentsHost =>
+    ({
+      switchToHttp: () => ({
+        getRequest: () => ({ id: 'req-1' }),
+        getResponse: () => ({}),
+      }),
+    }) as unknown as ArgumentsHost;
+
+  const buildAdapterHost = (): HttpAdapterHost =>
+    ({ httpAdapter: { reply: jest.fn() } }) as unknown as HttpAdapterHost;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('reporta a Sentry un error 500', () => {
+    const filter = new AllExceptionsFilter(buildAdapterHost());
+    filter.catch(new Error('boom'), buildHost());
+    expect(Sentry.captureException).toHaveBeenCalledWith(expect.any(Error));
+  });
+
+  it('no reporta a Sentry un error esperado (4xx)', () => {
+    const filter = new AllExceptionsFilter(buildAdapterHost());
+    filter.catch(new NotFoundException('Pedido no encontrado'), buildHost());
+    expect(Sentry.captureException).not.toHaveBeenCalled();
   });
 });
