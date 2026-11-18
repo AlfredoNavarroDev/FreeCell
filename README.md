@@ -27,6 +27,19 @@ comprobante; el operador aprueba y el sistema entrega la(s) licencia(s) reservad
 
 ## Cómo levantar el proyecto
 
+### Todo junto con Docker Compose (backend + frontend)
+
+```bash
+cp backend/.env.example backend/.env    # completa JWT_SECRET, JWT_REFRESH_PEPPER, LICENSE_ENC_KEY, ADMIN_*
+cp frontend/.env.example frontend/.env  # completa AUTH_SECRET (openssl rand -base64 32)
+docker compose --profile app up -d --build
+docker compose --profile app exec api node dist/database/seed.js   # opcional: catálogo demo
+```
+
+Backend en http://localhost:3000, frontend en http://localhost:3001. `docker-compose.yml` (raíz) construye ambas
+imágenes de producción; para desarrollo diario del backend con hot-reload, usa `backend/docker-compose.yml` (solo
+Postgres + Redis) + `npm run start:dev` como se describe abajo.
+
 ### Backend (`cd backend`)
 
 ```bash

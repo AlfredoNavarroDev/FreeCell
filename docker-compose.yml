@@ -1,0 +1,104 @@
+# Orquesta backend (Postgres + Redis + API + worker) y frontend juntos, para probar la app completa
+# con un solo "docker compose --profile app up -d --build". Para desarrollo diario del backend solo
+# (hot-reload, sin rebuild de imagen) usa "backend/docker-compose.yml" en su lugar.
+x-backend: &backend
+  build: ./backend
+  image: freecell-backend:local
+  env_file: ./backend/.env
+  environment:
+    NODE_ENV: production
+    DATABASE_URL: postgresql://freecell:freecell@postgres:5432/freecell
+    REDIS_URL: redis://redis:6379/0
+    DB_SSL: 'false'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: freecell
+      POSTGRES_PASSWORD: freecell
+      POSTGRES_DB: freecell
+    ports:
+      - '${DB_PORT:-5432}:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backend/docker/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U freecell -d freecell']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ADVERTENCIA: "docker compose --profile app down" también detiene/elimina postgres y redis,
+  # porque no tienen "profiles:" y Compose los trata como siempre-habilitados (unión con el perfil "app").
+  migrate:
+    <<: *backend
+    profiles: ['app']
+    command: ['node', 'dist/database/run-migrations.js']
+    healthcheck:
+      disable: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    <<: *backend
+    profiles: ['app']
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: production
+      APP_ROLE: api
+      DATABASE_URL: postgresql://freecell:freecell@postgres:5432/freecell
+      REDIS_URL: redis://redis:6379/0
+      DB_SSL: 'false'
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  worker:
+    <<: *backend
+    profiles: ['app']
+    command: ['node', 'dist/worker.js']
+    environment:
+      NODE_ENV: production
+      APP_ROLE: worker
+      DATABASE_URL: postgresql://freecell:freecell@postgres:5432/freecell
+      REDIS_URL: redis://redis:6379/0
+      DB_SSL: 'false'
+    healthcheck:
+      disable: true
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  web:
+    build: ./frontend
+    image: freecell-frontend:local
+    profiles: ['app']
+    env_file: ./frontend/.env
+    environment:
+      # Server-side de Next (api-client.ts) llama al backend por el nombre del servicio en la red de Compose.
+      API_URL: http://api:3000
+    ports:
+      - '3001:3000'
+    depends_on:
+      api:
+        condition: service_started
+
+volumes:
+  pgdata:
