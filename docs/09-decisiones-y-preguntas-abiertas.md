@@ -133,6 +133,14 @@ de este documento) quedaron resueltas como decisiones **D14–D55**.
 | D82 | `low-stock-check` alerta tanto `LOW` como `OUT_OF_STOCK` (no solo `LOW`). | Sin stock es un caso peor que "bajo"; el cliente no puede comprar ese plan, pero el operador igual necesita el aviso para reponer. |
 | D83 | Cadencia de re-alerta: **una vez por día** mientras la condición persista, usando una `key` de `notification_logs` con la fecha UTC (`low-stock-<planId>-<adminId>-<YYYY-MM-DD>`, análogo para SLA). Sin tabla nueva. | Coincide con un operador que revisa ~1×/día (razón de D19); evita spam sin depender de que alguien marque la alerta como vista. |
 
+### Decisiones de observabilidad (Bull Board, Sentry) — Sprint 4 (2026-11-18)
+| Id | Decisión | Razón |
+|---|---|---|
+| D84 | `/admin/queues` (Bull Board) se protege con **HTTP Basic Auth propio** (`ADMIN_QUEUES_USER`/`ADMIN_QUEUES_PASSWORD`), no con el JWT de la app. | Bull Board es navegación directa de browser (GET), no fetch con header `Authorization`; el JWT actual solo viaja por Bearer. Credenciales propias evitan construir un login por cookie solo para esta pantalla interna. |
+| D85 | `mountQueuesAdmin()` se llama explícitamente antes de `app.init()`/`app.listen()` (en `main.ts`, no dentro de `configureApp`). | Confirmado con prueba: un `app.use()` agregado después de `init()` queda detrás del catch-all de Nest y nunca se alcanza. Mantenerlo fuera de `configureApp` también evita que cada test e2e de la suite tenga que registrar las 3 colas que Bull Board necesita. |
+| D86 | `OperationalAlertsModule` se importa directo en `AppModule` (no solo vía `WorkersModule`). | Bug encontrado al implementar Bull Board: en producción (`APP_ROLE=api`) `WorkersModule` no carga en el proceso API, así que la cola `operational-alerts` no existía ahí — Bull Board (que vive en la API) no podría mostrarla. Mismo patrón que `NotificationsModule`, que ya se importa directo independiente del worker. |
+| D87 | Sentry (backend `@sentry/nestjs`, frontend `@sentry/nextjs`) se integra ahora sin DSN real (`SENTRY_DSN`/`NEXT_PUBLIC_SENTRY_DSN` vacíos); `Sentry.init` trata un DSN vacío como "desactivado". | Deja el código listo (captura en `AllExceptionsFilter` para 5xx, `instrumentation.ts`/`instrumentation-client.ts` del frontend) sin bloquear por la creación de una cuenta de Sentry, que es un paso de infraestructura separado (paso 13 de `docs/10`). |
+
 ## C. Riesgos principales
 | Riesgo | Impacto | Mitigación |
 |---|---|---|

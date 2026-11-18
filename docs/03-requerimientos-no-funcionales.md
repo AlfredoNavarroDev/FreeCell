@@ -70,9 +70,9 @@ deben validarse con el negocio. **Estado:** ✅ cumplido y probado · 🟡 parci
 |---|---|---|
 | RNF-OBS-01 | Endpoint `/health` (liveness) y `/health/ready` (Postgres + Redis). | ✅ |
 | RNF-OBS-02 | Logs estructurados en JSON con *request id* y sin datos sensibles (pino). | ✅ (`nestjs-pino`; JSON en producción, `pino-pretty` en dev; `X-Request-Id` propagado/generado; redacta `authorization`, `cookie`, `password`, `refreshToken`, `accessToken`, `secret`) |
-| RNF-OBS-03 | Panel de colas (**Bull Board** en `/admin/queues`, solo ADMIN) y conservación de trabajos fallidos. | ⬜ (los fallidos ya se conservan) |
-| RNF-OBS-04 | Reporte de errores (Sentry o similar) en API y frontend. | ⬜ |
-| RNF-OBS-05 | Alertas: cola de fallidos > 0, stock bajo, pagos esperando más de [X] min. | 🟡 (stock bajo y pagos esperando >24h ✅, jobs `low-stock-check`/`order-review-sla-check`, 2026-11-15; falta "cola de fallidos > 0", va con Bull Board/Sentry) |
+| RNF-OBS-03 | Panel de colas (**Bull Board** en `/admin/queues`, solo ADMIN) y conservación de trabajos fallidos. | ✅ (2026-11-18: HTTP Basic Auth propio vía `ADMIN_QUEUES_USER`/`ADMIN_QUEUES_PASSWORD`, no el JWT de la app — D84; colas `orders`/`notifications`/`operational-alerts`; los fallidos ya se conservaban) |
+| RNF-OBS-04 | Reporte de errores (Sentry o similar) en API y frontend. | ✅ (2026-11-18: `@sentry/nestjs` y `@sentry/nextjs` integrados; sin `SENTRY_DSN`/`NEXT_PUBLIC_SENTRY_DSN` el SDK queda inerte hasta que exista una cuenta real) |
+| RNF-OBS-05 | Alertas: cola de fallidos > 0, stock bajo, pagos esperando más de [X] min. | ✅ (2026-11-15 stock bajo y SLA 24h; 2026-11-18 cola de fallidos, job `failed-jobs-check`) |
 
 ## RNF-MAN · Mantenibilidad y calidad
 | ID | Requerimiento | Estado |

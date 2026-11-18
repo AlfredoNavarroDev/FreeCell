@@ -53,5 +53,8 @@ Próximo: **paso 10** (admin: inicio/summary + reportes, S5, D55).
 **Nota (2026-11-15):** en paralelo, decidido arrancar también Sprint 4 (`docs/08`, "Robustez y salida a producción")
 antes del paso 10 — el loop de venta (pasos 1–6) ya cierra, así que tiene sentido empujar hacia despliegue real. Primer
 sub-proyecto de Sprint 4 completo: jobs `low-stock-check` + `order-review-sla-check` (RF-ADM-26, RF-COM-14/D19).
-Resto de Sprint 4 pendiente: observabilidad (Bull Board/logs/health/Sentry), CI, despliegue (Fly.io/Vercel/Neon/R2),
-legal/accesibilidad, pruebas de carga, README. No reemplaza el paso 10; son pistas independientes.
+Segundo sub-proyecto completo (2026-11-18): observabilidad — Bull Board en `/admin/queues` (D84/D85/D86), job
+`failed-jobs-check` (cierra RNF-OBS-05), Sentry backend+frontend sin DSN real todavía (D87); logs pino y
+`/health/ready` ya estaban ✅ desde antes.
+Resto de Sprint 4 pendiente: CI, despliegue (Fly.io/Vercel/Neon/R2), legal/accesibilidad, pruebas de carga, README.
+No reemplaza el paso 10; son pistas independientes.

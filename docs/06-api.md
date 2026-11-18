@@ -97,7 +97,7 @@ Ver `docs/backend/auth.md`, `docs/backend/orders.md` y `docs/backend/README.md` 
 | ⬜ | `GET /admin/reports/margin?from=&to=` | Margen por producto/plan: `unitPriceCents − unitCostCents` agregado (D55). |
 | ⬜ | `GET /admin/reports/stock-value` | Valor total del inventario `AVAILABLE` (Σ `unitCostCents`) (D55). |
 | ⬜ | `GET /admin/reports/top-plans?from=&to=&limit=` | Ranking de planes más vendidos en el rango (D55). |
-| ⬜ | `GET /admin/queues` | Bull Board montado (Sprint 4). |
+| ✅ | `GET /admin/queues` | Bull Board montado (colas `orders`/`notifications`/`operational-alerts`); HTTP Basic Auth propio (`ADMIN_QUEUES_USER`/`ADMIN_QUEUES_PASSWORD`, D84), no el JWT de la app. |
 
 ## Reglas transversales
 - Toda mutación crítica escribe `audit_logs`.

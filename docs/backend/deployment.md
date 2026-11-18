@@ -46,8 +46,11 @@ Las migraciones se corren con la misma imagen: `node dist/database/run-migration
 - `[http_service]`: `internal_port = 3000`, `force_https = true`, solo el process group `app`; health check
   `GET /health` cada 30 s con 20 s de gracia.
 - Comentario en el archivo: secretos a definir con `fly secrets set` — `DATABASE_URL` (+`DB_SSL=true`),
-  `REDIS_URL`, `JWT_SECRET`, `JWT_REFRESH_PEPPER`, `LICENSE_ENC_KEY`, `CORS_ORIGIN`. `APP_ROLE` no hace falta: en
-  producción el default ya es `api`, y el process group `worker` usa su propio entrypoint (`dist/worker.js`).
+  `REDIS_URL`, `JWT_SECRET`, `JWT_REFRESH_PEPPER`, `LICENSE_ENC_KEY`, `CORS_ORIGIN`, `ADMIN_QUEUES_USER`,
+  `ADMIN_QUEUES_PASSWORD` (obligatorias desde 2026-11-18: sin ellas `main.ts` lanza un error al montar
+  `/admin/queues`, RNF-OBS-03), `SENTRY_DSN` (opcional, RNF-OBS-04: sin ella Sentry queda inerte). `APP_ROLE` no
+  hace falta: en producción el default ya es `api`, y el process group `worker` usa su propio entrypoint
+  (`dist/worker.js`).
 - `app`/`primary_region` siguen como placeholders (`[nombre-de-la-app-en-fly]` / `[región]`): completar antes de
   `fly launch`.
 
@@ -55,7 +58,10 @@ Las migraciones se corren con la misma imagen: `node dist/database/run-migration
 
 - Despliegue real (`fly launch`/`fly deploy`), nombre de app y región definitivos.
 - CI en GitHub Actions (typecheck + unit + e2e con servicios Postgres/Redis) — hoy no existe ningún workflow.
-- Bull Board (panel de colas) y Sentry (reporte de errores) — fuera de alcance de Fundaciones.
-- Alertas (cola de fallidos, stock bajo, pagos esperando) y el job `low-stock-check`.
+- Abrir una cuenta de Sentry real y completar `SENTRY_DSN`/`NEXT_PUBLIC_SENTRY_DSN` (el código ya está listo e
+  inerte sin esos valores, 2026-11-18).
 - Probar el `release_command` y el health check contra un despliegue real en Fly.io (hoy solo se validó
   `docker compose --profile app up`, local).
+
+✅ (2026-11-18) Bull Board (`/admin/queues`, HTTP Basic Auth propio), alertas (cola de fallidos, stock bajo, SLA
+24h) y el scaffolding de Sentry (backend+frontend) ya están implementados — ver RNF-OBS-03/04/05 en `docs/03`.
