@@ -90,12 +90,15 @@ jobs:
 
       - run: npm ci
 
+      # tsc solo no genera los tipos ambientales de rutas/páginas/layouts (PageProps, LayoutProps):
+      # eso lo hace next build o, sin build completo, next typegen.
+      - run: npx next typegen
+
       - run: npx tsc --noEmit
 
-      # continue-on-error: hay deuda de lint real y preexistente (18 hallazgos en 7 archivos,
-      # react-hooks/error-boundaries y set-state-in-effect, next/no-html-link-for-pages,
-      # next/no-img-element) que no se limpia como efecto secundario de armar CI. Queda visible en
-      # el run pero no bloquea — limpiarla es su propia tarea (ver docs/11-bugs-pendientes.md).
+      # continue-on-error: hay deuda de lint real y preexistente (16 errores + 2 warnings en 9
+      # archivos, BUG-02 en docs/11-bugs-pendientes.md) que no se limpia como efecto secundario de
+      # armar CI. Queda visible en el run pero no bloquea.
       - run: npm run lint
         continue-on-error: true
 
