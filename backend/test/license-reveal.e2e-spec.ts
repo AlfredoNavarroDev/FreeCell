@@ -3,7 +3,6 @@ import { type NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { CryptoService } from '../src/common/crypto/crypto.service';
-import { OrderStatus } from '../src/database/enums';
 import { type User } from '../src/database/entities';
 import { createCatalog, createUser, insertOrder } from './utils/factories';
 import { createTestApp, resetState } from './utils/test-app';

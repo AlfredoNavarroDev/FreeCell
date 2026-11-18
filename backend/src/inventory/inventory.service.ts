@@ -24,7 +24,6 @@ import {
   InventoryResponseDto,
 } from './dto/inventory-item.dto';
 import { VoidLicenseDto } from './dto/void-license.dto';
-import { UpdateUsdRateDto } from './dto/update-usd-rate.dto';
 
 interface SecretCandidate {
   plain: string;
