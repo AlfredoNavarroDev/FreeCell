@@ -63,6 +63,29 @@ fuera de Playwright.
 `frontend/src/app/admin/page.tsx` (páginas afectadas), `frontend/src/auth.ts` (la llamada a `auth()` que
 ambas comparten).
 
+### BUG-02 · Deuda real de lint en frontend (16 errores + 2 warnings, 9 archivos)
+
+**Encontrado:** 2026-11-18, al armar CI (`.github/workflows/ci.yml`) y correr `npm run lint` sin `--fix`
+contra todo `src/`.
+
+**No bloquea:** CI corre el lint en el job `frontend` con `continue-on-error: true` — queda visible en cada
+run pero no tumba el pipeline.
+
+**Detalle (`npx eslint .`, 2026-11-18):**
+- `react-hooks/error-boundaries` (9, todas en `src/app/page.tsx:37-53`): JSX sin `<ErrorBoundary>` alrededor
+  de componentes que pueden lanzar.
+- `react-hooks/set-state-in-effect` (4): `setState` síncrono dentro de un `useEffect` sin guardas —
+  `src/lib/cart-context.tsx:45`, `src/lib/use-countdown.ts:13`, `src/components/inventory-screen.tsx:61`,
+  `src/components/order-items-summary.tsx:11`.
+- `@next/next/no-html-link-for-pages` (3): `<a>` en vez de `<Link>` de Next — `src/app/page.tsx:64`,
+  `src/app/checkout/[orderId]/entrega/page.tsx:35`, `src/components/checkout-summary.tsx:56`.
+- `@next/next/no-img-element` (1, warning): `<img>` en vez de `<Image>` — `src/components/admin-payment-detail.tsx:65`.
+- `@typescript-eslint/no-unused-vars` (1, warning): `src/app/error.tsx:4`.
+
+**Dónde seguir:** cada regla es independiente; no hace falta resolverlas todas de una — `error-boundaries`
+(9 en un solo archivo) es la de mayor volumen y probablemente la más rápida de resolver en bloque envolviendo
+el árbol de `page.tsx` en un único `<ErrorBoundary>`.
+
 ## Resueltos
 
 (ninguno todavía)

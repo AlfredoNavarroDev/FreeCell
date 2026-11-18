@@ -141,6 +141,11 @@ de este documento) quedaron resueltas como decisiones **D14–D55**.
 | D86 | `OperationalAlertsModule` se importa directo en `AppModule` (no solo vía `WorkersModule`). | Bug encontrado al implementar Bull Board: en producción (`APP_ROLE=api`) `WorkersModule` no carga en el proceso API, así que la cola `operational-alerts` no existía ahí — Bull Board (que vive en la API) no podría mostrarla. Mismo patrón que `NotificationsModule`, que ya se importa directo independiente del worker. |
 | D87 | Sentry (backend `@sentry/nestjs`, frontend `@sentry/nextjs`) se integra ahora sin DSN real (`SENTRY_DSN`/`NEXT_PUBLIC_SENTRY_DSN` vacíos); `Sentry.init` trata un DSN vacío como "desactivado". | Deja el código listo (captura en `AllExceptionsFilter` para 5xx, `instrumentation.ts`/`instrumentation-client.ts` del frontend) sin bloquear por la creación de una cuenta de Sentry, que es un paso de infraestructura separado (paso 13 de `docs/10`). |
 
+### Decisiones de CI — Sprint 4 (2026-11-18)
+| Id | Decisión | Razón |
+|---|---|---|
+| D88 | CI (`.github/workflows/ci.yml`) no corre los e2e de Playwright del frontend todavía; lint del frontend corre con `continue-on-error: true` en vez de bloquear. | Playwright necesita levantar el stack completo (API+Postgres+Redis+frontend) en el runner y uno de sus specs (`logout.spec.ts`) choca con BUG-01 (`docs/11`), reproducible hoy. El lint de frontend tiene deuda real preexistente (BUG-02, `docs/11`: 16 errores + 2 warnings en 9 archivos) que no se limpia como efecto secundario de armar CI. Ambos quedan como trabajo propio a futuro, no bloquean el pipeline de hoy. |
+
 ## C. Riesgos principales
 | Riesgo | Impacto | Mitigación |
 |---|---|---|

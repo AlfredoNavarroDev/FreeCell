@@ -57,7 +57,6 @@ Las migraciones se corren con la misma imagen: `node dist/database/run-migration
 ## Qué falta para Sprint 4
 
 - Despliegue real (`fly launch`/`fly deploy`), nombre de app y región definitivos.
-- CI en GitHub Actions (typecheck + unit + e2e con servicios Postgres/Redis) — hoy no existe ningún workflow.
 - Abrir una cuenta de Sentry real y completar `SENTRY_DSN`/`NEXT_PUBLIC_SENTRY_DSN` (el código ya está listo e
   inerte sin esos valores, 2026-11-18).
 - Probar el `release_command` y el health check contra un despliegue real en Fly.io (hoy solo se validó
@@ -65,3 +64,7 @@ Las migraciones se corren con la misma imagen: `node dist/database/run-migration
 
 ✅ (2026-11-18) Bull Board (`/admin/queues`, HTTP Basic Auth propio), alertas (cola de fallidos, stock bajo, SLA
 24h) y el scaffolding de Sentry (backend+frontend) ya están implementados — ver RNF-OBS-03/04/05 en `docs/03`.
+
+✅ (2026-11-18) CI en GitHub Actions (`.github/workflows/ci.yml`): job `backend` (typecheck + lint estricto +
+unit + e2e contra Postgres 16/Redis 7 reales como `services:`) y job `frontend` (typecheck + lint en
+`continue-on-error` + unit + `next build`). No incluye Playwright todavía (D88, `docs/09`).

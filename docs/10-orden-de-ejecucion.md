@@ -56,5 +56,8 @@ sub-proyecto de Sprint 4 completo: jobs `low-stock-check` + `order-review-sla-ch
 Segundo sub-proyecto completo (2026-11-18): observabilidad — Bull Board en `/admin/queues` (D84/D85/D86), job
 `failed-jobs-check` (cierra RNF-OBS-05), Sentry backend+frontend sin DSN real todavía (D87); logs pino y
 `/health/ready` ya estaban ✅ desde antes.
-Resto de Sprint 4 pendiente: CI, despliegue (Fly.io/Vercel/Neon/R2), legal/accesibilidad, pruebas de carga, README.
+Tercer sub-proyecto completo (2026-11-18): CI en GitHub Actions (`.github/workflows/ci.yml`, D88) — backend
+estricto (typecheck+lint+unit+e2e contra Postgres/Redis reales), frontend con lint en `continue-on-error` por
+deuda preexistente (BUG-02, `docs/11`); sin Playwright todavía (necesita el stack completo + choca con BUG-01).
+Resto de Sprint 4 pendiente: despliegue (Fly.io/Vercel/Neon/R2), legal/accesibilidad, pruebas de carga, README.
 No reemplaza el paso 10; son pistas independientes.

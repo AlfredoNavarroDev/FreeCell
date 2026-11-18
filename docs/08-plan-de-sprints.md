@@ -85,7 +85,8 @@ Entregado (detalle verificado contra el código en `docs/backend/`):
 - [x] Job repetible `low-stock-check` + alertas (RF-ADM-26, RNF-OBS-05 parcial) — 2026-11-15.
 - [x] Alerta al operador tras 24h en `IN_REVIEW` sin cancelar automáticamente (D19) — 2026-11-15.
 - [x] Bull Board en `/admin/queues` (solo ADMIN); logs estructurados (pino); `/health/ready`; Sentry — 2026-11-18.
-- [ ] CI en GitHub Actions con servicios Postgres/Redis.
+- [x] CI en GitHub Actions con servicios Postgres/Redis — 2026-11-18 (`.github/workflows/ci.yml`; backend
+      estricto, frontend con lint en `continue-on-error` por deuda preexistente, ver `docs/11` BUG-02).
 - [ ] Despliegue: Fly.io (API + workers + Redis propio) + Vercel (web) + Neon (Postgres) + R2 (D48, D49); migraciones en el
       pipeline; prueba de restauración de backup.
 - [ ] Publicar términos de uso / privacidad / reposición (borrador propio, D41) marcados `[PENDIENTE REVISIÓN LEGAL]`;
